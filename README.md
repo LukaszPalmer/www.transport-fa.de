@@ -58,4 +58,22 @@ backend/src/
 └─ server.ts            HTTP-Server, DB-Verbindung, Graceful Shutdown
 ```
 
+## Deployment
+
+Ein Git-Repository, zwei Plattformen. Beide bauen vom Repository-Hauptordner aus, weil `shared/` gebraucht wird.
+
+| | Backend → **Railway** | Frontend → **Vercel** |
+| --- | --- | --- |
+| Konfiguration | `backend/railway.json` | `frontend/vercel.json` |
+| Root Directory | leer lassen | `frontend` |
+| Einstellung | Railway Config File: `/backend/railway.json` | „Include files outside the root directory" aktiv (Standard) |
+| Region | EU West (Amsterdam) | Functions: `fra1` (Frankfurt, per `vercel.json`) |
+| Vor jedem Deploy | `db:sync-indexes:prod` (Collections & Indizes) | – |
+| Health-Check | `/health/ready` | – |
+| Domain | `api.transport-fa.de` | `www.transport-fa.de` (+ Weiterleitung von `transport-fa.de`) |
+| Variablen | Railway → Variables → Raw Editor (`NODE_ENV`/`PORT` setzt Railway) | Vercel → Settings → Environment Variables |
+
+Railway baut nur neu, wenn sich `backend/`, `shared/` oder die Paketdateien ändern; Vercel überspringt
+Deployments ohne Frontend-Änderungen automatisch.
+
 Details zur Website (Inhalte, Hero-Videos, Bewertungen): [`frontend/README.md`](frontend/README.md).
