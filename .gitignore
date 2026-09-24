@@ -1,0 +1,15 @@
+# Abhängigkeiten & Builds (Workspace-spezifische Regeln: frontend/.gitignore)
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Umgebungsvariablen – nur Vorlagen werden eingecheckt
+.env
+.env.*
+!.env.example
+
+# Logs & System
+*.log
+.DS_Store
+Thumbs.db

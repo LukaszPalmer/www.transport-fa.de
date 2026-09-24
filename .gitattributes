@@ -1,0 +1,15 @@
+# Einheitlich LF im Repository – Railway und Vercel bauen unter Linux.
+* text=auto eol=lf
+
+# Binärdateien nie anfassen
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.mp4 binary
+*.webm binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
