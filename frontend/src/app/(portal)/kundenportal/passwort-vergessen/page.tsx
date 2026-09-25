@@ -12,7 +12,7 @@ export default function ForgotPasswordPage() {
       title="Passwort vergessen?"
       description="Kein Problem. Geben Sie Ihre E-Mail-Adresse ein – wir senden Ihnen einen Link zum Zurücksetzen."
       footer={
-        <Link href={routes.portal} className="font-semibold text-accent-ink underline underline-offset-4">
+        <Link href={routes.portalLogin} className="font-semibold text-accent-ink underline underline-offset-4">
           Zurück zur Anmeldung
         </Link>
       }

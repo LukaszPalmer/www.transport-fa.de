@@ -11,6 +11,8 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
+  // Gemeinsame Typen & Validierung aus dem Monorepo (TypeScript-Quellcode, kein Build-Schritt).
+  transpilePackages: ["@fa/shared"],
 
   experimental: {
     serverActions: {

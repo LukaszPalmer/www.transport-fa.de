@@ -20,6 +20,8 @@ export const routes = {
   careers: "/karriere",
   application: "/karriere#bewerbung",
   portal: "/kundenportal",
+  portalLogin: "/kundenportal/anmelden",
+  portalVerify: "/kundenportal/email-bestaetigen",
   portalRegister: "/kundenportal/registrieren",
   portalForgot: "/kundenportal/passwort-vergessen",
   portalReset: "/kundenportal/passwort-zuruecksetzen",

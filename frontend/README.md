@@ -1,11 +1,11 @@
 # FA Transport – Website & Kundenportal
 
-Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4, Better Auth.
-Alle Marketing-Seiten werden statisch vorgerendert; nur Kundenportal und Auth-API rendern dynamisch.
+Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS v4. Anmeldung und Daten kommen von der API in `../backend`.
+Alle Marketing-Seiten werden statisch vorgerendert; nur das Kundenportal rendert dynamisch.
 
 ```bash
 npm install
-cp .env.example .env.local   # Werte eintragen (lokal genügt BETTER_AUTH_SECRET)
+cp .env.example .env.local   # lokal genügen die Vorgaben (API auf localhost:4000)
 npm run dev                  # http://localhost:3000
 npm run build && npm start   # Production
 npm run lint && npm run typecheck
@@ -19,7 +19,8 @@ npm run lint && npm run typecheck
 | `/leistungen/umzuege` · `/entruempelungen` · `/haushaltsaufloesungen` · `/transport-logistik` | Leistungsseiten mit eigenem Video-Hero (ein Template, Inhalte aus `src/content/services.ts`) |
 | `/kontakt` | Kontakt- & Angebotsformular (`?leistung=umzuege` wählt die Leistung vor) |
 | `/karriere` | Stellen aller Bereiche mit Filter + Bewerbungsformular inkl. Lebenslauf-Upload |
-| `/kundenportal` (+ `/registrieren`, `/passwort-vergessen`, `/passwort-zuruecksetzen`, `/konto`) | Login (E-Mail/Passwort, Google), Registrierung, Passwort-Reset, Kundenkonto |
+| `/kundenportal` (+ `/konto`) | Dashboard und Kundenkonto (nur angemeldet, sonst Weiterleitung zur Anmeldung) |
+| `/kundenportal/anmelden` · `/registrieren` · `/passwort-vergessen` · `/passwort-zuruecksetzen` · `/email-bestaetigen` | Anmeldung (E-Mail/Passwort, Google), Registrierung, Passwort-Reset, E-Mail-Bestätigung |
 | `/bewerten` | Kurzlink für Bewertungsanfragen (Google / MyHammer), nicht indexiert |
 
 ## Struktur
@@ -30,7 +31,6 @@ src/
 │  ├─ (site)/            Website-Seiten (Layout mit Header/Footer)
 │  ├─ (portal)/          Kundenportal (fokussiertes Layout, noindex)
 │  ├─ actions/           Server Actions: Kontakt, Bewerbung
-│  └─ api/auth/[...all]  Better-Auth-Endpunkte
 ├─ content/              ALLE Texte & Daten (company, services, careers, reviews, contact, home, navigation)
 ├─ components/
 │  ├─ forms/             Formular-Kit (Felder, Auswahlkarten, Upload) + Kontakt-/Bewerbungsformular
@@ -38,7 +38,7 @@ src/
 │  ├─ sections/          Seitensektionen (PageHero, StatsBar, OfferingGrid, FAQ, Reviews …)
 │  ├─ layout/            Header (Dropdown), Mobilmenü, Footer
 │  └─ ui/                Primitives (Button, SmartLink, Icon-Registry …)
-└─ lib/                  auth, session, mail, form-guard, structured-data
+└─ lib/                  api (Client/Server), session (DAL), portal-format, mail, form-guard, structured-data
 ```
 
 Neue Leistung hinzufügen: Eintrag in `src/content/services.ts` + Video per Skript (siehe unten).
@@ -54,15 +54,11 @@ Dropdown, Startseite, Kontaktformular, Sitemap und JSON-LD übernehmen sie autom
 
 ## Kundenportal
 
-- **Better Auth** mit SQLite (`node:sqlite`, in Node 24 eingebaut). Datei: `.data/auth.sqlite` (gitignored).
-  Tabellen werden beim ersten Zugriff automatisch angelegt – die einmalige Log-Meldung „Database schema mismatch“
-  beim allerersten Start ist dabei normal.
-- **Für serverlose Hosts** (Vercel, Netlify) Postgres statt SQLite verwenden: in `src/lib/auth.ts` die
-  `database`-Option durch einen `pg`-Pool ersetzen.
-- **Google-Anmeldung aktivieren:** In der Google Cloud Console einen OAuth-Client „Webanwendung“ anlegen,
-  Weiterleitungs-URI `https://<domain>/api/auth/callback/google` eintragen, dann `GOOGLE_CLIENT_ID` und
-  `GOOGLE_CLIENT_SECRET` setzen. Ohne diese Werte zeigt der Button „wird in Kürze freigeschaltet“.
-- Passwort-Reset (Link 60 Min. gültig), E-Mail-Bestätigung, Sitzungen 14 Tage, Rate-Limiting und CSRF-Schutz inklusive.
+- **Anmeldung über die Backend-API** (`backend/`): E-Mail/Passwort (Argon2id), Google-Login, E-Mail-Bestätigung,
+  Passwort-Reset, Rate-Limiting, Kontosperre nach Fehlversuchen. Die Sitzung liegt in einem httpOnly-Cookie der API.
+- **Server Components** lesen Daten über `lib/api/server.ts` (reicht das Cookie an die API weiter), Formulare im
+  Browser über `lib/api/client.ts`. Zugriffsprüfung zentral in `lib/session.ts` (`requireCustomer`).
+- Der Google-Button zeigt „wird in Kürze freigeschaltet“, solange im Backend kein Google-Client konfiguriert ist.
 
 ## Bewertungen (Google & MyHammer)
 
@@ -96,6 +92,5 @@ Haushaltsauflösungen 4553292, Transport 5598972, Karriere 4284181. Empfehlung: 
 
 - [ ] Firmendaten, Kennzahlen, Zertifikate, Stellen und FAQ-Antworten fachlich prüfen (`src/content/*`)
 - [ ] Impressum & Datenschutzerklärung rechtlich prüfen lassen
-- [ ] `.env`: `NEXT_PUBLIC_SITE_URL`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, SMTP-Zugang, Empfänger-Adressen
-- [ ] Google-OAuth-Client anlegen; Google-Place-ID und MyHammer-Profil in `reviews.ts`
-- [ ] Hosting mit persistentem Speicher für SQLite – oder auf Postgres umstellen
+- [ ] `.env`: `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_API_URL`, `API_INTERNAL_URL`, SMTP-Zugang, Empfänger-Adressen
+- [ ] Google-Place-ID und MyHammer-Profil in `reviews.ts`

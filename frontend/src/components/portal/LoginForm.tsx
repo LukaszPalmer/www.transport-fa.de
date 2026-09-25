@@ -1,9 +1,12 @@
 "use client";
 
+import type { MeResponse } from "@fa/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
-import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { routes } from "@/content/navigation";
+import { apiRequest } from "@/lib/api/client";
+import { ApiError, errorMessage } from "@/lib/api/errors";
 import { CheckboxField, TextField } from "@/components/forms/fields";
 import { AuthAlert, PasswordField, PendingButton } from "./auth-fields";
 import { AuthDivider, GoogleButton } from "./GoogleButton";
@@ -18,6 +21,7 @@ interface LoginFormProps {
 export function LoginForm({ googleEnabled, redirectTo, notice }: LoginFormProps) {
   const router = useRouter();
   const [error, setError] = useState<string>();
+  const [emailError, setEmailError] = useState<string>();
   const [pending, setPending] = useState(false);
   const [password, setPassword] = useState("");
 
@@ -25,19 +29,23 @@ export function LoginForm({ googleEnabled, redirectTo, notice }: LoginFormProps)
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     setError(undefined);
+    setEmailError(undefined);
     setPending(true);
-    const { error: signInError } = await authClient.signIn.email({
-      email: String(data.get("email") ?? "").trim(),
-      password,
-      rememberMe: data.get("remember") === "on",
-    });
-    if (signInError) {
-      setError(authErrorMessage(signInError));
+    try {
+      await apiRequest<MeResponse>("/auth/login", {
+        body: {
+          email: String(data.get("email") ?? ""),
+          password,
+          remember: data.get("remember") === "on",
+        },
+      });
+      router.replace(redirectTo);
+      router.refresh();
+    } catch (loginError) {
+      if (loginError instanceof ApiError && loginError.fields?.email) setEmailError(loginError.fields.email);
+      else setError(errorMessage(loginError));
       setPending(false);
-      return;
     }
-    router.replace(redirectTo);
-    router.refresh();
   };
 
   return (
@@ -45,11 +53,11 @@ export function LoginForm({ googleEnabled, redirectTo, notice }: LoginFormProps)
       {notice && !error && <AuthAlert tone={notice.tone}>{notice.text}</AuthAlert>}
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-      <GoogleButton enabled={googleEnabled} label="Mit Google anmelden" callbackURL={redirectTo} onError={setError} />
+      <GoogleButton enabled={googleEnabled} label="Mit Google anmelden" redirectTo={redirectTo} />
       <AuthDivider />
 
       <form onSubmit={onSubmit} className="space-y-5">
-        <TextField name="email" type="email" label="E-Mail-Adresse" required autoComplete="email" inputMode="email" />
+        <TextField name="email" type="email" label="E-Mail-Adresse" required autoComplete="email" inputMode="email" error={emailError} />
         <div>
           <PasswordField
             name="password"
@@ -59,10 +67,7 @@ export function LoginForm({ googleEnabled, redirectTo, notice }: LoginFormProps)
             onValueChange={setPassword}
           />
           <div className="mt-2 text-right">
-            <Link
-              href="/kundenportal/passwort-vergessen"
-              className="text-sm font-medium text-accent-ink underline-offset-4 hover:underline"
-            >
+            <Link href={routes.portalForgot} className="text-sm font-medium text-accent-ink underline-offset-4 hover:underline">
               Passwort vergessen?
             </Link>
           </div>

@@ -2,14 +2,14 @@
 
 import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
-import { authClient, authErrorMessage } from "@/lib/auth-client";
+import { googleSignInUrl } from "@/lib/api/client";
 import { buttonClasses } from "@/components/ui/button-styles";
 
 interface GoogleButtonProps {
   enabled: boolean;
   label: string;
-  callbackURL: string;
-  onError: (message: string) => void;
+  /** Ziel nach erfolgreicher Anmeldung (interner Pfad). */
+  redirectTo: string;
 }
 
 /** Google-„G“ in Markenfarben (von Google für Sign-in-Buttons vorgegeben). */
@@ -24,45 +24,36 @@ function GoogleMark() {
   );
 }
 
-/** Anmeldung mit Google (OAuth 2.0 / OpenID Connect über Better Auth). */
-export function GoogleButton({ enabled, label, callbackURL, onError }: GoogleButtonProps) {
+/**
+ * Anmeldung mit Google (OAuth 2.0 / OpenID Connect über die FA-Transport-API).
+ * Ein normaler Link: Die API leitet zu Google und nach der Anmeldung zurück ins Portal.
+ */
+export function GoogleButton({ enabled, label, redirectTo }: GoogleButtonProps) {
   const [pending, setPending] = useState(false);
+  const classes = buttonClasses({ variant: "outline", size: "lg", className: "w-full" });
 
-  const signIn = async () => {
-    setPending(true);
-    const { error } = await authClient.signIn.social({
-      provider: "google",
-      callbackURL,
-      errorCallbackURL: "/kundenportal?fehler=google",
-    });
-    // Bei Erfolg leitet der Browser zu Google weiter – nur Fehler landen hier.
-    if (error) {
-      onError(authErrorMessage(error));
-      setPending(false);
-    }
-  };
+  if (!enabled) {
+    return (
+      <div>
+        <button type="button" disabled className={`${classes} cursor-not-allowed opacity-60`}>
+          <GoogleMark />
+          <span>{label}</span>
+        </button>
+        <p className="mt-2 text-center text-xs text-slate-500">Die Google-Anmeldung wird in Kürze freigeschaltet.</p>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <button
-        type="button"
-        onClick={signIn}
-        disabled={!enabled || pending}
-        className={buttonClasses({
-          variant: "outline",
-          size: "lg",
-          className: "w-full disabled:cursor-not-allowed disabled:opacity-60",
-        })}
-      >
-        {pending ? <LoaderCircle aria-hidden="true" className="size-5 animate-spin" /> : <GoogleMark />}
-        <span>{label}</span>
-      </button>
-      {!enabled && (
-        <p className="mt-2 text-center text-xs text-slate-500">
-          Die Google-Anmeldung wird in Kürze freigeschaltet.
-        </p>
-      )}
-    </div>
+    <a
+      href={googleSignInUrl(redirectTo)}
+      onClick={() => setPending(true)}
+      aria-busy={pending}
+      className={`${classes} ${pending ? "pointer-events-none opacity-80" : ""}`}
+    >
+      {pending ? <LoaderCircle aria-hidden="true" className="size-5 animate-spin" /> : <GoogleMark />}
+      <span>{label}</span>
+    </a>
   );
 }
 

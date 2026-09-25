@@ -2,15 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { routes } from "@/content/navigation";
-import { googleAuthEnabled } from "@/lib/auth";
-import { getSession } from "@/lib/session";
+import { getAuthProviders, getMe } from "@/lib/session";
 import { AuthShell } from "@/components/portal/AuthShell";
 import { RegisterForm } from "@/components/portal/RegisterForm";
 
 export const metadata: Metadata = { title: "Kundenportal – Konto erstellen" };
 
 export default async function RegisterPage() {
-  if (await getSession()) redirect(routes.portalAccount);
+  if (await getMe()) redirect(routes.portal);
+  const { google } = await getAuthProviders();
 
   return (
     <AuthShell
@@ -19,13 +19,13 @@ export default async function RegisterPage() {
       footer={
         <>
           Bereits registriert?{" "}
-          <Link href={routes.portal} className="font-semibold text-accent-ink underline underline-offset-4">
+          <Link href={routes.portalLogin} className="font-semibold text-accent-ink underline underline-offset-4">
             Anmelden
           </Link>
         </>
       }
     >
-      <RegisterForm googleEnabled={googleAuthEnabled} />
+      <RegisterForm googleEnabled={google} />
     </AuthShell>
   );
 }

@@ -13,11 +13,10 @@
     "build:app-map": "node scripts/build-app-map.mjs"
   },
   "dependencies": {
-    "@better-auth/kysely-adapter": "^1.7.5",
-    "better-auth": "^1.7.5",
+    "@fa/shared": "*",
     "lucide-react": "^1.47.0",
     "next": "16.3.6",
-    "nodemailer": "^8.0.11",
+    "nodemailer": "^10.0.10",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",
@@ -28,7 +27,6 @@
     "@tailwindcss/postcss": "^4",
     "@types/google.maps": "^3.66.3",
     "@types/node": "^24.13.6",
-    "@types/nodemailer": "^8.0.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
