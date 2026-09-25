@@ -64,14 +64,22 @@ Ein Git-Repository, zwei Plattformen. Beide bauen vom Repository-Hauptordner aus
 
 | | Backend → **Railway** | Frontend → **Vercel** |
 | --- | --- | --- |
-| Konfiguration | `backend/railway.json` | `frontend/vercel.json` |
+| Konfiguration | Railway-Dashboard (Service → Settings, Werte unten) | `frontend/vercel.json` |
 | Root Directory | leer lassen | `frontend` |
-| Einstellung | Railway Config File: `/backend/railway.json` | „Include files outside the root directory" aktiv (Standard) |
 | Region | EU West (Amsterdam) | Functions: `fra1` (Frankfurt, per `vercel.json`) |
-| Vor jedem Deploy | `db:sync-indexes:prod` (Collections & Indizes) | – |
-| Health-Check | `/health/ready` | – |
 | Domain | `api.transport-fa.de` | `www.transport-fa.de` (+ Weiterleitung von `transport-fa.de`) |
-| Variablen | Railway → Variables → Raw Editor (`NODE_ENV`/`PORT` setzt Railway) | Vercel → Settings → Environment Variables |
+| Variablen | Variables → Raw Editor (`NODE_ENV`/`PORT` setzt Railway) | Settings → Environment Variables |
+
+**Railway-Service „@fa/backend" – Settings:**
+
+| Feld | Wert |
+| --- | --- |
+| Custom Build Command | `npm run build -w @fa/backend` |
+| Watch Paths | `/backend/**` · `/shared/**` · `/package.json` · `/package-lock.json` |
+| Custom Start Command | `npm run start -w @fa/backend` |
+| Pre-Deploy Step | `npm run db:sync-indexes:prod -w @fa/backend` (Collections & Indizes) |
+| Healthcheck Path | `/health/ready` |
+| Restart Policy | On Failure |
 
 Railway baut nur neu, wenn sich `backend/`, `shared/` oder die Paketdateien ändern; Vercel überspringt
 Deployments ohne Frontend-Änderungen automatisch.
