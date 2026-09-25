@@ -47,6 +47,14 @@ const EnvSchema = z.object({
   /** Optional: ohne beide Werte ist die Google-Anmeldung deaktiviert. */
   GOOGLE_CLIENT_ID: z.string().endsWith(".apps.googleusercontent.com", "GOOGLE_CLIENT_ID sieht nicht nach einer Google-Client-ID aus").optional(),
   GOOGLE_CLIENT_SECRET: z.string().min(1).optional(),
+
+  /** console: E-Mails nur ins Log (Entwicklung) · resend: echter Versand */
+  MAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
+  RESEND_API_KEY: z.string().startsWith("re_", "RESEND_API_KEY muss mit re_ beginnen").optional(),
+  MAIL_FROM: z.string().min(3).default("FA Transport <noreply@transport-fa.de>"),
+}).refine((values) => values.MAIL_PROVIDER !== "resend" || Boolean(values.RESEND_API_KEY), {
+  path: ["RESEND_API_KEY"],
+  message: "RESEND_API_KEY fehlt – für MAIL_PROVIDER=resend erforderlich.",
 });
 
 export type Env = z.infer<typeof EnvSchema>;

@@ -2,8 +2,10 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type Express } from "express";
 import helmet from "helmet";
+import { authenticate } from "./auth/middleware";
 import { allowedOrigins } from "./config/env";
 import { errorHandler, notFoundHandler } from "./http/error-handler";
+import { originCheck } from "./http/origin-check";
 import { requestLogger } from "./http/request-logger";
 import { apiRouter } from "./routes";
 import { healthRouter } from "./routes/health";
@@ -28,7 +30,7 @@ export function createApp(): Express {
   app.use(cookieParser());
 
   app.use("/health", healthRouter);
-  app.use("/api/v1", apiRouter);
+  app.use("/api/v1", originCheck, authenticate, apiRouter);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
