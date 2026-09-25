@@ -105,6 +105,7 @@ export const CHAT_MESSAGE_MAX_LENGTH = 4000;
 // --- E-Mail -----------------------------------------------------------------
 
 export const EMAIL_TYPES = [
+  "WELCOME",
   "VERIFICATION",
   "PASSWORD_RESET",
   "ACCOUNT_DELETED",

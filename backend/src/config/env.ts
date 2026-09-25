@@ -51,7 +51,7 @@ const EnvSchema = z.object({
   /** console: E-Mails nur ins Log (Entwicklung) · resend: echter Versand */
   MAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   RESEND_API_KEY: z.string().startsWith("re_", "RESEND_API_KEY muss mit re_ beginnen").optional(),
-  MAIL_FROM: z.string().min(3).default("FA Transport <noreply@transport-fa.de>"),
+  MAIL_FROM: z.string().min(3).default("FA Transport <kontakt@transport-fa.de>"),
 }).refine((values) => values.MAIL_PROVIDER !== "resend" || Boolean(values.RESEND_API_KEY), {
   path: ["RESEND_API_KEY"],
   message: "RESEND_API_KEY fehlt – für MAIL_PROVIDER=resend erforderlich.",

@@ -20,7 +20,7 @@ import { AppError } from "../http/errors";
 import { audit } from "../lib/audit";
 import { logger } from "../lib/logger";
 import { sendMail } from "../mail/mailer";
-import { passwordResetMail, verificationMail } from "../mail/templates";
+import { passwordResetMail, verificationMail, welcomeMail } from "../mail/templates";
 import { CustomerProfile, User, type IUser } from "../models";
 import { consumeAuthToken, issueAuthToken } from "../services/auth-tokens";
 import { createCustomerProfile } from "../services/customers";
@@ -64,6 +64,24 @@ async function sendVerificationMail(user: Pick<IUser, "_id" | "email" | "name">,
   const token = await issueAuthToken(user._id, "EMAIL_VERIFICATION");
   const mail = verificationMail(user.name.split(" ")[0] || user.name, frontendUrl(`/kundenportal/email-bestaetigen?token=${token}`));
   await sendMail({ type: "VERIFICATION", to: user.email, userId: user._id, customerId, ...mail });
+}
+
+/** Persönliche Willkommens-Mail, sobald das Kundenkonto aktiv ist – blockiert die Antwort nicht. */
+function sendWelcomeMail(user: Pick<IUser, "_id" | "email">, signInMethod: "google" | "password"): void {
+  CustomerProfile.findOne({ userId: user._id })
+    .lean()
+    .then(async (profile) => {
+      if (!profile) return;
+      const mail = welcomeMail({
+        firstName: profile.firstName,
+        email: user.email,
+        customerNumber: profile.customerNumber,
+        signInMethod,
+        portalUrl: frontendUrl("/kundenportal"),
+      });
+      await sendMail({ type: "WELCOME", to: user.email, userId: user._id, customerId: profile._id, ...mail });
+    })
+    .catch((error: unknown) => logger.error({ err: error }, "Willkommens-Mail konnte nicht vorbereitet werden"));
 }
 
 // --- Status -----------------------------------------------------------------
@@ -170,9 +188,11 @@ authRouter.post("/verify-email", async (req, res) => {
   const userId = await consumeAuthToken(token, "EMAIL_VERIFICATION");
   if (!userId) throw AppError.badRequest("Der Bestätigungslink ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.");
 
-  const user = await User.findByIdAndUpdate(userId, { emailVerifiedAt: new Date() }, { returnDocument: "after" });
-  if (!user) throw AppError.notFound();
+  const before = await User.findByIdAndUpdate(userId, { emailVerifiedAt: new Date() }, { returnDocument: "before" });
+  if (!before) throw AppError.notFound();
+  const user = before;
   assertCanSignIn(user);
+  if (!before.emailVerifiedAt && user.role === "CUSTOMER") sendWelcomeMail(user, "password");
 
   // Der Link beweist den Zugriff auf das Postfach – ohne passende Sitzung direkt anmelden.
   if (!req.auth || !req.auth.user.id.equals(user._id)) await startSession(req, res, user, true);
@@ -295,7 +315,7 @@ authRouter.get("/google/callback", async (req, res) => {
     return;
   }
 
-  const user = await findOrCreateGoogleUser(profile);
+  const { user, created } = await findOrCreateGoogleUser(profile);
   if (user.state !== "ACTIVE" || user.role === "DRIVER") {
     fail("disabled");
     return;
@@ -303,7 +323,8 @@ authRouter.get("/google/callback", async (req, res) => {
 
   await User.updateOne({ _id: user._id }, { lastLoginAt: new Date(), failedLoginCount: 0 });
   await startSession(req, res, user, true);
-  audit(req, "auth.login", { actorId: user._id, actorRole: user.role, targetType: "User", targetId: user._id, meta: { method: "google" } });
+  audit(req, created ? "auth.registered" : "auth.login", { actorId: user._id, actorRole: user.role, targetType: "User", targetId: user._id, meta: { method: "google" } });
+  if (created) sendWelcomeMail(user, "google");
 
   res.redirect(frontendUrl(redirect ?? LANDING[user.role]));
 });
@@ -316,7 +337,7 @@ authRouter.get("/google/callback", async (req, res) => {
  */
 async function findOrCreateGoogleUser(profile: GoogleProfile) {
   const byGoogle = await User.findOne({ googleSub: profile.sub });
-  if (byGoogle) return byGoogle;
+  if (byGoogle) return { user: byGoogle, created: false };
 
   const byEmail = await User.findOne({ email: profile.email });
   if (byEmail) {
@@ -324,10 +345,10 @@ async function findOrCreateGoogleUser(profile: GoogleProfile) {
     byEmail.emailVerifiedAt ??= new Date();
     byEmail.avatarUrl ??= profile.avatarUrl;
     await byEmail.save();
-    return byEmail;
+    return { user: byEmail, created: false };
   }
 
-  return mongoose.connection.transaction(async (session) => {
+  const user = await mongoose.connection.transaction(async (session) => {
     const [created] = await User.create(
       [
         {
@@ -347,4 +368,5 @@ async function findOrCreateGoogleUser(profile: GoogleProfile) {
     );
     return created;
   });
+  return { user, created: true };
 }

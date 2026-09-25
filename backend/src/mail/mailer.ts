@@ -1,8 +1,12 @@
-import type { EmailType } from "@fa/shared";
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
+import { COMPANY, type EmailType } from "@fa/shared";
 import type { Types } from "mongoose";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
 import { EmailLog } from "../models";
+import { LOGO_MARK_PNG_BASE64 } from "./assets/logo";
+import { LOGO_CID } from "./layout";
 
 export interface MailMessage {
   type: EmailType;
@@ -13,6 +17,9 @@ export interface MailMessage {
   userId?: Types.ObjectId;
   customerId?: Types.ObjectId;
 }
+
+/** Lokale Vorschau der Mails (gitignored) – im Browser öffnen. */
+const PREVIEW_DIR = path.resolve(".mail-preview");
 
 /**
  * Versand über den konfigurierten Anbieter (Resend oder Konsole) – jede Mail
@@ -32,7 +39,8 @@ export async function sendMail(message: MailMessage): Promise<boolean> {
   });
 
   try {
-    const providerMessageId = env.MAIL_PROVIDER === "resend" ? await sendViaResend(message, String(log._id)) : logToConsole(message);
+    const providerMessageId =
+      env.MAIL_PROVIDER === "resend" ? await sendViaResend(message, String(log._id)) : writePreview(message, String(log._id));
     await EmailLog.updateOne({ _id: log._id }, { status: "SENT", sentAt: new Date(), providerMessageId });
     return true;
   } catch (error) {
@@ -50,7 +58,16 @@ async function sendViaResend(message: MailMessage, idempotencyKey: string): Prom
       "Content-Type": "application/json",
       "Idempotency-Key": idempotencyKey,
     },
-    body: JSON.stringify({ from: env.MAIL_FROM, to: [message.to], subject: message.subject, text: message.text, html: message.html }),
+    body: JSON.stringify({
+      from: env.MAIL_FROM,
+      to: [message.to],
+      reply_to: COMPANY.contact.email,
+      subject: message.subject,
+      text: message.text,
+      html: message.html,
+      // Logo als eingebettetes Bild: erscheint sofort, ohne „Bilder laden"
+      attachments: [{ filename: "fa-transport.png", content: LOGO_MARK_PNG_BASE64, content_type: "image/png", content_id: LOGO_CID }],
+    }),
     signal: AbortSignal.timeout(10_000),
   });
   const body = (await response.json().catch(() => ({}))) as { id?: string; message?: string };
@@ -58,8 +75,13 @@ async function sendViaResend(message: MailMessage, idempotencyKey: string): Prom
   return body.id;
 }
 
-/** Entwicklung: Mail samt Links im Log ausgeben statt zu versenden. */
-function logToConsole(message: MailMessage): undefined {
-  logger.info(`\n✉  E-Mail (${message.type}) an ${message.to}\n   Betreff: ${message.subject}\n\n${message.text}\n`);
+/** Entwicklung: Mail ins Log und als HTML-Vorschau in .mail-preview/ statt zu versenden. */
+function writePreview(message: MailMessage, id: string): undefined {
+  mkdirSync(PREVIEW_DIR, { recursive: true });
+  const file = path.join(PREVIEW_DIR, `${new Date().toISOString().replace(/[:.]/g, "-")}-${message.type.toLowerCase()}-${id.slice(-6)}.html`);
+  writeFileSync(file, message.html.replaceAll(`cid:${LOGO_CID}`, `data:image/png;base64,${LOGO_MARK_PNG_BASE64}`));
+  logger.info(
+    `\n✉  E-Mail (${message.type}) an ${message.to}\n   Betreff: ${message.subject}\n   Vorschau: ${file}\n\n${message.text}\n`,
+  );
   return undefined;
 }

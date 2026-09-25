@@ -1,11 +1,14 @@
+import { COMPANY } from "@fa/shared";
 import type { SocialLink } from "@/types/content";
 
 /**
  * Zentrale Unternehmensdaten – Single Source of Truth für Header, Footer,
  * Kontakt-CTAs, Impressum und strukturierte Daten (JSON-LD).
  *
- * TODO(Inhalt): Adresse, Telefon, E-Mail, Registerdaten und Social-URLs sind
- * Platzhalter und müssen vor dem Livegang durch die echten Daten ersetzt werden.
+ * Kerndaten (Adresse, Kontakt, Register) kommen aus @fa/shared, damit auch die
+ * E-Mails des Backends dieselben Angaben verwenden.
+ *
+ * TODO(Inhalt): Social-URLs sind Platzhalter (Stammdaten: shared/src/company.ts).
  */
 const socialLinks: SocialLink[] = [
   { platform: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/company/fa-transport" },
@@ -15,33 +18,19 @@ const socialLinks: SocialLink[] = [
 ];
 
 export const company = {
-  name: "FA Transport",
-  legalName: "FA Transport GmbH",
+  name: COMPANY.name,
+  legalName: COMPANY.legalName,
   foundingYear: 1999,
   description:
     "Umzüge, Entrümpelungen, Haushaltsauflösungen sowie Transport & Logistik – termintreu, transparent und zum Festpreis. Ihr Partner aus einer Hand.",
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.transport-fa.de",
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? COMPANY.websiteUrl,
   portalUrl: "/kundenportal",
   contact: {
-    phone: "+49 (0) 123 456 78-0",
-    phoneHref: "tel:+49123456780",
-    email: "kontakt@transport-fa.de",
-    quoteEmail: "kontakt@transport-fa.de",
-    careersEmail: "kontakt@transport-fa.de",
-    hours: "Mo–Fr 7–19 Uhr · Disposition 24/7",
+    ...COMPANY.contact,
+    quoteEmail: COMPANY.contact.email,
+    careersEmail: COMPANY.contact.email,
   },
-  address: {
-    street: "Musterstraße 1",
-    postalCode: "12345",
-    city: "Musterstadt",
-    country: "Deutschland",
-    countryCode: "DE",
-  },
-  register: {
-    court: "Amtsgericht Musterstadt",
-    number: "HRB 000000",
-    vatId: "DE000000000",
-    managingDirectors: "Vorname Nachname",
-  },
+  address: COMPANY.address,
+  register: COMPANY.register,
   social: socialLinks,
 };
