@@ -39,6 +39,7 @@ npm run dev                                   # API :4000 + Web :3000 parallel
 | --- | --- |
 | `npm run dev` | Backend (`tsx watch`) und Frontend (`next dev`) gleichzeitig |
 | `npm run dev:backend` / `dev:frontend` | nur ein Teil |
+| `npm run dev:stop` | hängengebliebene Dev-Server beenden (passiert vor `npm run dev` automatisch) |
 | `npm run build` | Produktions-Builds (Backend-Bundle nach `backend/dist`, Next.js-Build) |
 | `npm run typecheck` · `npm run lint` | alle Workspaces |
 | `npm run db:sync-indexes -w @fa/backend` | Collections anlegen und Indizes abgleichen |

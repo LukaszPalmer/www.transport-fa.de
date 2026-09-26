@@ -11,7 +11,9 @@
     "node": ">=24"
   },
   "scripts": {
+    "predev": "node scripts/stop-dev-servers.mjs",
     "dev": "concurrently -k -n api,web -c blue,green \"npm run dev -w @fa/backend\" \"npm run dev -w @fa/frontend\"",
+    "dev:stop": "node scripts/stop-dev-servers.mjs",
     "dev:backend": "npm run dev -w @fa/backend",
     "dev:frontend": "npm run dev -w @fa/frontend",
     "build": "npm run build -w @fa/backend && npm run build -w @fa/frontend",
