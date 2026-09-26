@@ -1,4 +1,13 @@
-import { ACCOUNT_STATES, CUSTOMER_TYPES, LOCALES, type AccountState, type CustomerType, type Locale } from "@fa/shared";
+import {
+  ACCOUNT_STATES,
+  CUSTOMER_TYPES,
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  LOCALES,
+  type AccountState,
+  type CustomerType,
+  type Locale,
+  type NotificationPreferences,
+} from "@fa/shared";
 import { Schema } from "mongoose";
 import { AddressSchema, defineModel, E164, ObjectId, type Address, type Id } from "../db/schema-kit";
 
@@ -18,10 +27,21 @@ export interface ICustomerProfile {
   accountManagerId?: Id; // → User (ADMIN)
   internalNotes?: string; // nur für Mitarbeiter
   state: AccountState;
+  notifications: NotificationPreferences; // E-Mail-Benachrichtigungen (Einstellungen)
   searchText: string; // Nummer, Name, Firma, E-Mail – kleingeschrieben, vom Service gepflegt
   createdAt: Date;
   updatedAt: Date;
 }
+
+const NotificationsSchema = new Schema<NotificationPreferences>(
+  {
+    shipmentUpdates: { type: Boolean, default: DEFAULT_NOTIFICATION_PREFERENCES.shipmentUpdates },
+    documents: { type: Boolean, default: DEFAULT_NOTIFICATION_PREFERENCES.documents },
+    invoices: { type: Boolean, default: DEFAULT_NOTIFICATION_PREFERENCES.invoices },
+    chatReplies: { type: Boolean, default: DEFAULT_NOTIFICATION_PREFERENCES.chatReplies },
+  },
+  { _id: false },
+);
 
 const CustomerProfileSchema = new Schema<ICustomerProfile>(
   {
@@ -39,6 +59,7 @@ const CustomerProfileSchema = new Schema<ICustomerProfile>(
     accountManagerId: { type: ObjectId, ref: "User" },
     internalNotes: { type: String, maxlength: 5000, select: false },
     state: { type: String, enum: ACCOUNT_STATES, default: "ACTIVE" },
+    notifications: { type: NotificationsSchema, default: () => ({}) },
     // Admin-Suche per Regex – für diese Größenordnung ausreichend, später ggf. Atlas Search.
     searchText: { type: String, default: "" },
   },

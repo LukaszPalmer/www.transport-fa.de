@@ -28,6 +28,11 @@ const nextConfig: NextConfig = {
     qualities: [60, 75],
   },
 
+  async redirects() {
+    // „Mein Konto" heißt jetzt „Einstellungen" – alte Links (z. B. aus E-Mails) führen weiter, Query bleibt erhalten.
+    return [{ source: "/kundenportal/konto", destination: "/kundenportal/einstellungen", permanent: true }];
+  },
+
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

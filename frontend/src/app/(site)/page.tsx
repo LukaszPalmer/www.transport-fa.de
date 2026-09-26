@@ -9,6 +9,9 @@ import { ReviewsSection } from "@/components/sections/reviews/ReviewsSection";
 import { ServicesSection } from "@/components/sections/services/ServicesSection";
 import { StatsBar } from "@/components/sections/StatsBar";
 import { TrackingAppSection } from "@/components/sections/app/TrackingAppSection";
+import { BlogTeaserSection } from "@/components/sections/blog/BlogTeaserSection";
+import { LiveChatSection } from "@/components/sections/chat/LiveChatSection";
+import { ReferralSection } from "@/components/sections/referral/ReferralSection";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { organizationJsonLd } from "@/lib/structured-data";
 
@@ -29,8 +32,11 @@ export default function HomePage() {
       <ServicesSection />
       <FleetSection />
       <TrackingAppSection />
+      <LiveChatSection />
       <AboutSection />
       <ReviewsSection />
+      <ReferralSection />
+      <BlogTeaserSection />
       <CareersTeaser />
       <ContactCta />
     </>

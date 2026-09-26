@@ -4,7 +4,9 @@
   "private": true,
   "description": "Website, Kundenportal und Admin-Dashboard der FA Transport GmbH – Next.js App Router, TypeScript, Tailwind CSS v4.",
   "scripts": {
+    "predev": "node scripts/copy-maplibre-worker.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-maplibre-worker.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -15,11 +17,13 @@
   "dependencies": {
     "@fa/shared": "*",
     "lucide-react": "^1.47.0",
+    "maplibre-gl": "^6.11.2",
     "next": "16.3.6",
     "nodemailer": "^10.0.10",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "server-only": "^0.0.1",
+    "socket.io-client": "^4.8.4",
     "zod": "^4.6.5"
   },
   "devDependencies": {

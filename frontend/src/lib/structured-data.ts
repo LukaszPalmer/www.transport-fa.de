@@ -1,5 +1,7 @@
 import type { Faq, ServiceArea } from "@/types/content";
+import { blogHref, type BlogPost } from "@/content/blog";
 import { company } from "@/content/company";
+import { routes } from "@/content/navigation";
 import { serviceHref, services } from "@/content/services";
 
 /**
@@ -40,7 +42,8 @@ export function organizationJsonLd() {
       email: contact.quoteEmail,
       availableLanguage: ["de", "en"],
     },
-    sameAs: company.social.map((social) => social.href),
+    // Nur echte Profile – Platzhalter („folgt demnächst") gehören nicht in die Suchmaschinen-Daten.
+    sameAs: company.social.flatMap((social) => (social.href ? [social.href] : [])),
     hasOfferCatalog: {
       "@type": "OfferCatalog",
       name: "Leistungen",
@@ -83,6 +86,54 @@ export function faqJsonLd(faqs: Faq[]) {
 }
 
 /** Serialisiert JSON-LD sicher für <script> (verhindert </script>-Injection). */
+/** Blog-Übersicht mit allen veröffentlichten Beiträgen. */
+export function blogJsonLd(posts: BlogPost[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: `${company.name} – Blog & Ratgeber`,
+    url: `${company.siteUrl}${routes.blog}`,
+    inLanguage: "de-DE",
+    publisher: { "@id": organizationId },
+    blogPost: posts.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.title,
+      url: `${company.siteUrl}${blogHref(post.slug)}`,
+      datePublished: post.publishedAt,
+    })),
+  };
+}
+
+/** Einzelner Beitrag inkl. Brotkrumen (Startseite › Blog › Beitrag). */
+export function blogPostingJsonLd(post: BlogPost) {
+  const url = `${company.siteUrl}${blogHref(post.slug)}`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "BlogPosting",
+        headline: post.title,
+        description: post.excerpt,
+        image: `${company.siteUrl}${post.cover.src}`,
+        datePublished: post.publishedAt,
+        dateModified: post.updatedAt ?? post.publishedAt,
+        inLanguage: "de-DE",
+        mainEntityOfPage: url,
+        author: { "@type": "Person", name: post.author.name, jobTitle: post.author.role },
+        publisher: { "@id": organizationId },
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Startseite", item: company.siteUrl },
+          { "@type": "ListItem", position: 2, name: "Blog", item: `${company.siteUrl}${routes.blog}` },
+          { "@type": "ListItem", position: 3, name: post.title, item: url },
+        ],
+      },
+    ],
+  };
+}
+
 export function serializeJsonLd(data: object): string {
   return JSON.stringify(data).replace(/</g, "\\u003c");
 }

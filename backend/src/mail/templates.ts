@@ -76,7 +76,31 @@ export function welcomeMail({ firstName, email, customerNumber, signInMethod, po
 
 // --- E-Mail-Adresse bestätigen ---------------------------------------------------------
 
-export function verificationMail(firstName: string, url: string): RenderedMail {
+export function verificationMail(firstName: string, url: string, purpose: "register" | "change" = "register"): RenderedMail {
+  if (purpose === "change") {
+    return {
+      subject: `Bitte bestätigen Sie Ihre neue E-Mail-Adresse – ${COMPANY.name}`,
+      text:
+        `Hallo ${firstName},\n\nIhr Kundenkonto bei ${COMPANY.name} nutzt ab sofort diese E-Mail-Adresse. Bitte bestätigen Sie sie ` +
+        `über diesen Link (24 Stunden gültig):\n\n${url}\n\nFalls Sie das nicht veranlasst haben, melden Sie sich bitte bei uns.` +
+        textFooter(),
+      html: renderLayout({
+        preheader: "Ein Klick – dann ist Ihre neue E-Mail-Adresse bestätigt.",
+        eyebrow: "Neue E-Mail-Adresse",
+        title: "Bitte bestätigen Sie Ihre neue Adresse",
+        intro: "Ihr Kundenkonto nutzt ab sofort diese E-Mail-Adresse.",
+        body: [
+          paragraph(`Hallo ${firstName},`),
+          paragraph("bitte bestätigen Sie Ihre neue E-Mail-Adresse – danach sehen Sie im Kundenportal wieder alle Aufträge, Dokumente und Rechnungen."),
+          button("E-Mail-Adresse bestätigen", url),
+          linkFallback(url),
+          note(`Der Link ist 24 Stunden gültig. Falls Sie die Änderung nicht veranlasst haben, melden Sie sich bitte umgehend: ${COMPANY.contact.phone}.`),
+          signature(),
+        ],
+        reason: `Sie erhalten diese E-Mail, weil diese Adresse bei ${COMPANY.name} für ein Kundenkonto hinterlegt wurde.`,
+      }),
+    };
+  }
   return {
     subject: `Bitte bestätigen Sie Ihre E-Mail-Adresse – ${COMPANY.name}`,
     text:
@@ -127,6 +151,159 @@ export function passwordResetMail(firstName: string, url: string): RenderedMail 
         signature(),
       ],
       reason: `Sie erhalten diese E-Mail, weil für Ihr Kundenkonto bei ${COMPANY.name} ein neues Passwort angefordert wurde.`,
+    }),
+  };
+}
+
+// --- Sicherheitshinweis: Zugangsdaten geändert --------------------------------------------
+
+export interface SecurityNoticeInput {
+  firstName: string;
+  /** Selbst geändert (Einstellungen) oder vom Team im Admin-Bereich neu gesetzt. */
+  changedBy: "self" | "staff";
+  passwordChanged: boolean;
+  /** Neue Adresse – die Mail geht an die bisherige, damit ein Missbrauch auffällt. */
+  newEmail?: string;
+  loginUrl: string;
+  account?: "customer" | "staff";
+}
+
+export function securityNoticeMail({ firstName, changedBy, passwordChanged, newEmail, loginUrl, account = "customer" }: SecurityNoticeInput): RenderedMail {
+  const parts = [newEmail ? ["E-Mail-Adresse", "die E-Mail-Adresse"] : undefined, passwordChanged ? ["Passwort", "das Passwort"] : undefined].filter(
+    (part): part is string[] => part !== undefined,
+  );
+  const what = parts.map(([label]) => label).join(" und ");
+  const withArticles = parts.map(([, label]) => label).join(" und ");
+  const accountLabel = account === "staff" ? "Ihres Mitarbeiterzugangs" : "Ihres Kundenkontos";
+  const who =
+    changedBy === "staff"
+      ? `Unser Team hat ${withArticles} ${accountLabel} neu gesetzt.`
+      : `${withArticles.charAt(0).toUpperCase()}${withArticles.slice(1)} ${accountLabel} ${parts.length > 1 ? "wurden" : "wurde"} soeben geändert.`;
+  const rows: Array<[string, string]> = [["Geändert", what]];
+  if (newEmail) rows.push(["Neue E-Mail-Adresse", newEmail]);
+  rows.push(["Zeitpunkt", new Intl.DateTimeFormat("de-DE", { dateStyle: "long", timeStyle: "short", timeZone: "Europe/Berlin" }).format(new Date())]);
+  const warning = `Falls Sie das nicht veranlasst haben, melden Sie sich bitte umgehend bei uns: ${COMPANY.contact.phone} oder ${COMPANY.contact.email}.`;
+  const relogin = "Aus Sicherheitsgründen wurden alle anderen Anmeldungen beendet – melden Sie sich dort bitte neu an.";
+
+  return {
+    subject: `Sicherheitshinweis: ${what} geändert – ${COMPANY.name}`,
+    text:
+      `Hallo ${firstName},\n\n${who}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join("\n")}\n\n${relogin}\n\n` +
+      `Zur Anmeldung: ${loginUrl}\n\n${warning}` +
+      textFooter(),
+    html: renderLayout({
+      preheader: who,
+      eyebrow: "Sicherheit",
+      title: `${what.charAt(0).toUpperCase()}${what.slice(1)} geändert`,
+      intro: who,
+      body: [
+        paragraph(`Hallo ${firstName},`),
+        paragraph(who),
+        infoCard(rows),
+        paragraph(relogin),
+        button("Zur Anmeldung", loginUrl),
+        note(warning),
+        signature(),
+      ],
+      reason: `Sie erhalten diese E-Mail, weil sich die Zugangsdaten ${accountLabel} bei ${COMPANY.name} geändert haben.`,
+    }),
+  };
+}
+
+// --- Auftragsstatus -------------------------------------------------------------------------
+
+export interface ShipmentUpdateInput {
+  firstName: string;
+  shipmentNumber: string;
+  route: string;
+  headline: string;
+  message: string;
+  driver?: { name: string; phone: string; plate?: string };
+  url: string;
+  settingsUrl: string;
+}
+
+export function shipmentUpdateMail({ firstName, shipmentNumber, route, headline, message, driver, url, settingsUrl }: ShipmentUpdateInput): RenderedMail {
+  const rows: Array<[string, string]> = [
+    ["Auftrag", shipmentNumber],
+    ["Strecke", route],
+  ];
+  if (driver) {
+    rows.push(["Fahrer", driver.name], ["Telefon", driver.phone]);
+    if (driver.plate) rows.push(["Kennzeichen", driver.plate]);
+  }
+  const optOut = `Diese Benachrichtigung können Sie in den Einstellungen des Kundenportals abbestellen: ${settingsUrl}`;
+  return {
+    subject: `${headline} – Auftrag ${shipmentNumber}`,
+    text: `Hallo ${firstName},\n\n${message}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join("\n")}\n\nLive verfolgen: ${url}\n\n${optOut}` + textFooter(),
+    html: renderLayout({
+      preheader: message,
+      eyebrow: `Auftrag ${shipmentNumber}`,
+      title: headline,
+      intro: message,
+      body: [paragraph(`Hallo ${firstName},`), paragraph(message), infoCard(rows), button("Auftrag ansehen", url), smallText(escapeHtml(optOut)), signature()],
+      reason: `Sie erhalten diese E-Mail, weil Sie Benachrichtigungen zu Ihren Aufträgen bei ${COMPANY.name} aktiviert haben.`,
+    }),
+  };
+}
+
+// --- Chat-Antwort (Kunde war offline) -------------------------------------------------------
+
+export function chatReplyMail({ firstName, staffName, preview, url, settingsUrl }: { firstName: string; staffName: string; preview: string; url: string; settingsUrl: string }): RenderedMail {
+  const optOut = `Diese Benachrichtigung können Sie in den Einstellungen des Kundenportals abbestellen: ${settingsUrl}`;
+  return {
+    subject: `Neue Antwort von ${staffName} – ${COMPANY.name}`,
+    text: `Hallo ${firstName},\n\n${staffName} hat Ihnen im Chat geantwortet:\n\n„${preview}“\n\nZum Chat: ${url}\n\n${optOut}` + textFooter(),
+    html: renderLayout({
+      preheader: `${staffName}: ${preview}`,
+      eyebrow: "Live-Chat",
+      title: "Sie haben eine neue Antwort",
+      intro: `${staffName} hat Ihnen im Chat geantwortet.`,
+      body: [
+        paragraph(`Hallo ${firstName},`),
+        paragraph(`${staffName} hat Ihnen im Chat geantwortet:`),
+        note(`„${preview}“`),
+        button("Zum Chat", url),
+        smallText(escapeHtml(optOut)),
+        signature(),
+      ],
+      reason: `Sie erhalten diese E-Mail, weil Sie Benachrichtigungen zu Chat-Antworten bei ${COMPANY.name} aktiviert haben.`,
+    }),
+  };
+}
+
+// --- Konto gelöscht ---------------------------------------------------------------------
+
+export function accountDeletedMail(firstName: string): RenderedMail {
+  const greeting = firstName ? `Hallo ${firstName},` : "Guten Tag,";
+  return {
+    subject: `Ihr Kundenkonto wurde gelöscht – ${COMPANY.name}`,
+    text:
+      `${greeting}
+
+wie gewünscht haben wir Ihr Kundenkonto bei ${COMPANY.name} gelöscht – mit allen Aufträgen, Dokumenten, Nachrichten und Anmeldedaten. ` +
+      `Gesetzlich aufbewahrungspflichtige Belege (z. B. Rechnungen) liegen ausschließlich in unserer Buchhaltung.
+
+` +
+      `Falls Sie das nicht veranlasst haben, melden Sie sich bitte umgehend bei uns: ${COMPANY.contact.phone}.` +
+      textFooter(),
+    html: renderLayout({
+      preheader: "Ihr Kundenkonto und alle zugehörigen Daten wurden gelöscht.",
+      eyebrow: "Konto gelöscht",
+      title: "Schade, dass Sie gehen",
+      intro: "Ihr Kundenkonto und alle zugehörigen Daten wurden vollständig gelöscht.",
+      body: [
+        paragraph(greeting),
+        paragraph(
+          `wie gewünscht haben wir Ihr Kundenkonto bei ${COMPANY.name} gelöscht – mit allen Aufträgen, Dokumenten, Nachrichten und Anmeldedaten.`,
+        ),
+        paragraph("Sie sind uns jederzeit wieder willkommen – ein neues Konto ist in einer Minute angelegt."),
+        note(
+          `Gesetzlich aufbewahrungspflichtige Belege (z. B. Rechnungen) liegen ausschließlich in unserer Buchhaltung. Falls Sie die Löschung nicht veranlasst haben, melden Sie sich bitte umgehend: ${COMPANY.contact.phone}.`,
+        ),
+        signature(),
+      ],
+      reason: `Sie erhalten diese E-Mail als Bestätigung der Löschung Ihres Kundenkontos bei ${COMPANY.name}.`,
     }),
   };
 }

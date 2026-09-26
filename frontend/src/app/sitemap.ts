@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { blogHref, blogPosts } from "@/content/blog";
 import { company } from "@/content/company";
 import { routes } from "@/content/navigation";
 import { serviceHref, services } from "@/content/services";
@@ -16,6 +17,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     })),
     { url: url(routes.contact), lastModified, changeFrequency: "yearly", priority: 0.8 },
+    { url: url(routes.blog), lastModified, changeFrequency: "weekly", priority: 0.7 },
+    ...blogPosts.map((post) => ({
+      url: url(blogHref(post.slug)),
+      lastModified: new Date(post.updatedAt ?? post.publishedAt),
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    })),
     { url: url(routes.careers), lastModified, changeFrequency: "weekly", priority: 0.7 },
     { url: url("/impressum"), lastModified, changeFrequency: "yearly", priority: 0.2 },
     { url: url("/datenschutz"), lastModified, changeFrequency: "yearly", priority: 0.2 },

@@ -34,7 +34,8 @@ export interface IDocument {
   uploadedById?: Id;
   uploadedByRole: Role;
   storage: StoredFile;
-  status: UploadState; // Presigned PUT direkt nach R2 → READY erst nach Bestätigung + Dateityp-Prüfung
+  status: UploadState; // READY erst nach vollständigem Upload + Dateityp-Prüfung
+  handToDriver: boolean; // „Dem Fahrer mitgeben" – Büro druckt es für den LKW aus
   createdAt: Date;
   updatedAt: Date;
 }
@@ -62,6 +63,7 @@ const DocumentSchema = new Schema<IDocument>(
       required: true,
     },
     status: { type: String, enum: UPLOAD_STATES, default: "PENDING_UPLOAD" },
+    handToDriver: { type: Boolean, default: false },
   },
   { timestamps: true },
 );
@@ -69,6 +71,7 @@ const DocumentSchema = new Schema<IDocument>(
 DocumentSchema.index({ "storage.key": 1 }, { unique: true });
 DocumentSchema.index({ customerId: 1, category: 1, createdAt: -1 });
 DocumentSchema.index({ shipmentId: 1 }, { partialFilterExpression: { shipmentId: { $exists: true } } });
+DocumentSchema.index({ handToDriver: 1, createdAt: -1 }, { partialFilterExpression: { handToDriver: true } }); // Druckliste fürs Büro
 DocumentSchema.index({ createdAt: 1 }, { partialFilterExpression: { status: "PENDING_UPLOAD" } }); // Aufräumjob
 
 export const DocumentModel = defineModel("Document", DocumentSchema); // Name ≠ `Document` (DOM-/Mongoose-Typen)

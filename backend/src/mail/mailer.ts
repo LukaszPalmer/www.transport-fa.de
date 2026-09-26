@@ -27,7 +27,9 @@ const PREVIEW_DIR = path.resolve(".mail-preview");
  * Liefert false bei Fehlschlag, wirft aber nie: Mailprobleme dürfen z. B. eine
  * Registrierung nicht abbrechen.
  */
-export async function sendMail(message: MailMessage): Promise<boolean> {
+export async function sendMail(message: MailMessage, options: { log?: boolean } = {}): Promise<boolean> {
+  if (options.log === false) return sendUnlogged(message);
+
   const log = await EmailLog.create({
     type: message.type,
     to: message.to,
@@ -46,6 +48,18 @@ export async function sendMail(message: MailMessage): Promise<boolean> {
   } catch (error) {
     logger.error({ err: error, emailLogId: String(log._id), type: message.type }, "E-Mail-Versand fehlgeschlagen");
     await EmailLog.updateOne({ _id: log._id }, { status: "FAILED", error: String(error).slice(0, 2000) });
+    return false;
+  }
+}
+
+/** Versand ohne EmailLog – z. B. die Bestätigung einer Kontolöschung. */
+async function sendUnlogged(message: MailMessage): Promise<boolean> {
+  try {
+    if (env.MAIL_PROVIDER === "resend") await sendViaResend(message, `unlogged-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    else writePreview(message, "unlogged");
+    return true;
+  } catch (error) {
+    logger.error({ err: error, type: message.type }, "E-Mail-Versand fehlgeschlagen");
     return false;
   }
 }

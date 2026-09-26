@@ -3,6 +3,7 @@ import { services } from "./services";
 /** Auswahl „Worum geht es?“ im Kontaktformular – abgeleitet aus den Leistungsbereichen. */
 export const contactTopics = [
   ...services.map((service) => ({ value: service.slug, label: service.name, description: service.highlights[0] })),
+  { value: "empfehlung", label: "Empfehlung & Provision", description: "Kunden vermitteln und Provision erhalten" },
   { value: "sonstiges", label: "Sonstiges", description: "Allgemeine Frage oder Kombination" },
 ];
 

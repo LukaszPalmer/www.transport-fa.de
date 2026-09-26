@@ -1,5 +1,8 @@
 import { Router } from "express";
+import { accountRouter } from "./account";
+import { adminRouter } from "./admin";
 import { authRouter } from "./auth";
+import { mfaRouter } from "./auth-mfa";
 import { portalRouter } from "./portal";
 
 /**
@@ -12,5 +15,8 @@ apiRouter.get("/", (_req, res) => {
   res.json({ name: "FA Transport API", version: "v1" });
 });
 
+apiRouter.use("/auth/mfa", mfaRouter);
 apiRouter.use("/auth", authRouter);
+apiRouter.use("/account", accountRouter);
 apiRouter.use("/portal", portalRouter);
+apiRouter.use("/admin", adminRouter);

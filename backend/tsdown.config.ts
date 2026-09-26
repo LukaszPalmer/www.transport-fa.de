@@ -6,6 +6,7 @@ export default defineConfig({
     server: "src/server.ts",
     "sync-indexes": "scripts/sync-indexes.ts",
     "check-storage": "scripts/check-storage.ts",
+    admin: "scripts/admin.ts",
   },
   platform: "node",
   target: "node24",

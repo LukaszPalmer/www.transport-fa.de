@@ -26,6 +26,8 @@ export interface IChatSession {
   customerLastReadAt?: Date;
   resolvedAt?: Date;
   resolvedById?: Id;
+  /** Gesetzt beim Beenden (RESOLVED): danach löscht MongoDB den Chat automatisch (TTL). */
+  expiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -44,12 +46,16 @@ const ChatSessionSchema = new Schema<IChatSession>(
     customerLastReadAt: Date,
     resolvedAt: Date,
     resolvedById: { type: ObjectId, ref: "User" },
+    expiresAt: Date,
   },
   { timestamps: true },
 );
 
 ChatSessionSchema.index({ status: 1, lastMessageAt: -1 }); // Helpdesk-Inbox
+ChatSessionSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Löschfrist nach Chat-Ende
 ChatSessionSchema.index({ customerId: 1, lastMessageAt: -1 }); // Widget + 360°-Ansicht
+// Höchstens ein laufender Chat je Kunde – auch wenn zwei Tabs gleichzeitig die erste Nachricht senden.
+ChatSessionSchema.index({ customerId: 1 }, { unique: true, name: "one_open_chat_per_customer", partialFilterExpression: { status: { $in: ["OPEN", "IN_PROGRESS"] } } });
 ChatSessionSchema.index({ assignedToId: 1, status: 1 });
 
 export interface IChatMessage {
@@ -60,6 +66,8 @@ export interface IChatMessage {
   body: string;
   attachmentIds: Id[]; // → Document (CHAT_ATTACHMENT)
   clientMessageId: string; // UUID vom Client – keine Duplikate bei Reconnect
+  /** Wie beim Chat: gesetzt beim Beenden, danach automatische Löschung (TTL). */
+  expiresAt?: Date;
   createdAt: Date;
 }
 
@@ -71,12 +79,14 @@ const ChatMessageSchema = new Schema<IChatMessage>(
     body: { type: String, required: true, trim: true, maxlength: CHAT_MESSAGE_MAX_LENGTH },
     attachmentIds: { type: [{ type: ObjectId, ref: "Document" }], default: [] },
     clientMessageId: { type: String, required: true, maxlength: 64 },
+    expiresAt: Date,
   },
   { timestamps: { createdAt: true, updatedAt: false } },
 );
 
 ChatMessageSchema.index({ sessionId: 1, createdAt: 1 });
 ChatMessageSchema.index({ sessionId: 1, clientMessageId: 1 }, { unique: true });
+ChatMessageSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
 export const ChatSession = defineModel("ChatSession", ChatSessionSchema);
 export const ChatMessage = defineModel("ChatMessage", ChatMessageSchema);

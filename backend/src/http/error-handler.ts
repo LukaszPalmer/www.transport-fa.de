@@ -2,7 +2,7 @@ import type { ApiErrorBody } from "@fa/shared";
 import type { ErrorRequestHandler, RequestHandler } from "express";
 import mongoose from "mongoose";
 import { z } from "zod";
-import { AppError } from "./errors";
+import { AppError, emailTakenError } from "./errors";
 
 /**
  * Zentrale Fehlerbehandlung ("globale Error-Middleware").
@@ -53,7 +53,10 @@ function toAppError(error: unknown): AppError {
     return AppError.badRequest(`Ungültiger Wert für "${error.path}".`);
   }
 
-  if (isDuplicateKeyError(error)) return AppError.conflict();
+  if (isDuplicateKeyError(error)) {
+    // Parallele Registrierung/Änderung mit derselben Adresse – der Unique-Index gewinnt.
+    return "email" in (error.keyPattern ?? {}) ? emailTakenError() : AppError.conflict();
+  }
 
   // Fehler des JSON-Body-Parsers (express.json)
   if (isBodyParserError(error)) {
@@ -65,7 +68,7 @@ function toAppError(error: unknown): AppError {
   return new AppError(500, "INTERNAL", "Ein unerwarteter Fehler ist aufgetreten. Bitte versuchen Sie es erneut.");
 }
 
-function isDuplicateKeyError(error: unknown): boolean {
+function isDuplicateKeyError(error: unknown): error is mongoose.mongo.MongoServerError {
   return error instanceof mongoose.mongo.MongoServerError && error.code === 11000;
 }
 

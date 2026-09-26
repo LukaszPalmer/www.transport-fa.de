@@ -10,6 +10,8 @@ export const sectionIds = {
   fleet: "flotte",
   about: "ueber-uns",
   reviews: "bewertungen",
+  referral: "empfehlung",
+  blog: "blog",
   careers: "karriere",
   contact: "kontakt",
 } as const;
@@ -21,12 +23,21 @@ export const routes = {
   application: "/karriere#bewerbung",
   portal: "/kundenportal",
   portalLogin: "/kundenportal/anmelden",
+  portalTracking: "/kundenportal/tracking",
+  portalDocuments: "/kundenportal/dokumente",
   portalVerify: "/kundenportal/email-bestaetigen",
   portalRegister: "/kundenportal/registrieren",
   portalForgot: "/kundenportal/passwort-vergessen",
   portalReset: "/kundenportal/passwort-zuruecksetzen",
-  portalAccount: "/kundenportal/konto",
+  portalSettings: "/kundenportal/einstellungen",
   review: "/bewerten",
+  blog: "/blog",
+  admin: "/admin",
+  adminLogin: "/admin/login",
+  adminUsers: "/admin/users",
+  adminOrders: "/admin/orders",
+  adminChat: "/admin/chat",
+  adminTeam: "/admin/team",
 } as const;
 
 export const serviceNav = services.map((service) => ({
@@ -40,6 +51,7 @@ export const mainNav: NavItem[] = [
   { label: "Leistungen", href: `/#${sectionIds.services}`, children: serviceNav },
   { label: "Über uns", href: `/#${sectionIds.about}` },
   { label: "Flotte", href: `/#${sectionIds.fleet}` },
+  { label: "Blog", href: routes.blog },
   { label: "Karriere", href: routes.careers },
   { label: "Kontakt", href: routes.contact },
 ];
@@ -60,6 +72,8 @@ export const footerNav: NavGroup[] = [
     items: [
       { label: "Über uns", href: `/#${sectionIds.about}` },
       { label: "Flotte & Technologie", href: `/#${sectionIds.fleet}` },
+      { label: "Blog & Ratgeber", href: routes.blog },
+      { label: "Empfehlungsprogramm", href: `/#${sectionIds.referral}` },
       { label: "Karriere", href: routes.careers },
       { label: "Kontakt", href: routes.contact },
       { label: "Kundenportal", href: routes.portal },

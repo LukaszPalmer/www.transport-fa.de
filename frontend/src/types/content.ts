@@ -63,12 +63,13 @@ export interface Certification {
   title: string;
 }
 
-export type SocialPlatform = "linkedin" | "xing" | "instagram" | "youtube";
+export type SocialPlatform = "linkedin" | "xing" | "instagram" | "youtube" | "facebook";
 
 export interface SocialLink {
   platform: SocialPlatform;
   label: string;
-  href: string;
+  /** Fehlt, solange das Profil noch nicht existiert („Profil folgt demnächst"). */
+  href?: string;
 }
 
 export interface VideoSource {

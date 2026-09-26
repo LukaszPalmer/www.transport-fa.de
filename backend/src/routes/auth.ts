@@ -1,5 +1,6 @@
 import {
   ForgotPasswordInput,
+  isStaffRole,
   LoginInput,
   RegisterInput,
   ResetPasswordInput,
@@ -16,7 +17,7 @@ import { hashPassword, isPasswordPwned, verifyAgainstDummy, verifyPassword } fro
 import { consumeRateLimit, emailKey } from "../auth/rate-limit";
 import { createSession, revokeAllSessions, revokeSession } from "../auth/sessions";
 import { env } from "../config/env";
-import { AppError } from "../http/errors";
+import { AppError, emailTakenError } from "../http/errors";
 import { audit } from "../lib/audit";
 import { logger } from "../lib/logger";
 import { sendMail } from "../mail/mailer";
@@ -37,7 +38,7 @@ const LOCK_DURATION_MS = 15 * 60 * 1000;
 const INVALID_CREDENTIALS = "E-Mail-Adresse oder Passwort ist nicht korrekt.";
 const PWNED_PASSWORD = "Dieses Passwort ist aus Datenlecks bekannt. Bitte wählen Sie ein anderes.";
 
-const LANDING: Record<Role, string> = { CUSTOMER: "/kundenportal", ADMIN: "/admin", DRIVER: "/" };
+const LANDING: Record<Role, string> = { CUSTOMER: "/kundenportal", EMPLOYEE: "/admin", ADMIN: "/admin", DRIVER: "/" };
 const LOGIN_PAGE = "/kundenportal/anmelden";
 
 const OAUTH_STATE = "fa_oauth_state";
@@ -101,9 +102,7 @@ authRouter.post("/register", async (req, res) => {
   await consumeRateLimit(`register:ip:${req.ip}`, 10, 60 * 60);
   const input = RegisterInput.parse(req.body);
 
-  if (await User.exists({ email: input.email })) {
-    throw AppError.conflict("Für diese E-Mail-Adresse gibt es bereits ein Konto. Bitte melden Sie sich an.");
-  }
+  if (await User.exists({ email: input.email })) throw emailTakenError();
   if (await isPasswordPwned(input.password)) throw AppError.validation({ password: PWNED_PASSWORD });
 
   const passwordHash = await hashPassword(input.password);
@@ -130,15 +129,34 @@ authRouter.post("/register", async (req, res) => {
 // --- Anmeldung mit E-Mail + Passwort ------------------------------------------
 
 authRouter.post("/login", async (req, res) => {
-  await consumeRateLimit(`login:ip:${req.ip}`, 30, 15 * 60);
   const input = LoginInput.parse(req.body);
+  const user = await signInWithPassword(req, input, "portal");
+  await startSession(req, res, user, input.remember);
+  res.json(await buildMeResponse(user._id));
+});
+
+/**
+ * Anmeldung im Admin-Bereich (/admin/login). Kundenkonten werden hier wie falsche
+ * Zugangsdaten behandelt. Danach fehlt noch der zweite Faktor (/auth/mfa/*).
+ */
+authRouter.post("/staff/login", async (req, res) => {
+  const input = LoginInput.parse(req.body);
+  const user = await signInWithPassword(req, input, "staff");
+  await startSession(req, res, user, false);
+  res.json(await buildMeResponse(user._id));
+});
+
+async function signInWithPassword(req: Request, input: LoginInput, audience: "portal" | "staff") {
+  await consumeRateLimit(`login:ip:${req.ip}`, 30, 15 * 60);
   await consumeRateLimit(emailKey("login", input.email), 10, 15 * 60);
 
   const user = await User.findOne({ email: input.email }).select("+passwordHash");
-  if (!user?.passwordHash) {
+  const wrongAudience = audience === "staff" && user !== null && !isStaffRole(user.role);
+  if (!user?.passwordHash || wrongAudience) {
     await verifyAgainstDummy(input.password);
-    audit(req, "auth.login_failed", { meta: { reason: user ? "no_password" : "unknown_email" } });
-    throw AppError.unauthenticated(user ? "Für dieses Konto ist die Anmeldung mit Google eingerichtet." : INVALID_CREDENTIALS);
+    audit(req, "auth.login_failed", { meta: { reason: !user ? "unknown_email" : wrongAudience ? "not_staff" : "no_password", audience } });
+    const googleOnly = user && !user.passwordHash && audience === "portal";
+    throw AppError.unauthenticated(googleOnly ? "Für dieses Konto ist die Anmeldung mit Google eingerichtet." : INVALID_CREDENTIALS);
   }
 
   if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -158,11 +176,9 @@ authRouter.post("/login", async (req, res) => {
 
   assertCanSignIn(user);
   await User.updateOne({ _id: user._id }, { failedLoginCount: 0, $unset: { lockedUntil: 1 }, lastLoginAt: new Date() });
-  await startSession(req, res, user, input.remember);
-  audit(req, "auth.login", { actorId: user._id, actorRole: user.role, targetType: "User", targetId: user._id });
-
-  res.json(await buildMeResponse(user._id));
-});
+  audit(req, "auth.login", { actorId: user._id, actorRole: user.role, targetType: "User", targetId: user._id, meta: { audience } });
+  return user;
+}
 
 function assertCanSignIn(user: Pick<IUser, "state" | "role">): void {
   if (user.state !== "ACTIVE") throw AppError.forbidden("Dieses Konto ist deaktiviert. Bitte wenden Sie sich an uns.");

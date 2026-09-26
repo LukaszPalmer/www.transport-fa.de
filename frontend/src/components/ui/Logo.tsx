@@ -6,6 +6,9 @@ interface LogoProps {
   /** "light" = helle Schrift für dunkle Flächen. */
   tone?: "light" | "dark";
   className?: string;
+  /** Linkziel – Standard ist die Startseite (Admin-Bereich: /admin). */
+  href?: string;
+  label?: string;
 }
 
 /** Bildmarke: zwei nach vorn geneigte Fahrspuren – Bewegung & Präzision. */
@@ -18,11 +21,11 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ tone = "light", className }: LogoProps) {
+export function Logo({ tone = "light", className, href = "/", label = `${company.name} – zur Startseite` }: LogoProps) {
   return (
     <Link
-      href="/"
-      aria-label={`${company.name} – zur Startseite`}
+      href={href}
+      aria-label={label}
       className={cn("group inline-flex items-center gap-3", className)}
     >
       <LogoMark className="size-9 transition-transform duration-300 ease-out-expo group-hover:-rotate-6" />

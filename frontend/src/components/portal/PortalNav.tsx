@@ -8,17 +8,19 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 
 const items: Array<{ label: string; href: string; icon: IconName }> = [
   { label: "Übersicht", href: routes.portal, icon: "house" },
-  { label: "Mein Konto", href: routes.portalAccount, icon: "users" },
+  { label: "Tracking", href: routes.portalTracking, icon: "map-pin" },
+  { label: "Dokumente", href: routes.portalDocuments, icon: "file-text" },
+  { label: "Einstellungen", href: routes.portalSettings, icon: "settings" },
 ];
 
-/** Bereichs-Navigation des Kundenportals (weitere Bereiche folgen mit den Modulen). */
+/** Bereichs-Navigation des Kundenportals. */
 export function PortalNav() {
   const pathname = usePathname();
 
   return (
     <nav aria-label="Kundenportal" className="-mb-px flex gap-1 overflow-x-auto">
       {items.map((item) => {
-        const active = pathname === item.href;
+        const active = item.href === routes.portal ? pathname === item.href : pathname.startsWith(item.href);
         return (
           <Link
             key={item.href}

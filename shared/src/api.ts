@@ -8,6 +8,10 @@ export const API_ERROR_CODES = [
   "VALIDATION_FAILED",
   "UNAUTHENTICATED",
   "FORBIDDEN",
+  /** Sensible Aktion (z. B. Konto löschen) verlangt eine frische Anmeldung. */
+  "REAUTH_REQUIRED",
+  /** Admin-Bereich: zweiter Faktor (Authenticator-Code) fehlt oder ist noch nicht eingerichtet. */
+  "MFA_REQUIRED",
   "NOT_FOUND",
   "CONFLICT",
   "PAYLOAD_TOO_LARGE",

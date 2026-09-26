@@ -1,8 +1,9 @@
 import type { MeResponse } from "@fa/shared";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { company } from "@/content/company";
 import { legalNav } from "@/content/navigation";
+import { ChatWidget } from "@/components/chat/ChatWidget";
 import { Container } from "@/components/ui/Container";
 import { Logo } from "@/components/ui/Logo";
 import { SignOutButton } from "./AccountActions";
@@ -38,6 +39,13 @@ export function PortalShell({ me, children }: { me: MeResponse | null; children:
       </header>
 
       <div className="flex-1">{children}</div>
+
+      {/* Live-Chat erst mit bestätigter E-Mail – wie alle Portal-Daten. */}
+      {me?.customer && me.user.emailVerified && (
+        <Suspense fallback={null}>
+          <ChatWidget />
+        </Suspense>
+      )}
 
       <footer className="border-t border-slate-200 bg-white">
         <Container className="flex flex-col items-center justify-between gap-3 py-6 text-sm text-slate-500 sm:flex-row">

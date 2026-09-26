@@ -8,13 +8,13 @@ import type { SocialLink } from "@/types/content";
  * Kerndaten (Adresse, Kontakt, Register) kommen aus @fa/shared, damit auch die
  * E-Mails des Backends dieselben Angaben verwenden.
  *
- * TODO(Inhalt): Social-URLs sind Platzhalter (Stammdaten: shared/src/company.ts).
+ * TODO(Inhalt): Profil-URL als `href` eintragen, sobald ein Kanal online ist – bis dahin
+ * erscheint das Icon mit dem Hinweis „Profil folgt demnächst" (kein Link, nicht im JSON-LD).
  */
 const socialLinks: SocialLink[] = [
-  { platform: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/company/fa-transport" },
-  { platform: "xing", label: "XING", href: "https://www.xing.com/pages/fa-transport" },
-  { platform: "instagram", label: "Instagram", href: "https://www.instagram.com/fatransport" },
-  { platform: "youtube", label: "YouTube", href: "https://www.youtube.com/@fatransport" },
+  { platform: "linkedin", label: "LinkedIn" },
+  { platform: "instagram", label: "Instagram" },
+  { platform: "facebook", label: "Facebook" },
 ];
 
 export const company = {

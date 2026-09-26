@@ -1,4 +1,4 @@
-import type { ApiErrorCode } from "@fa/shared";
+import { EMAIL_TAKEN_MESSAGE, type ApiErrorCode } from "@fa/shared";
 
 /**
  * Erwartbare Fehler mit HTTP-Status und nutzertauglicher Meldung.
@@ -42,4 +42,9 @@ export class AppError extends Error {
   static rateLimited(message = "Zu viele Anfragen. Bitte versuchen Sie es später erneut.") {
     return new AppError(429, "RATE_LIMITED", message);
   }
+}
+
+/** 409 mit Feldfehler – das Formular zeigt die Meldung direkt am E-Mail-Feld. */
+export function emailTakenError(): AppError {
+  return new AppError(409, "CONFLICT", EMAIL_TAKEN_MESSAGE, { email: EMAIL_TAKEN_MESSAGE });
 }

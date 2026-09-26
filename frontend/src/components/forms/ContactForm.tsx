@@ -36,6 +36,8 @@ function ContactFormInner({ topics, destinationTopics, onRestart }: ContactFormP
   const submittedTopic = typeof state.values?.topic === "string" ? state.values.topic : undefined;
   const topic = chosenTopic ?? submittedTopic ?? (topics.some((entry) => entry.value === urlTopic) ? urlTopic! : "");
   const needsDestination = destinationTopics.includes(topic);
+  // Empfehlungsprogramm: keine Objektadresse/kein Termin – stattdessen Angaben zur Empfehlung.
+  const isReferral = topic === "empfehlung";
 
   if (state.status === "success") {
     return (
@@ -88,26 +90,28 @@ function ContactFormInner({ topics, destinationTopics, onRestart }: ContactFormP
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-        <TextField
-          name="from"
-          label={needsDestination ? "Von (PLZ / Ort)" : "Objektadresse (PLZ / Ort)"}
-          autoComplete="postal-code"
-          placeholder="z. B. 12345 Musterstadt"
-          defaultValue={value("from")}
-          error={errors.from}
-        />
-        {needsDestination && (
+      {!isReferral && (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
           <TextField
-            name="to"
-            label="Nach (PLZ / Ort)"
-            placeholder="z. B. 80331 München"
-            defaultValue={value("to")}
-            error={errors.to}
+            name="from"
+            label={needsDestination ? "Von (PLZ / Ort)" : "Objektadresse (PLZ / Ort)"}
+            autoComplete="postal-code"
+            placeholder="z. B. 12345 Musterstadt"
+            defaultValue={value("from")}
+            error={errors.from}
           />
-        )}
-        <TextField name="date" type="date" label="Wunschtermin" defaultValue={value("date")} error={errors.date} />
-      </div>
+          {needsDestination && (
+            <TextField
+              name="to"
+              label="Nach (PLZ / Ort)"
+              placeholder="z. B. 80331 München"
+              defaultValue={value("to")}
+              error={errors.to}
+            />
+          )}
+          <TextField name="date" type="date" label="Wunschtermin" defaultValue={value("date")} error={errors.date} />
+        </div>
+      )}
 
       <TextAreaField
         name="message"
@@ -115,7 +119,11 @@ function ContactFormInner({ topics, destinationTopics, onRestart }: ContactFormP
         required
         rows={5}
         maxLength={4000}
-        placeholder="Zum Beispiel: 3-Zimmer-Wohnung, 2. OG ohne Aufzug, ca. 25 Kartons, Küche muss abgebaut werden …"
+        placeholder={
+          isReferral
+            ? "Zum Beispiel: Ich möchte Ihnen regelmäßig Kunden empfehlen – ich bin Hausverwalter in Hamburg. Oder: Mein Nachbar plant einen Umzug im Mai …"
+            : "Zum Beispiel: 3-Zimmer-Wohnung, 2. OG ohne Aufzug, ca. 25 Kartons, Küche muss abgebaut werden …"
+        }
         defaultValue={value("message")}
         error={errors.message}
       />

@@ -6,6 +6,7 @@ export interface UserMfa {
   secretEncrypted: string; // TOTP-Secret, AES-256-GCM mit MFA_ENCRYPTION_KEY
   enabledAt: Date;
   recoveryCodeHashes: string[];
+  lastUsedStep?: number; // Zeitschritt des zuletzt akzeptierten Codes – jeder Code gilt nur einmal
 }
 
 export interface IUser {
@@ -21,8 +22,12 @@ export interface IUser {
   failedLoginCount: number;
   lockedUntil?: Date; // Sperre nach wiederholten Fehlversuchen
   lastLoginAt?: Date;
+  /** Zuletzt online (Socket-Verbindung beendet bzw. letzte Aktivität). */
+  lastSeenAt?: Date;
   passwordChangedAt?: Date;
-  mfa?: UserMfa; // Pflicht für ADMIN
+  mfa?: UserMfa; // Pflicht für Mitarbeiter (ADMIN, EMPLOYEE)
+  /** Während der 2FA-Einrichtung: noch nicht bestätigtes TOTP-Secret (verschlüsselt). */
+  mfaPendingSecret?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -40,13 +45,16 @@ const UserSchema = new Schema<IUser>(
     failedLoginCount: { type: Number, default: 0, min: 0 },
     lockedUntil: Date,
     lastLoginAt: Date,
+    lastSeenAt: Date,
     passwordChangedAt: Date,
+    mfaPendingSecret: { type: String, select: false },
     mfa: {
       type: new Schema<UserMfa>(
         {
           secretEncrypted: { type: String, required: true },
           enabledAt: { type: Date, required: true },
           recoveryCodeHashes: { type: [String], default: [] },
+          lastUsedStep: Number,
         },
         { _id: false },
       ),

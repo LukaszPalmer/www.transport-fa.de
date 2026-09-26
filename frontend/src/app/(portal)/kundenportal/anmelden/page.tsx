@@ -10,6 +10,7 @@ export const metadata: Metadata = { title: "Kundenportal – Anmelden" };
 
 const notices: Record<string, { tone: "error" | "success" | "info"; text: string }> = {
   abgemeldet: { tone: "success", text: "Sie wurden erfolgreich abgemeldet." },
+  geloescht: { tone: "success", text: "Ihr Konto wurde gelöscht – alle Ihre Daten wurden aus dem Portal entfernt. Eine Bestätigung ist per E-Mail unterwegs." },
   google: { tone: "error", text: "Die Anmeldung mit Google wurde abgebrochen oder ist fehlgeschlagen. Bitte versuchen Sie es erneut." },
   gesperrt: { tone: "error", text: "Dieses Konto ist deaktiviert. Bitte wenden Sie sich an uns." },
   sitzung: { tone: "info", text: "Bitte melden Sie sich an, um fortzufahren." },
@@ -22,13 +23,15 @@ export default async function LoginPage({ searchParams }: PageProps<"/kundenport
   if (await getMe()) redirect(redirectTo);
   const { google } = await getAuthProviders();
 
-  const noticeKey = params.abgemeldet
-    ? "abgemeldet"
-    : typeof params.fehler === "string"
-      ? params.fehler
-      : params.weiter
-        ? "sitzung"
-        : undefined;
+  const noticeKey = params.geloescht
+    ? "geloescht"
+    : params.abgemeldet
+      ? "abgemeldet"
+      : typeof params.fehler === "string"
+        ? params.fehler
+        : params.weiter
+          ? "sitzung"
+          : undefined;
 
   return (
     <AuthShell

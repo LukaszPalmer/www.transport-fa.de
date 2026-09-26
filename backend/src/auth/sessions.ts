@@ -11,7 +11,7 @@ import { Session, User, type IUser } from "../models";
  * ohne „Angemeldet bleiben" 12 Stunden als Browser-Sitzung.
  */
 const HOUR = 60 * 60 * 1000;
-const LIFETIME: Record<Role, number> = { CUSTOMER: 14 * 24 * HOUR, ADMIN: 12 * HOUR, DRIVER: 30 * 24 * HOUR };
+const LIFETIME: Record<Role, number> = { CUSTOMER: 14 * 24 * HOUR, EMPLOYEE: 12 * HOUR, ADMIN: 12 * HOUR, DRIVER: 30 * 24 * HOUR };
 const SHORT_LIFETIME = 12 * HOUR;
 const LAST_SEEN_INTERVAL = 5 * 60 * 1000;
 
@@ -27,6 +27,12 @@ export interface AuthUser {
 export interface AuthContext {
   user: AuthUser;
   sessionId: Types.ObjectId;
+  /** Zeitpunkt der Anmeldung – für Aktionen, die eine frische Anmeldung verlangen. */
+  signedInAt: Date;
+  /** Mitarbeiter: zweiter Faktor in dieser Sitzung bestätigt. */
+  mfaVerified: boolean;
+  /** Feste Laufzeit – auch offene Socket-Verbindungen enden spätestens dann. */
+  expiresAt: Date;
 }
 
 export interface CreatedSession {
@@ -64,11 +70,16 @@ export async function resolveSession(token: string): Promise<AuthContext | null>
   if (!user || user.state !== "ACTIVE" || user.role !== session.role) return null;
 
   if (Date.now() - session.lastSeenAt.getTime() > LAST_SEEN_INTERVAL) {
-    void Session.updateOne({ _id: session._id }, { lastSeenAt: new Date() }).exec();
+    const now = new Date();
+    void Session.updateOne({ _id: session._id }, { lastSeenAt: now }).exec();
+    void User.updateOne({ _id: user._id }, { lastSeenAt: now }).exec(); // „Zuletzt online"
   }
 
   return {
     sessionId: session._id,
+    signedInAt: session.createdAt,
+    mfaVerified: session.mfaVerified,
+    expiresAt: session.expiresAt,
     user: {
       id: user._id,
       email: user.email,
@@ -80,11 +91,36 @@ export async function resolveSession(token: string): Promise<AuthContext | null>
   };
 }
 
-export async function revokeSession(token: string): Promise<void> {
-  await Session.deleteOne({ tokenHash: sha256(token) });
+/**
+ * Benachrichtigung bei widerrufenen Sitzungen – der Echtzeit-Server trennt daraufhin
+ * offene Socket-Verbindungen (sonst bliebe ein Chat nach Passwortänderung verbunden).
+ */
+type RevocationListener = (event: { userId: Types.ObjectId; sessionIds?: Types.ObjectId[]; except?: Types.ObjectId }) => void;
+const revocationListeners = new Set<RevocationListener>();
+
+export function onSessionsRevoked(listener: RevocationListener): void {
+  revocationListeners.add(listener);
 }
 
-/** Alle Sitzungen eines Nutzers beenden – nach Passwort-Reset, Sperre oder Kontolöschung. */
-export async function revokeAllSessions(userId: Types.ObjectId): Promise<void> {
-  await Session.deleteMany({ userId });
+function notifyRevoked(event: Parameters<RevocationListener>[0]): void {
+  for (const listener of revocationListeners) listener(event);
+}
+
+export async function revokeSession(token: string): Promise<void> {
+  const session = await Session.findOneAndDelete({ tokenHash: sha256(token) }).select("userId").lean();
+  if (session) notifyRevoked({ userId: session.userId, sessionIds: [session._id] });
+}
+
+/**
+ * Alle Sitzungen eines Nutzers beenden – nach Passwort-/E-Mail-Änderung, Sperre oder
+ * Kontolöschung. Optional bleibt die aktuelle Sitzung erhalten (eigene Änderung).
+ */
+export async function revokeAllSessions(userId: Types.ObjectId, options: { except?: Types.ObjectId } = {}): Promise<number> {
+  const result = await Session.deleteMany(options.except ? { userId, _id: { $ne: options.except } } : { userId });
+  notifyRevoked({ userId, except: options.except });
+  return result.deletedCount;
+}
+
+export async function markSessionMfaVerified(sessionId: Types.ObjectId): Promise<void> {
+  await Session.updateOne({ _id: sessionId }, { mfaVerified: true });
 }

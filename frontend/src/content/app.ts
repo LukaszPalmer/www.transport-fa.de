@@ -3,9 +3,10 @@ import type { Feature } from "@/types/content";
 /**
  * FA Tracking App – Inhalte der App-Sektion (Startseite, Umzüge, Transport).
  *
- * TODO(Inhalt): Store-Links eintragen, sobald die App veröffentlicht ist.
- * Die Badges sind die unveränderten Originale von Apple bzw. Google
- * (public/brands/) und dürfen laut Richtlinien nur auf die eigene App verlinken.
+ * TODO(Inhalt): Store-Links als `href` eintragen, sobald die App veröffentlicht ist – bis
+ * dahin erscheinen die Badges ohne Link mit „Demnächst verfügbar". Die Badges sind die
+ * unveränderten Originale von Apple bzw. Google (public/brands/) und dürfen laut
+ * Richtlinien nur auf die eigene App verlinken.
  */
 export const trackingApp = {
   eyebrow: "FA Tracking App",
@@ -19,14 +20,17 @@ export const trackingApp = {
     { icon: "message", title: "Direkter Draht", description: "Fahrer oder Disposition mit einem Tipp erreichen." },
   ] satisfies Feature[],
   note: "Kostenlos für iOS und Android · Anmeldung mit Ihrem Kundenportal-Zugang",
+  comingSoonNote: "Bis zum Start verfolgen Sie Ihre Sendung live im Kundenportal.",
   stores: {
     appStore: {
-      href: "https://apps.apple.com/de/app/fa-tracking/id0000000000",
+      href: undefined as string | undefined,
+      name: "App Store",
       label: "FA Tracking im App Store laden",
       badge: { src: "/brands/app-store-badge.svg", width: 119.66, height: 40 },
     },
     googlePlay: {
-      href: "https://play.google.com/store/apps/details?id=de.fatransport.tracking",
+      href: undefined as string | undefined,
+      name: "Google Play",
       label: "FA Tracking bei Google Play herunterladen",
       badge: { src: "/brands/google-play-badge.svg", width: 180, height: 53.333 },
     },

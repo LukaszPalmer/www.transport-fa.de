@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { appMap } from "@/content/app-map.generated";
 import { trackingApp, trackingDemo } from "@/content/app";
+import { ComingSoon } from "@/components/ui/ComingSoon";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
 import { InViewAnimations } from "@/components/ui/InViewAnimations";
@@ -13,28 +14,50 @@ import { TrackingPhone } from "./TrackingPhone";
 
 const BADGE_HEIGHT = 48;
 
-/** Originale Store-Badges (unverändert, gleiche Höhe laut Apple-/Google-Richtlinien). */
+/**
+ * Originale Store-Badges (unverändert, gleiche Höhe laut Apple-/Google-Richtlinien).
+ * Ohne Store-Link: kein Link, Hinweis „Demnächst verfügbar" plus Tooltip.
+ */
 function StoreBadges() {
+  const stores = Object.values(trackingApp.stores);
+  const comingSoon = stores.some((store) => !store.href);
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      {Object.values(trackingApp.stores).map((store) => (
-        <SmartLink
-          key={store.href}
-          href={store.href}
-          aria-label={store.label}
-          className="rounded-[10px] transition-[transform,box-shadow] duration-300 ease-out-expo hover:-translate-y-0.5 hover:shadow-card-hover"
-        >
-          <Image
-            src={store.badge.src}
-            alt=""
-            width={Math.round((store.badge.width / store.badge.height) * BADGE_HEIGHT)}
-            height={BADGE_HEIGHT}
-            unoptimized
-            className="block w-auto"
-            style={{ height: BADGE_HEIGHT }}
-          />
-        </SmartLink>
-      ))}
+    <div>
+      {comingSoon && (
+        <p className="mb-3 inline-flex items-center gap-2 rounded-full bg-accent/15 px-3 py-1 text-xs font-bold tracking-wide text-accent-ink uppercase">
+          <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-accent-ink" />
+          Demnächst verfügbar
+        </p>
+      )}
+      <div className="flex flex-wrap items-center gap-3">
+        {stores.map((store) => {
+          const badge = (
+            <Image
+              src={store.badge.src}
+              alt=""
+              width={Math.round((store.badge.width / store.badge.height) * BADGE_HEIGHT)}
+              height={BADGE_HEIGHT}
+              unoptimized
+              className="block w-auto"
+              style={{ height: BADGE_HEIGHT }}
+            />
+          );
+          return store.href ? (
+            <SmartLink
+              key={store.name}
+              href={store.href}
+              aria-label={store.label}
+              className="rounded-[10px] transition-[transform,box-shadow] duration-300 ease-out-expo hover:-translate-y-0.5 hover:shadow-card-hover"
+            >
+              {badge}
+            </SmartLink>
+          ) : (
+            <ComingSoon key={store.name} id={`store-${store.name}`} label={`${store.name} – demnächst verfügbar`} tooltip="App folgt in Kürze" className="rounded-[10px]">
+              {badge}
+            </ComingSoon>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -84,7 +107,9 @@ export function TrackingAppSection() {
 
           <div className="mt-10">
             <StoreBadges />
-            <p className="mt-4 text-sm text-slate-500">{trackingApp.note}</p>
+            <p className="mt-4 text-sm text-slate-500">
+              {Object.values(trackingApp.stores).some((store) => !store.href) ? trackingApp.comingSoonNote : trackingApp.note}
+            </p>
           </div>
         </div>
 

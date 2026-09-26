@@ -25,6 +25,12 @@ const glyphs: Record<SocialPlatform, ReactNode> = {
       <circle cx="17.5" cy="6.5" r="0.6" fill="currentColor" />
     </g>
   ),
+  facebook: (
+    <path
+      fill="currentColor"
+      d="M13.6 21.5v-8.2h2.8l.4-3.2h-3.2V8.1c0-.9.3-1.6 1.6-1.6h1.7V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.3H7.4v3.2h2.8v8.2h3.4Z"
+    />
+  ),
   youtube: (
     <path
       fill="currentColor"

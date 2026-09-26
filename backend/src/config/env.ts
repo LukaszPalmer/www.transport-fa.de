@@ -35,6 +35,11 @@ const EnvSchema = z.object({
     .regex(/^mongodb(\+srv)?:\/\//, "MONGODB_URI muss mit mongodb:// oder mongodb+srv:// beginnen"),
   MONGODB_DB_NAME: z.string().min(1).default("fa-transport"),
 
+  /** Verschlüsselt die 2FA-Secrets der Mitarbeiter (AES-256-GCM) – 32 Byte, Base64. */
+  MFA_ENCRYPTION_KEY: z
+    .string({ error: "MFA_ENCRYPTION_KEY fehlt – siehe backend/.env.example." })
+    .refine((value) => Buffer.from(value, "base64").length === 32, "MFA_ENCRYPTION_KEY muss 32 Byte (Base64) lang sein"),
+
   R2_ACCOUNT_ID: z
     .string({ error: "R2_ACCOUNT_ID fehlt – Cloudflare → R2 → Account Details." })
     .regex(/^[a-f0-9]{32}$/, "R2_ACCOUNT_ID muss die 32-stellige Cloudflare Account ID sein"),

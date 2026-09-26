@@ -11,6 +11,8 @@ import { requireRole, requireVerifiedEmail } from "../auth/middleware";
 import { AppError } from "../http/errors";
 import { CustomerProfile, DocumentModel, DriverProfile, Invoice, Shipment } from "../models";
 import { toCustomerSummary } from "../services/customers";
+import { documentsRouter } from "./portal-documents";
+import { shipmentsRouter } from "./portal-shipments";
 
 /**
  * /api/v1/portal – Daten des angemeldeten Kunden. Jede Abfrage ist fest auf
@@ -19,6 +21,8 @@ import { toCustomerSummary } from "../services/customers";
 export const portalRouter = Router();
 
 portalRouter.use(requireRole("CUSTOMER"), requireVerifiedEmail);
+portalRouter.use("/documents", documentsRouter);
+portalRouter.use("/shipments", shipmentsRouter);
 
 const ACTIVE_SHIPMENT_STATUSES: ShipmentStatus[] = ["PLANNED", "ASSIGNED", "EN_ROUTE_TO_PICKUP", "IN_TRANSIT"];
 const DRIVER_VISIBLE_STATUSES: ShipmentStatus[] = ["ASSIGNED", "EN_ROUTE_TO_PICKUP", "IN_TRANSIT"];

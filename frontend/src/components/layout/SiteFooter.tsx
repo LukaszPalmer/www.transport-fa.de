@@ -1,6 +1,7 @@
 import { company } from "@/content/company";
 import { footerNav, legalNav } from "@/content/navigation";
 import { certifications } from "@/content/home";
+import { ComingSoon } from "@/components/ui/ComingSoon";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
@@ -8,6 +9,8 @@ import { SmartLink } from "@/components/ui/SmartLink";
 import { SocialIcon } from "@/components/ui/SocialIcon";
 
 const linkClass = "text-slate-400 transition-colors duration-300 hover:text-white";
+const socialClass =
+  "flex size-10 items-center justify-center rounded-xl border border-white/10 text-slate-400 transition-[color,border-color,background-color] duration-300 hover:border-accent/50 hover:bg-white/5 hover:text-accent";
 
 export function SiteFooter() {
   const year = new Date().getFullYear();
@@ -30,13 +33,15 @@ export function SiteFooter() {
           <ul className="mt-6 flex gap-3" aria-label="Social Media">
             {company.social.map((social) => (
               <li key={social.platform}>
-                <SmartLink
-                  href={social.href}
-                  aria-label={`${company.name} auf ${social.label}`}
-                  className="flex size-10 items-center justify-center rounded-xl border border-white/10 text-slate-400 transition-[color,border-color,background-color] duration-300 hover:border-accent/50 hover:bg-white/5 hover:text-accent"
-                >
-                  <SocialIcon platform={social.platform} className="size-4.5" />
-                </SmartLink>
+                {social.href ? (
+                  <SmartLink href={social.href} aria-label={`${company.name} auf ${social.label}`} className={socialClass}>
+                    <SocialIcon platform={social.platform} className="size-4.5" />
+                  </SmartLink>
+                ) : (
+                  <ComingSoon id={`social-${social.platform}`} label={social.label} tooltip="Profil folgt demnächst" className={socialClass}>
+                    <SocialIcon platform={social.platform} className="size-4.5" />
+                  </ComingSoon>
+                )}
               </li>
             ))}
           </ul>

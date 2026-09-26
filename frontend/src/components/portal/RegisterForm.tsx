@@ -1,6 +1,6 @@
 "use client";
 
-import { PASSWORD_MIN_LENGTH, type MeResponse } from "@fa/shared";
+import { EMAIL_TAKEN_MESSAGE, PASSWORD_MIN_LENGTH, type MeResponse } from "@fa/shared";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
@@ -80,6 +80,18 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
           inputMode="email"
           error={fieldErrors.email}
         />
+        {fieldErrors.email === EMAIL_TAKEN_MESSAGE && (
+          <p className="-mt-3 text-sm text-slate-600">
+            Sie haben bereits ein Konto?{" "}
+            <Link href={routes.portalLogin} className="font-semibold text-accent-ink underline underline-offset-4">
+              Jetzt anmelden
+            </Link>{" "}
+            oder{" "}
+            <Link href={routes.portalForgot} className="font-semibold text-accent-ink underline underline-offset-4">
+              Passwort zurücksetzen
+            </Link>
+          </p>
+        )}
         <PasswordField
           name="password"
           label="Passwort"

@@ -43,6 +43,13 @@ npm run dev                                   # API :4000 + Web :3000 parallel
 | `npm run typecheck` · `npm run lint` | alle Workspaces |
 | `npm run db:sync-indexes -w @fa/backend` | Collections anlegen und Indizes abgleichen |
 | `npm run storage:check -w @fa/backend` | Cloudflare R2 testen (Schreiben, Lesen, Löschen, EU-Jurisdiktion) |
+| `npm run admin -w @fa/backend -- anlegen <email> "<Name>"` | Administrator anlegen (Passwort wird einmalig angezeigt, 2FA bei der ersten Anmeldung unter `/admin/login`) |
+| `npm run admin -w @fa/backend -- zuruecksetzen <email>` | Notfall: Passwort + 2FA eines Mitarbeiters zurücksetzen (z. B. Handy verloren) |
+| `npm run chat:load-test -w @fa/backend -- 100 5` | Lasttest Live-Chat (100 Test-Kunden × 5 Nachrichten, räumt danach auf – nicht in Produktion) |
+
+**Admin-Bereich** (`/admin`): Anmeldung nur mit Zwei-Faktor-Authentifizierung (Authenticator-App). Administratoren legen
+unter „Team & Zugang" weitere Mitarbeiter an und vergeben Rechte einzeln (Kunden einsehen, Aufträge verwalten, Fahrer
+zuweisen, Live-Chat, Dokumente, Zugangsdaten ändern). Produktion: `node dist/admin.js anlegen …` in der Railway-Shell.
 
 ## Backend-Struktur
 

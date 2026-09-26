@@ -1,4 +1,5 @@
 import type { DocumentSummary, InvoiceSummary, ShipmentSummary } from "@fa/shared";
+import Link from "next/link";
 import { company } from "@/content/company";
 import { routes } from "@/content/navigation";
 import { getService } from "@/content/services";
@@ -16,7 +17,7 @@ import { EmptyState, Panel, StatusBadge } from "./ui";
 
 export function ShipmentsPanel({ shipments, total }: { shipments: ShipmentSummary[]; total: number }) {
   return (
-    <Panel title="Laufende Aufträge" icon="truck" className="lg:col-span-2">
+    <Panel title="Laufende Aufträge" icon="truck" className="lg:col-span-2" action={shipments.length > 0 ? { label: "Zum Tracking", href: routes.portalTracking } : undefined}>
       {shipments.length === 0 ? (
         <EmptyState
           title="Aktuell keine laufenden Aufträge"
@@ -43,14 +44,16 @@ function ShipmentItem({ shipment }: { shipment: ShipmentSummary }) {
   const nextDate = shipment.etaAt ?? shipment.plannedDeliveryAt ?? shipment.plannedPickupAt;
 
   return (
-    <li className="rounded-2xl border border-slate-200 p-5">
+    <li className="relative rounded-2xl border border-slate-200 p-5 transition-colors hover:border-accent/50">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
             {service?.name ?? "Auftrag"} · {shipment.shipmentNumber}
           </p>
           <p className="mt-1 flex flex-wrap items-center gap-2 text-lg font-bold text-primary">
-            {shipment.pickupCity}
+            <Link href={`${routes.portalTracking}?sendung=${shipment.id}`} className="after:absolute after:inset-0">
+              {shipment.pickupCity}
+            </Link>
             <Icon name="arrow-right" className="size-4 text-accent-ink" />
             {shipment.deliveryCity}
           </p>
@@ -75,7 +78,7 @@ function ShipmentItem({ shipment }: { shipment: ShipmentSummary }) {
             <dt className="sr-only">Fahrer</dt>
             <dd>
               {shipment.driver.firstName} {shipment.driver.lastName} ·{" "}
-              <a href={`tel:${shipment.driver.phone}`} className="font-semibold text-accent-ink hover:underline">
+              <a href={`tel:${shipment.driver.phone}`} className="relative z-10 font-semibold text-accent-ink hover:underline">
                 {shipment.driver.phone}
               </a>
             </dd>
@@ -118,11 +121,12 @@ export function InvoicesPanel({ invoices }: { invoices: InvoiceSummary[] }) {
 
 export function DocumentsPanel({ documents }: { documents: DocumentSummary[] }) {
   return (
-    <Panel title="Neueste Dokumente" icon="file-text">
+    <Panel title="Neueste Dokumente" icon="file-text" action={{ label: "Alle Dokumente", href: routes.portalDocuments }}>
       {documents.length === 0 ? (
         <EmptyState
           title="Noch keine Dokumente"
-          text="Zolldokumente, Frachtpapiere, Abliefernachweise und Belege erscheinen hier – der Upload eigener Dokumente folgt in Kürze."
+          text="Zolldokumente, Frachtpapiere, Abliefernachweise und Belege erscheinen hier."
+          action={{ label: "Dokument hochladen", href: routes.portalDocuments }}
         />
       ) : (
         <ul className="divide-y divide-slate-100">
