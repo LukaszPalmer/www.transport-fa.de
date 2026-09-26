@@ -13,7 +13,7 @@ export const hero = {
     "Wir bewegen Ihre Güter termintreu durch Europa – mit moderner Flotte, lückenloser Echtzeit-Transparenz und einem festen Ansprechpartner für jede Sendung.",
   primaryCta: { label: "Angebot anfordern", href: routes.contactForm } satisfies CtaLink,
   secondaryCta: { label: "Unsere Flotte entdecken", href: `#${sectionIds.fleet}` } satisfies CtaLink,
-  proofPoints: ["ISO 9001 & 14001 zertifiziert", "Disposition 24/7", "Europaweites Netzwerk"],
+  proofPoints: ["Angebot in 2 Stunden", "Disposition 24/7", "Europaweites Netzwerk"],
   media: heroMedia("hero"),
 };
 
