@@ -1,5 +1,5 @@
 import type { Readable } from "node:stream";
-import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
+import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../config/env";
@@ -40,6 +40,17 @@ export function createStreamUpload(key: string, body: Readable, contentType: str
     queueSize: 2,
     partSize: 5 * 1024 * 1024,
   });
+}
+
+/** Kleine, im Server erzeugte Dateien (z. B. Rechnungs-PDF) in einem Stück hochladen. */
+export async function putObject(key: string, body: Buffer, contentType: string): Promise<void> {
+  await r2.send(new PutObjectCommand({ Bucket: R2_BUCKET, Key: key, Body: body, ContentType: contentType, ContentLength: body.length }));
+}
+
+export async function getObjectBuffer(key: string): Promise<Buffer> {
+  const object = await r2.send(new GetObjectCommand({ Bucket: R2_BUCKET, Key: key }));
+  if (!object.Body) throw new Error(`R2-Objekt ${key} ist leer`);
+  return Buffer.from(await object.Body.transformToByteArray());
 }
 
 export async function deleteObject(key: string): Promise<void> {

@@ -4,6 +4,7 @@ import type {
   DocumentCategory,
   EffectivePaymentStatus,
   InvoiceType,
+  PaymentMethod,
   ServiceSlug,
   ShipmentStatus,
 } from "./domain";
@@ -45,6 +46,25 @@ export interface InvoiceSummary {
   issueDate: string;
   dueDate?: string;
   paymentStatus?: EffectivePaymentStatus;
+}
+
+/**
+ * Beleg im Bereich „Rechnungen“ – PDF über /portal/invoices/:id/view bzw. /download,
+ * bei E-Rechnungen zusätzlich die XRechnung-XML über /portal/invoices/:id/xml.
+ */
+export interface InvoiceItem extends InvoiceSummary {
+  netCents: number;
+  vatCents: number;
+  validUntil?: string;
+  paymentMethod?: PaymentMethod;
+  paidAt?: string;
+  shipment?: { id: string; shipmentNumber: string; route: string };
+  eInvoice: boolean;
+}
+
+export interface InvoiceListResponse {
+  invoices: InvoiceItem[];
+  stats: { openCount: number; openGrossCents: number; overdueCount: number; paidCount: number };
 }
 
 export interface DocumentSummary {

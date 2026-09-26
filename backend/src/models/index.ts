@@ -8,6 +8,7 @@ export * from "./document";
 export * from "./driver-profile";
 export * from "./email-log";
 export * from "./invoice";
+export * from "./invoice-draft";
 export * from "./location-log";
 export * from "./rate-limit";
 export * from "./session";

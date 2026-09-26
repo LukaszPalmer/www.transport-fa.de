@@ -9,6 +9,7 @@ import { Icon, type IconName } from "@/components/ui/Icon";
 const items: Array<{ label: string; href: string; icon: IconName }> = [
   { label: "Übersicht", href: routes.portal, icon: "house" },
   { label: "Tracking", href: routes.portalTracking, icon: "map-pin" },
+  { label: "Rechnungen", href: routes.portalInvoices, icon: "coins" },
   { label: "Dokumente", href: routes.portalDocuments, icon: "file-text" },
   { label: "Einstellungen", href: routes.portalSettings, icon: "settings" },
 ];

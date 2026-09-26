@@ -3,8 +3,9 @@ import type { Types } from "mongoose";
 import { env } from "../config/env";
 import { logger } from "../lib/logger";
 import { sendMail } from "../mail/mailer";
-import { chatReplyMail, shipmentUpdateMail } from "../mail/templates";
-import { CustomerProfile, DriverProfile, Shipment, User } from "../models";
+import { chatReplyMail, invoiceIssuedMail, shipmentUpdateMail } from "../mail/templates";
+import { CustomerProfile, DriverProfile, Invoice, Shipment, User } from "../models";
+import { INVOICE_TYPE_LABEL } from "./invoices";
 
 /**
  * E-Mail-Benachrichtigungen an Kunden – nur, wenn das Thema in den Einstellungen
@@ -15,8 +16,12 @@ const SHIPMENT_MESSAGES: Partial<Record<ShipmentStatus, { headline: string; mess
   ASSIGNED: { headline: "Fahrer zugewiesen", message: "Für Ihren Auftrag ist jetzt ein Fahrer eingeplant." },
   EN_ROUTE_TO_PICKUP: { headline: "Fahrer ist unterwegs", message: "Unser Fahrer ist auf dem Weg zur Abholung – Sie können ihn live verfolgen." },
   IN_TRANSIT: { headline: "Ware ist unterwegs", message: "Ihre Ware wurde abgeholt und ist auf dem Weg zum Ziel." },
-  DELIVERED: { headline: "Zugestellt", message: "Ihr Auftrag wurde erfolgreich zugestellt. Vielen Dank für Ihr Vertrauen!" },
+  DELIVERED: { headline: "Auftrag abgeschlossen", message: "Ihr Auftrag wurde erfolgreich abgeschlossen. Vielen Dank für Ihr Vertrauen!" },
 };
+
+const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
+const day = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" });
+const PAYMENT_METHOD_LABEL = { BANK_TRANSFER: "per Überweisung", CASH: "bar" } as const;
 
 async function recipient(customerId: Types.ObjectId, topic: NotificationTopic) {
   const profile = await CustomerProfile.findById(customerId).select("userId firstName notifications").lean();
@@ -60,6 +65,43 @@ export function notifyShipmentUpdate(shipmentId: Types.ObjectId, status: Shipmen
       }),
     });
   })().catch((error: unknown) => logger.error({ err: error }, "Status-Benachrichtigung fehlgeschlagen"));
+}
+
+/** Neuer Beleg im Kundenportal – mit Betrag und Fälligkeit, ohne Anhang (PDF liegt geschützt im Portal). */
+export function notifyInvoiceIssued(invoiceId: Types.ObjectId): void {
+  void (async () => {
+    const invoice = await Invoice.findById(invoiceId).lean();
+    if (!invoice) return;
+    const target = await recipient(invoice.customerId, "invoices");
+    if (!target) return;
+    const shipment = invoice.shipmentId ? await Shipment.findById(invoice.shipmentId).select("shipmentNumber").lean() : null;
+
+    const deadline: [string, string] | undefined = invoice.dueDate
+      ? ["Fällig am", day.format(invoice.dueDate)]
+      : invoice.validUntil
+        ? ["Gültig bis", day.format(invoice.validUntil)]
+        : undefined;
+    const paidNote =
+      invoice.paymentStatus === "PAID" && invoice.paymentMethod ? `Bereits bezahlt (${PAYMENT_METHOD_LABEL[invoice.paymentMethod]}) – vielen Dank!` : undefined;
+
+    await sendMail({
+      type: "INVOICE_ISSUED",
+      to: target.user.email,
+      userId: target.user._id,
+      customerId: target.profile._id,
+      ...invoiceIssuedMail({
+        firstName: target.profile.firstName,
+        typeLabel: INVOICE_TYPE_LABEL[invoice.type],
+        number: invoice.number,
+        amount: euro.format(invoice.grossCents / 100),
+        deadline: paidNote ? undefined : deadline,
+        paidNote,
+        shipmentNumber: shipment?.shipmentNumber,
+        url: portalUrl(`/kundenportal/rechnungen?beleg=${String(invoice._id)}`),
+        settingsUrl: portalUrl("/kundenportal/einstellungen"),
+      }),
+    });
+  })().catch((error: unknown) => logger.error({ err: error }, "Beleg-Benachrichtigung fehlgeschlagen"));
 }
 
 /** Chat-Antwort, während der Kunde nicht verbunden ist. */

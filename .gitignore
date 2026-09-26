@@ -14,5 +14,6 @@ coverage/
 .DS_Store
 Thumbs.db
 
-# Lokale E-Mail-Vorschauen (backend)
+# Lokale E-Mail- und Rechnungsvorschauen (backend)
 .mail-preview/
+.invoice-preview/

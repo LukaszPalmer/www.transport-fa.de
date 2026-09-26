@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 import { PassThrough, Transform, type Readable } from "node:stream";
-import { DocumentUploadFields, MAX_UPLOAD_BYTES, UPLOAD_FILE_TYPES, type DocumentItem } from "@fa/shared";
+import { DocumentUploadFields, MAX_UPLOAD_BYTES, UPLOAD_FILE_TYPES, type DocumentItem, type UploadMimeType } from "@fa/shared";
 import busboy from "busboy";
 import type { Request } from "express";
 import { Types } from "mongoose";
@@ -33,24 +33,65 @@ export function toDocumentItem(
 
 // --- Upload -------------------------------------------------------------------------
 
+/** Obergrenze für Formularfelder neben der Datei (Beleg-Upload: 11). */
+const MAX_FORM_FIELDS = 20;
+
 interface UploadContext {
   customerId: Types.ObjectId;
   userId: Types.ObjectId;
 }
 
+/** Was ein Upload anlegen soll – geprüft, bevor die Datei angenommen wird. */
+export interface PreparedUpload<T> {
+  customerId: Types.ObjectId;
+  document: Pick<IDocument, "category" | "title" | "visibility" | "uploadedByRole" | "handToDriver"> & {
+    shipmentId?: Types.ObjectId;
+    uploadedById: Types.ObjectId;
+  };
+  /** Nur bestimmte Dateitypen annehmen (Standard: alle Upload-Typen). */
+  accept?: { types: readonly UploadMimeType[]; message: string };
+  /** Nach dem Speichern, z. B. einen Beleg anlegen. Schlägt das fehl, werden Datei und Dokument wieder entfernt. */
+  finalize: (document: IDocument) => Promise<T>;
+}
+
+/** Kunden-Upload im Portal: Zoll- und Frachtpapiere, Fotos. */
+export function receiveCustomerUpload(req: Request, context: UploadContext): Promise<IDocument> {
+  return receiveUpload(req, async (fields) => {
+    const input = DocumentUploadFields.parse(fields); // ZodError → 422 mit Feldfehlern
+    if (input.shipmentId && !(await Shipment.exists({ _id: input.shipmentId, customerId: context.customerId }))) {
+      throw AppError.validation({ shipmentId: "Dieser Auftrag gehört nicht zu Ihrem Konto." });
+    }
+    return {
+      customerId: context.customerId,
+      document: {
+        category: input.category,
+        title: input.title,
+        visibility: "CUSTOMER",
+        uploadedById: context.userId,
+        uploadedByRole: "CUSTOMER",
+        handToDriver: input.handToDriver,
+        shipmentId: input.shipmentId ? new Types.ObjectId(input.shipmentId) : undefined,
+      },
+      finalize: async (document) => document,
+    };
+  });
+}
+
 /**
  * Nimmt einen Formular-Upload entgegen und streamt die Datei direkt nach R2.
- * Reihenfolge: Felder prüfen → Dateisignatur prüfen → hochladen (Größenlimit
+ * Reihenfolge: Felder prüfen (`prepare`) → Dateisignatur prüfen → hochladen (Größenlimit
  * läuft mit) → erst danach Datenbankeintrag. Abgebrochene Uploads hinterlassen nichts.
+ * Die Formularfelder müssen vor der Datei gesendet werden.
  */
-export function receiveCustomerUpload(req: Request, context: UploadContext): Promise<IDocument> {
+export function receiveUpload<T>(req: Request, prepare: (fields: Record<string, string>) => Promise<PreparedUpload<T>>): Promise<T> {
   return new Promise((resolve, reject) => {
     const fields: Record<string, string> = {};
     let fileSeen = false;
+    let rejected = false;
 
     let parser: busboy.Busboy;
     try {
-      parser = busboy({ headers: req.headers, limits: { files: 1, fileSize: MAX_UPLOAD_BYTES, fields: 10, fieldSize: 2000 } });
+      parser = busboy({ headers: req.headers, limits: { files: 1, fileSize: MAX_UPLOAD_BYTES, fields: MAX_FORM_FIELDS, fieldSize: 2000 } });
     } catch {
       reject(AppError.badRequest("Bitte senden Sie die Datei als Formular-Upload."));
       return;
@@ -59,12 +100,25 @@ export function receiveCustomerUpload(req: Request, context: UploadContext): Pro
     parser.on("field", (name, value) => {
       fields[name] = value;
     });
+    // Überzählige Felder vor der Datei würden sonst stillschweigend fehlen – und Standardwerte
+    // greifen. Die Datei wird dann gar nicht erst angenommen. Felder nach der Datei spielen keine Rolle.
+    parser.on("fieldsLimit", () => {
+      if (fileSeen) return;
+      rejected = true;
+      reject(AppError.badRequest("Das Formular enthält zu viele Felder."));
+    });
     parser.on("file", (_name, stream, info) => {
+      if (rejected) {
+        stream.resume();
+        return;
+      }
       fileSeen = true;
-      storeFile(stream, info.filename, fields, context).then(resolve, (error: unknown) => {
-        stream.resume(); // Rest verwerfen, damit die Anfrage sauber endet
-        reject(error);
-      });
+      prepare(fields)
+        .then((prepared) => storeFile(stream, info.filename, prepared))
+        .then(resolve, (error: unknown) => {
+          stream.resume(); // Rest verwerfen, damit die Anfrage sauber endet
+          reject(error);
+        });
     });
     parser.on("error", () => reject(AppError.badRequest("Der Upload konnte nicht gelesen werden.")));
     parser.on("close", () => {
@@ -74,21 +128,16 @@ export function receiveCustomerUpload(req: Request, context: UploadContext): Pro
   });
 }
 
-async function storeFile(stream: Readable, filename: string, fields: Record<string, string>, context: UploadContext): Promise<IDocument> {
-  const input = DocumentUploadFields.parse(fields); // ZodError → 422 mit Feldfehlern
-
-  if (input.shipmentId && !(await Shipment.exists({ _id: input.shipmentId, customerId: context.customerId }))) {
-    throw AppError.validation({ shipmentId: "Dieser Auftrag gehört nicht zu Ihrem Konto." });
-  }
-
+async function storeFile<T>(stream: Readable, filename: string, prepared: PreparedUpload<T>): Promise<T> {
   const head = await readHead(stream, FILE_SIGNATURE_BYTES);
   const mimeType = detectFileType(head);
   if (!mimeType) {
     throw AppError.validation({ file: "Dieser Dateityp wird nicht unterstützt. Erlaubt sind PDF, JPG, PNG, WEBP und HEIC." });
   }
+  if (prepared.accept && !prepared.accept.types.includes(mimeType)) throw AppError.validation({ file: prepared.accept.message });
 
   const documentId = new Types.ObjectId();
-  const key = `${customerPrefix(String(context.customerId))}${documentId}.${UPLOAD_FILE_TYPES[mimeType]}`;
+  const key = `${customerPrefix(String(prepared.customerId))}${documentId}.${UPLOAD_FILE_TYPES[mimeType]}`;
   const hash = createHash("sha256");
   let size = 0;
   const counter = new Transform({
@@ -124,17 +173,12 @@ async function storeFile(stream: Readable, filename: string, fields: Record<stri
     throw new AppError(413, "PAYLOAD_TOO_LARGE", `Die Datei ist größer als ${MAX_UPLOAD_BYTES / 1024 / 1024} MB.`);
   }
 
+  let document: IDocument | undefined;
   try {
-    return await DocumentModel.create({
+    document = await DocumentModel.create({
       _id: documentId,
-      customerId: context.customerId,
-      shipmentId: input.shipmentId ? new Types.ObjectId(input.shipmentId) : undefined,
-      category: input.category,
-      title: input.title,
-      visibility: "CUSTOMER",
-      uploadedById: context.userId,
-      uploadedByRole: "CUSTOMER",
-      handToDriver: input.handToDriver,
+      customerId: prepared.customerId,
+      ...prepared.document,
       storage: {
         key,
         originalName: path.basename(filename || `dokument.${UPLOAD_FILE_TYPES[mimeType]}`).slice(0, 255),
@@ -144,7 +188,9 @@ async function storeFile(stream: Readable, filename: string, fields: Record<stri
       },
       status: "READY",
     });
+    return await prepared.finalize(document);
   } catch (error) {
+    if (document) await DocumentModel.deleteOne({ _id: documentId }).catch(() => undefined);
     await deleteObject(key).catch(() => undefined);
     throw error;
   }

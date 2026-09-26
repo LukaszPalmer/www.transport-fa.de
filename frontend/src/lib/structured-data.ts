@@ -1,8 +1,8 @@
 import type { Faq, ServiceArea } from "@/types/content";
-import { blogHref, type BlogPost } from "@/content/blog";
+import { blogHref, getCategory, type BlogPost } from "@/content/blog";
 import { company } from "@/content/company";
 import { routes } from "@/content/navigation";
-import { serviceHref, services } from "@/content/services";
+import { getService, serviceHref, services } from "@/content/services";
 
 /**
  * Schema.org-Daten für Rich Results (Knowledge Panel, Sitelinks, FAQ).
@@ -25,7 +25,6 @@ export function organizationJsonLd() {
     url: company.siteUrl,
     logo: `${company.siteUrl}/icon.svg`,
     description: company.description,
-    foundingDate: String(company.foundingYear),
     email: contact.email,
     telephone: contact.phoneHref.replace("tel:", ""),
     address: {
@@ -73,9 +72,9 @@ export function serviceJsonLd(service: ServiceArea) {
   };
 }
 
-export function faqJsonLd(faqs: Faq[]) {
+/** FAQPage-Knoten ohne @context – so auch in einem @graph verwendbar. */
+function faqPageNode(faqs: Faq[]) {
   return {
-    "@context": "https://schema.org",
     "@type": "FAQPage",
     mainEntity: faqs.map((faq) => ({
       "@type": "Question",
@@ -83,6 +82,10 @@ export function faqJsonLd(faqs: Faq[]) {
       acceptedAnswer: { "@type": "Answer", text: faq.answer },
     })),
   };
+}
+
+export function faqJsonLd(faqs: Faq[]) {
+  return { "@context": "https://schema.org", ...faqPageNode(faqs) };
 }
 
 /** Serialisiert JSON-LD sicher für <script> (verhindert </script>-Injection). */
@@ -104,9 +107,10 @@ export function blogJsonLd(posts: BlogPost[]) {
   };
 }
 
-/** Einzelner Beitrag inkl. Brotkrumen (Startseite › Blog › Beitrag). */
+/** Einzelner Beitrag inkl. Brotkrumen (Startseite › Blog › Beitrag) und – falls vorhanden – FAQ. */
 export function blogPostingJsonLd(post: BlogPost) {
   const url = `${company.siteUrl}${blogHref(post.slug)}`;
+  const category = getCategory(post.category);
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -119,9 +123,16 @@ export function blogPostingJsonLd(post: BlogPost) {
         dateModified: post.updatedAt ?? post.publishedAt,
         inLanguage: "de-DE",
         mainEntityOfPage: url,
-        author: { "@type": "Person", name: post.author.name, jobTitle: post.author.role },
+        articleSection: category?.name,
+        keywords: post.keywords.join(", "),
+        // Themenbezug zur Leistungsseite – hilft Suchmaschinen, Beitrag und Angebot zu verknüpfen.
+        about: category ? { "@type": "Service", name: getService(category.service)?.name, url: `${company.siteUrl}${serviceHref(category.service)}` } : undefined,
+        author: post.author.team
+          ? { "@type": "Organization", name: company.legalName, url: company.siteUrl }
+          : { "@type": "Person", name: post.author.name, jobTitle: post.author.role },
         publisher: { "@id": organizationId },
       },
+      ...(post.faqs?.length ? [faqPageNode(post.faqs)] : []),
       {
         "@type": "BreadcrumbList",
         itemListElement: [

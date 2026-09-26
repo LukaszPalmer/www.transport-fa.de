@@ -21,12 +21,21 @@ export const getMe = cache(async (): Promise<MeResponse | null> => {
 
 export type CustomerSession = MeResponse & { customer: CustomerSummary };
 
-/** Für geschützte Portal-Seiten: ohne Sitzung zur Anmeldung, mit Rücksprung. */
+/** Nur Kundenkonten gelten im Portal als angemeldet – eine Admin-Sitzung im selben Browser nicht. */
+export function isCustomerSession(me: MeResponse | null): me is CustomerSession {
+  return me?.user.role === "CUSTOMER" && Boolean(me.customer);
+}
+
+/**
+ * Für geschützte Portal-Seiten: ohne Kundensitzung zur Anmeldung, mit Rücksprung.
+ * Mit einer anderen Sitzung (z. B. Admin) erscheint dort ein Hinweis – ein Redirect
+ * zur Startseite würde die Anmeldeseite unerreichbar machen.
+ */
 export async function requireCustomer(currentPath: string): Promise<CustomerSession> {
   const me = await getMe();
-  if (!me) redirect(`${routes.portalLogin}?weiter=${encodeURIComponent(currentPath)}`);
-  if (me.user.role !== "CUSTOMER" || !me.customer) redirect("/");
-  return me as CustomerSession;
+  if (isCustomerSession(me)) return me;
+  const reason = me ? "&fehler=kein-kundenkonto" : "";
+  redirect(`${routes.portalLogin}?weiter=${encodeURIComponent(currentPath)}${reason}`);
 }
 
 export const getAuthProviders = cache(async (): Promise<AuthProvidersResponse> => {

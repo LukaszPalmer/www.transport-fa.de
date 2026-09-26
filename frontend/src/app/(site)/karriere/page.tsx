@@ -52,7 +52,7 @@ export default function CareersPage() {
             id="benefits-title"
             eyebrow="Warum FA Transport"
             title="Ein Arbeitgeber, der mit anpackt."
-            description="In allen Bereichen – ob Transport, Umzug, Räumung oder Büro – gelten bei uns dieselben Versprechen."
+            description="In allen Bereichen – ob Transport, Umzug oder Räumung – gelten bei uns dieselben Versprechen."
           />
           <ul className="mt-16 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {benefits.map((benefit) => (

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { routes } from "@/content/navigation";
-import { getAuthProviders, getMe, safeRedirectPath } from "@/lib/session";
+import { getAuthProviders, getMe, isCustomerSession, safeRedirectPath } from "@/lib/session";
 import { AuthShell } from "@/components/portal/AuthShell";
 import { LoginForm } from "@/components/portal/LoginForm";
 
@@ -13,6 +13,10 @@ const notices: Record<string, { tone: "error" | "success" | "info"; text: string
   geloescht: { tone: "success", text: "Ihr Konto wurde gelöscht – alle Ihre Daten wurden aus dem Portal entfernt. Eine Bestätigung ist per E-Mail unterwegs." },
   google: { tone: "error", text: "Die Anmeldung mit Google wurde abgebrochen oder ist fehlgeschlagen. Bitte versuchen Sie es erneut." },
   gesperrt: { tone: "error", text: "Dieses Konto ist deaktiviert. Bitte wenden Sie sich an uns." },
+  "kein-kundenkonto": {
+    tone: "info",
+    text: "Sie sind gerade mit einem Konto ohne Kundenzugang angemeldet (z. B. Admin). Bitte melden Sie sich mit Ihrem Kundenkonto an.",
+  },
   sitzung: { tone: "info", text: "Bitte melden Sie sich an, um fortzufahren." },
 };
 
@@ -20,7 +24,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/kundenport
   const params = await searchParams;
   const redirectTo = safeRedirectPath(params.weiter, routes.portal);
 
-  if (await getMe()) redirect(redirectTo);
+  if (isCustomerSession(await getMe())) redirect(redirectTo);
   const { google } = await getAuthProviders();
 
   const noticeKey = params.geloescht

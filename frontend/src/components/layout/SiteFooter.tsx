@@ -1,6 +1,6 @@
 import { company } from "@/content/company";
 import { footerNav, legalNav } from "@/content/navigation";
-import { certifications } from "@/content/home";
+import { footerClaim } from "@/content/home";
 import { ComingSoon } from "@/components/ui/ComingSoon";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
@@ -28,7 +28,7 @@ export function SiteFooter() {
           <Logo />
           <p className="mt-6 max-w-sm leading-relaxed text-slate-400">{company.description}</p>
           <p className="mt-6 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
-            {certifications.slice(0, 3).map((c) => c.code).join(" · ")} zertifiziert
+            {footerClaim}
           </p>
           <ul className="mt-6 flex gap-3" aria-label="Social Media">
             {company.social.map((social) => (

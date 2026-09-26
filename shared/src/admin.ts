@@ -1,12 +1,19 @@
 import { z } from "zod";
 import { EmailSchema, NewPasswordSchema, PhoneSchema } from "./auth";
 import {
+  INVOICE_TYPES,
+  PAYMENT_METHODS,
+  PAYMENT_STATUSES,
   PERMISSIONS,
   SERVICE_SLUGS,
   SHIPMENT_STATUSES,
   STAFF_ROLES,
   type DocumentCategory,
   type DocumentVisibility,
+  type EffectivePaymentStatus,
+  type InvoiceSource,
+  type InvoiceType,
+  type PaymentMethod,
   type Permission,
   type PresenceState,
   type Role,
@@ -110,7 +117,21 @@ export interface AdminShipmentRow {
   plannedDeliveryAt?: string;
   driver?: { id: string; name: string; phone: string; plate?: string };
   documents: number;
+  /** Nur mit dem Recht „Rechnungen & Belege“: die maßgebliche Rechnung zum Auftrag. */
+  invoice?: AdminShipmentInvoice;
+  /** Nur mit dem Recht „Rechnungen & Belege“: offener Rechnungsentwurf zum Auftrag. */
+  invoiceDraftId?: string;
   createdAt: string;
+}
+
+/** Rechnung eines Auftrags – die neueste nicht stornierte, sonst die neueste stornierte. */
+export interface AdminShipmentInvoice {
+  id: string;
+  number: string;
+  grossCents: number;
+  paymentStatus: EffectivePaymentStatus;
+  paymentMethod?: PaymentMethod;
+  paidAt?: string;
 }
 
 export interface AdminCustomerDetail {
@@ -138,6 +159,8 @@ export interface AdminCustomerDetail {
   online: boolean;
   shipments: AdminShipmentRow[];
   documents: AdminDocumentItem[];
+  /** Leer, wenn das Recht „Rechnungen & Belege“ fehlt. */
+  invoices: AdminInvoiceRow[];
   chats: Array<{ id: string; status: string; lastMessageAt: string; preview: string; unreadByStaff: number }>;
 }
 
@@ -241,4 +264,83 @@ export interface AdminDriver {
 export interface AdminShipmentList {
   shipments: AdminShipmentRow[];
   total: number;
+}
+
+// --- Rechnungen & Belege ---------------------------------------------------------------------
+
+/**
+ * Zwei Wege: Rechnungen im Portal erstellen (E-Rechnung, siehe invoicing.ts) oder Belege aus
+ * der Buchhaltung (Lexware) hochladen – dann werden PDF und Eckdaten an den Kunden gesendet.
+ * Formularfelder des Uploads kommen als Multipart-Strings, Beträge in Cent.
+ */
+const dateOnly = z.string({ error: "Bitte ein Datum wählen." }).regex(/^\d{4}-\d{2}-\d{2}$/, "Bitte ein Datum wählen.");
+const optionalDate = dateOnly.optional().or(z.literal("").transform(() => undefined));
+const amountCents = (label: string) =>
+  z.coerce
+    .number({ error: `${label} fehlt.` })
+    .int(`${label} ist ungültig.`)
+    .min(0, `${label} darf nicht negativ sein.`)
+    .max(1_000_000_000, `${label} ist zu hoch.`);
+
+export const UploadInvoiceFields = z
+  .object({
+    type: z.enum(INVOICE_TYPES, { error: "Bitte die Belegart wählen." }),
+    number: z.string({ error: "Belegnummer fehlt." }).trim().min(1, "Belegnummer fehlt.").max(40, "Die Belegnummer ist zu lang."),
+    customerId: objectId,
+    shipmentId: objectId.optional().or(z.literal("").transform(() => undefined)),
+    issueDate: dateOnly,
+    dueDate: optionalDate,
+    validUntil: optionalDate,
+    netCents: amountCents("Der Nettobetrag"),
+    vatCents: amountCents("Die Umsatzsteuer"),
+    /** Nur Rechnungen: schon bezahlt, z. B. bar beim Umzug. */
+    paidWith: z.enum(PAYMENT_METHODS).optional().or(z.literal("").transform(() => undefined)),
+    notify: z.enum(["true", "false"]).default("true").transform((value) => value === "true"),
+  })
+  .superRefine((value, context) => {
+    if (value.type === "INVOICE" && !value.dueDate) context.addIssue({ code: "custom", path: ["dueDate"], message: "Bitte das Fälligkeitsdatum angeben." });
+    if (value.dueDate && value.dueDate < value.issueDate) context.addIssue({ code: "custom", path: ["dueDate"], message: "Die Fälligkeit liegt vor dem Belegdatum." });
+    if (value.validUntil && value.validUntil < value.issueDate) context.addIssue({ code: "custom", path: ["validUntil"], message: "Das Angebot endet vor dem Belegdatum." });
+  });
+export type UploadInvoiceFields = z.infer<typeof UploadInvoiceFields>;
+
+export const UpdateInvoicePaymentInput = z
+  .object({ status: z.enum(PAYMENT_STATUSES), method: z.enum(PAYMENT_METHODS).optional() })
+  .refine((value) => value.status !== "PAID" || value.method !== undefined, { path: ["method"], message: "Bitte angeben, wie bezahlt wurde." });
+export type UpdateInvoicePaymentInput = z.input<typeof UpdateInvoicePaymentInput>;
+
+export interface AdminInvoiceRow {
+  id: string;
+  type: InvoiceType;
+  number: string;
+  customer: { id: string; customerNumber: string; name: string };
+  shipment?: { id: string; shipmentNumber: string };
+  netCents: number;
+  vatCents: number;
+  grossCents: number;
+  issueDate: string;
+  dueDate?: string;
+  validUntil?: string;
+  paymentStatus?: EffectivePaymentStatus;
+  paymentMethod?: PaymentMethod;
+  paidAt?: string;
+  fileName: string;
+  /** GENERATED = im Portal erstellte E-Rechnung (unveränderbar, XML-Download), UPLOAD = PDF aus der Buchhaltung. */
+  source: InvoiceSource;
+  /** Zuletzt per E-Mail (mit PDF im Anhang) an den Kunden gesendet. */
+  emailedAt?: string;
+  emailedTo?: string;
+  createdAt: string;
+}
+
+export interface AdminInvoiceList {
+  invoices: AdminInvoiceRow[];
+  total: number;
+  stats: {
+    openCount: number;
+    openGrossCents: number;
+    overdueCount: number;
+    overdueGrossCents: number;
+    paidThisMonthGrossCents: number;
+  };
 }

@@ -39,3 +39,17 @@ export function documentUrl(id: string, mode: "view" | "download"): string {
 export function adminDocumentUrl(id: string, mode: "view" | "download"): string {
   return `${API_URL}/api/v1/admin/documents/${id}/${mode}`;
 }
+
+/** PDF eines Belegs (Rechnung, Angebot …) – im Kundenportal bzw. im Admin-Bereich. „xml“: E-Rechnung als XRechnung. */
+export function invoiceUrl(id: string, mode: "view" | "download" | "xml"): string {
+  return `${API_URL}/api/v1/portal/invoices/${id}/${mode}`;
+}
+
+export function adminInvoiceUrl(id: string, mode: "view" | "download" | "xml"): string {
+  return `${API_URL}/api/v1/admin/invoices/${id}/${mode}`;
+}
+
+/** Vorschau eines Rechnungsentwurfs als PDF (Wasserzeichen „Entwurf“). */
+export function invoiceDraftPreviewUrl(id: string): string {
+  return `${API_URL}/api/v1/admin/invoices/drafts/${id}/preview`;
+}

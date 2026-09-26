@@ -12,6 +12,7 @@ import {
   sortedPosts,
 } from "@/content/blog";
 import { routes } from "@/content/navigation";
+import { getService, serviceContactHref, serviceHref } from "@/content/services";
 import { blogPostingJsonLd } from "@/lib/structured-data";
 import { ArticleBody } from "@/components/blog/ArticleBody";
 import { PostCard } from "@/components/blog/PostCard";
@@ -35,6 +36,7 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
   return {
     title: post.title,
     description: post.excerpt,
+    keywords: post.keywords,
     alternates: { canonical: blogHref(post.slug) },
     openGraph: {
       type: "article",
@@ -44,6 +46,8 @@ export async function generateMetadata({ params }: PageProps<"/blog/[slug]">): P
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt ?? post.publishedAt,
       authors: [post.author.name],
+      section: getCategory(post.category)?.name,
+      tags: post.keywords,
     },
   };
 }
@@ -54,7 +58,12 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
   if (!post) notFound();
 
   const category = getCategory(post.category);
-  const headings = post.body.flatMap((block) => (block.type === "heading" ? [block.text] : []));
+  const service = category && getService(category.service);
+  const faqHeading = "Häufige Fragen";
+  const headings = [
+    ...post.body.flatMap((block) => (block.type === "heading" ? [block.text] : [])),
+    ...(post.faqs?.length ? [faqHeading] : []),
+  ];
   const related = sortedPosts()
     .filter((other) => other.slug !== post.slug)
     .sort((a, b) => Number(b.category === post.category) - Number(a.category === post.category))
@@ -140,12 +149,43 @@ export default async function BlogPostPage({ params }: PageProps<"/blog/[slug]">
           <article id="beitrag" className={headings.length > 1 ? "lg:col-span-8 lg:col-start-5" : "mx-auto w-full max-w-3xl lg:col-span-12"}>
             <ArticleBody blocks={post.body} />
 
+            {post.faqs && post.faqs.length > 0 && (
+              <section aria-labelledby={headingId(faqHeading)} className="mt-14">
+                <h2 id={headingId(faqHeading)} className="scroll-mt-28 text-2xl leading-tight font-bold text-primary sm:text-3xl">
+                  {faqHeading}
+                </h2>
+                <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200/80 bg-white px-6 shadow-card sm:px-8">
+                  {post.faqs.map((faq) => (
+                    <details key={faq.question} className="group py-2">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-left font-display text-lg font-semibold text-primary [&::-webkit-details-marker]:hidden">
+                        <h3>{faq.question}</h3>
+                        <Icon name="arrow-right" className="size-5 shrink-0 text-accent-ink transition-transform duration-300 group-open:rotate-90" />
+                      </summary>
+                      <p className="pb-5 text-base leading-7 text-slate-600">{faq.answer}</p>
+                    </details>
+                  ))}
+                </div>
+              </section>
+            )}
+
             <div className="mt-16 flex flex-col gap-6 rounded-3xl bg-surface p-7 ring-1 ring-slate-100 sm:flex-row sm:items-center sm:justify-between sm:p-8">
               <div>
-                <p className="font-display text-lg font-bold text-primary">Sie planen ein Vorhaben?</p>
-                <p className="mt-1 text-sm text-slate-600">Kostenlose Beratung und ein verbindlicher Festpreis – meist innerhalb von 2 Stunden.</p>
+                <p className="font-display text-lg font-bold text-primary">
+                  {service ? `${service.name} in Düsseldorf & Umgebung?` : "Sie planen ein Vorhaben?"}
+                </p>
+                <p className="mt-1 text-sm text-slate-600">
+                  Kostenlose Beratung und ein verbindlicher Festpreis – meist innerhalb von 2 Stunden.
+                  {service && (
+                    <>
+                      {" "}
+                      <SmartLink href={serviceHref(service.slug)} className="font-semibold text-accent-ink underline underline-offset-4">
+                        Zur Leistung: {service.name}
+                      </SmartLink>
+                    </>
+                  )}
+                </p>
               </div>
-              <ButtonLink href={routes.contactForm} variant="dark" withArrow>
+              <ButtonLink href={service ? serviceContactHref(service.slug) : routes.contactForm} variant="dark" withArrow>
                 Angebot anfordern
               </ButtonLink>
             </div>

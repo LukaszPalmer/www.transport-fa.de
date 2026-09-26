@@ -41,6 +41,8 @@ export interface Feature {
   icon: IconName;
   title: string;
   description: string;
+  /** Kurzer Hinweis neben dem Titel, z. B. „In Kürze“ für Funktionen in Vorbereitung. */
+  badge?: string;
 }
 
 /** Karte mit Stichpunkten (Leistungsbausteine). */
@@ -58,9 +60,11 @@ export interface Faq {
   answer: string;
 }
 
-export interface Certification {
-  code: string;
-  title: string;
+/** Leistungsversprechen als kompakte Kachel (Wert + Erklärung). */
+export interface Commitment {
+  icon: IconName;
+  value: string;
+  label: string;
 }
 
 export type SocialPlatform = "linkedin" | "xing" | "instagram" | "youtube" | "facebook";
@@ -138,7 +142,7 @@ export interface Review {
 /* --------------------------------------------------------------------------
    Karriere
    -------------------------------------------------------------------------- */
-export type CareerAreaId = "transport" | "umzug" | "raeumung" | "verwaltung";
+export type CareerAreaId = "transport" | "umzug" | "raeumung";
 
 export interface CareerArea {
   id: CareerAreaId;

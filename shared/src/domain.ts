@@ -27,6 +27,7 @@ export const PERMISSIONS = [
   "can_manage_drivers",
   "can_chat",
   "can_view_documents",
+  "can_manage_invoices",
   "can_edit_credentials",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
@@ -37,6 +38,7 @@ export const PERMISSION_INFO: Record<Permission, { label: string; description: s
   can_manage_drivers: { label: "Fahrer zuweisen", description: "Fahrer & LKW anlegen und Aufträgen zuweisen" },
   can_chat: { label: "Live-Chat", description: "Kundenanfragen im Chat beantworten" },
   can_view_documents: { label: "Dokumente einsehen", description: "Alle Kundendokumente öffnen und herunterladen" },
+  can_manage_invoices: { label: "Rechnungen & Belege", description: "Angebote, Auftragsbestätigungen und Rechnungen senden, Zahlungen verbuchen" },
   can_edit_credentials: { label: "Zugangsdaten ändern", description: "E-Mail und Passwort von Kunden neu setzen" },
 };
 
@@ -80,9 +82,9 @@ export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
 };
 
 export const NOTIFICATION_INFO: Record<NotificationTopic, { label: string; description: string }> = {
-  shipmentUpdates: { label: "Auftragsstatus", description: "Fahrer zugewiesen, unterwegs, zugestellt" },
+  shipmentUpdates: { label: "Auftragsstatus", description: "Fahrer zugewiesen, unterwegs, abgeschlossen" },
   documents: { label: "Neue Dokumente", description: "Wenn wir Unterlagen für Sie hinterlegen" },
-  invoices: { label: "Rechnungen & Angebote", description: "Neue Belege und Zahlungserinnerungen" },
+  invoices: { label: "Rechnungen & Angebote", description: "Hinweise auf neue Belege im Portal – Rechnungen, die wir Ihnen per E-Mail senden, erhalten Sie unabhängig davon" },
   chatReplies: { label: "Chat-Antworten", description: "Antworten unseres Teams, wenn Sie offline sind" },
 };
 
@@ -138,6 +140,19 @@ export type InvoiceType = (typeof INVOICE_TYPES)[number];
 export const PAYMENT_STATUSES = ["PENDING", "PAID", "CANCELLED"] as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
 export type EffectivePaymentStatus = PaymentStatus | "OVERDUE";
+
+/** Wie eine Rechnung beglichen wurde – das Büro verbucht es, der Kunde sieht es im Portal. */
+export const PAYMENT_METHODS = ["BANK_TRANSFER", "CASH"] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+/** Herkunft eines Belegs: im Portal erstellte E-Rechnung oder PDF-Upload aus der Buchhaltung. */
+export const INVOICE_SOURCES = ["GENERATED", "UPLOAD"] as const;
+export type InvoiceSource = (typeof INVOICE_SOURCES)[number];
+
+/** Nur Rechnungen haben einen Zahlstatus – Angebote, Auftragsbestätigungen und Gutschriften nicht. */
+export function hasPaymentStatus(type: InvoiceType): boolean {
+  return type === "INVOICE";
+}
 
 /** PENDING + Fälligkeit überschritten → OVERDUE. Nie veraltet, kein Cronjob nötig. */
 export function effectivePaymentStatus(

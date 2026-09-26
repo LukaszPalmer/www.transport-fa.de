@@ -12,6 +12,7 @@ import { AppError } from "../http/errors";
 import { CustomerProfile, DocumentModel, DriverProfile, Invoice, Shipment } from "../models";
 import { toCustomerSummary } from "../services/customers";
 import { documentsRouter } from "./portal-documents";
+import { invoicesRouter } from "./portal-invoices";
 import { shipmentsRouter } from "./portal-shipments";
 
 /**
@@ -22,6 +23,7 @@ export const portalRouter = Router();
 
 portalRouter.use(requireRole("CUSTOMER"), requireVerifiedEmail);
 portalRouter.use("/documents", documentsRouter);
+portalRouter.use("/invoices", invoicesRouter);
 portalRouter.use("/shipments", shipmentsRouter);
 
 const ACTIVE_SHIPMENT_STATUSES: ShipmentStatus[] = ["PLANNED", "ASSIGNED", "EN_ROUTE_TO_PICKUP", "IN_TRANSIT"];

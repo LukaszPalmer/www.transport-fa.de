@@ -47,10 +47,20 @@ npm run dev                                   # API :4000 + Web :3000 parallel
 | `npm run admin -w @fa/backend -- anlegen <email> "<Name>"` | Administrator anlegen (Passwort wird einmalig angezeigt, 2FA bei der ersten Anmeldung unter `/admin/login`) |
 | `npm run admin -w @fa/backend -- zuruecksetzen <email>` | Notfall: Passwort + 2FA eines Mitarbeiters zurücksetzen (z. B. Handy verloren) |
 | `npm run chat:load-test -w @fa/backend -- 100 5` | Lasttest Live-Chat (100 Test-Kunden × 5 Nachrichten, räumt danach auf – nicht in Produktion) |
+| `npm run mail:preview -w @fa/backend` | E-Mail-Vorlagen als HTML nach `backend/.mail-preview/` |
+| `npm run invoice:preview -w @fa/backend` | Beispielrechnungen (ZUGFeRD-PDF, Entwurf, XRechnung-XML) nach `backend/.invoice-preview/` – ohne Datenbank |
 
 **Admin-Bereich** (`/admin`): Anmeldung nur mit Zwei-Faktor-Authentifizierung (Authenticator-App). Administratoren legen
 unter „Team & Zugang" weitere Mitarbeiter an und vergeben Rechte einzeln (Kunden einsehen, Aufträge verwalten, Fahrer
-zuweisen, Live-Chat, Dokumente, Zugangsdaten ändern). Produktion: `node dist/admin.js anlegen …` in der Railway-Shell.
+zuweisen, Live-Chat, Dokumente, Rechnungen, Zugangsdaten ändern). Produktion: `node dist/admin.js anlegen …` in der Railway-Shell.
+
+**Rechnungen** (`/admin/invoices`): Das Büro erstellt E-Rechnungen nach EN 16931 direkt im Portal – als Entwurf mit
+PDF-Vorschau, beim Senden mit fortlaufender Nummer (`RE-JJJJ-00001`, erst beim Versand vergeben). Jede Rechnung ist eine
+ZUGFeRD-PDF (PDF/A-3b mit eingebetteter `factur-x.xml`), geht mit PDF im Anhang an die bestätigte E-Mail des Kunden und
+erscheint in seinem Kundenportal; zusätzlich gibt es die XRechnung-XML. Gesendete Rechnungen sind unveränderlich (Korrektur
+per Storno). Im Reiter „Aufträge" zeigt die Spalte „Rechnung" Nummer und Zahlstatus (offen/bezahlt) je Auftrag.
+Firmen-, Steuer- und Bankdaten kommen aus `shared/src/company.ts` – solange dort Platzhalter stehen, blockiert die API den
+Versand in Produktion. Schriften: `backend/assets/fonts` (Inter, Plus Jakarta Sans, OFL).
 
 ## Backend-Struktur
 
@@ -61,6 +71,7 @@ backend/src/
 ├─ models/              16 Mongoose-Modelle (User, Session, CustomerProfile, Shipment, LocationLog …)
 ├─ http/                AppError, zentrale Fehlerbehandlung, Request-Logging
 ├─ storage/r2.ts        Cloudflare R2 (S3-API, EU-Endpoint), Key-Schema customers/<id>/…
+├─ invoicing/           E-Rechnung: CII-XML (EN 16931/XRechnung), PDF-Layout (pdfkit, PDF/A-3b + GiroCode)
 ├─ routes/              /health, /api/v1
 ├─ app.ts               Express-App (helmet, CORS, JSON, Cookies)
 └─ server.ts            HTTP-Server, DB-Verbindung, Graceful Shutdown

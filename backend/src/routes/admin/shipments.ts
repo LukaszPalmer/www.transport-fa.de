@@ -13,7 +13,7 @@ import { z } from "zod";
 import { requireAnyPermission, requirePermission } from "../../auth/middleware";
 import { AppError } from "../../http/errors";
 import { audit } from "../../lib/audit";
-import { CustomerProfile, DriverProfile, Shipment, type IShipment } from "../../models";
+import { CustomerProfile, DriverProfile, Invoice, Shipment, type IShipment } from "../../models";
 import { nextShipmentNumber, toAdminShipmentRows } from "../../services/admin-shipments";
 import { notifyShipmentUpdate } from "../../services/notifications";
 
@@ -25,7 +25,8 @@ const NEEDS_DRIVER: ShipmentStatus[] = ["ASSIGNED", "EN_ROUTE_TO_PICKUP", "IN_TR
 const CLOSED: ShipmentStatus[] = ["DELIVERED", "CANCELLED"];
 
 const ListQuery = z.object({
-  status: z.enum([...SHIPMENT_STATUSES, "ACTIVE", "UNASSIGNED"]).optional(),
+  /** UNBILLED = abgeschlossen, aber noch ohne (gültige) Rechnung. */
+  status: z.enum([...SHIPMENT_STATUSES, "ACTIVE", "UNASSIGNED", "UNBILLED"]).optional(),
   customerId: z.string().regex(/^[a-f0-9]{24}$/).optional(),
   q: z.string().trim().max(50).optional(),
   page: z.coerce.number().int().min(1).max(1000).default(1),
@@ -43,8 +44,11 @@ async function findShipment(req: Request) {
   return shipment;
 }
 
-async function rowFor(shipment: IShipment) {
-  const [row] = await toAdminShipmentRows([shipment]);
+/** Rechnung je Auftrag nur für Mitarbeiter mit „Rechnungen & Belege“. */
+const canSeeInvoices = (req: Request) => req.staff!.permissions.includes("can_manage_invoices");
+
+async function rowFor(shipment: IShipment, req: Request) {
+  const [row] = await toAdminShipmentRows([shipment], { withInvoices: canSeeInvoices(req) });
   return row;
 }
 
@@ -53,7 +57,11 @@ adminShipmentsRouter.get("/", requireAnyPermission("can_manage_orders", "can_man
   const filter: Record<string, unknown> = {};
   if (query.status === "ACTIVE") filter.status = { $in: ACTIVE_STATUSES };
   else if (query.status === "UNASSIGNED") Object.assign(filter, { status: { $in: ACTIVE_STATUSES }, driverId: { $exists: false } });
-  else if (query.status) filter.status = query.status;
+  else if (query.status === "UNBILLED") {
+    if (!canSeeInvoices(req)) throw AppError.forbidden();
+    const billed = await Invoice.distinct("shipmentId", { type: "INVOICE", paymentStatus: { $ne: "CANCELLED" }, shipmentId: { $exists: true } });
+    Object.assign(filter, { status: "DELIVERED", _id: { $nin: billed } });
+  } else if (query.status) filter.status = query.status;
   if (query.customerId) filter.customerId = new Types.ObjectId(query.customerId);
   if (query.q) filter.shipmentNumber = { $regex: escapeRegex(query.q.toUpperCase()) };
 
@@ -65,7 +73,7 @@ adminShipmentsRouter.get("/", requireAnyPermission("can_manage_orders", "can_man
       .lean(),
     Shipment.countDocuments(filter),
   ]);
-  const body: AdminShipmentList = { shipments: await toAdminShipmentRows(shipments), total };
+  const body: AdminShipmentList = { shipments: await toAdminShipmentRows(shipments, { withInvoices: canSeeInvoices(req) }), total };
   res.json(body);
 });
 
@@ -92,14 +100,14 @@ adminShipmentsRouter.post("/", requirePermission("can_manage_orders"), async (re
   });
 
   audit(req, "shipment.created", { targetType: "Shipment", targetId: shipment._id, customerId: customer._id });
-  res.status(201).json(await rowFor(shipment));
+  res.status(201).json(await rowFor(shipment, req));
 });
 
 adminShipmentsRouter.patch("/:id/status", requirePermission("can_manage_orders"), async (req, res) => {
   const { status } = UpdateShipmentStatusInput.parse(req.body);
   const shipment = await findShipment(req);
   if (shipment.status === status) {
-    res.json(await rowFor(shipment));
+    res.json(await rowFor(shipment, req));
     return;
   }
   if (NEEDS_DRIVER.includes(status) && !shipment.driverId) throw AppError.validation({ status: "Bitte zuerst einen Fahrer zuweisen." });
@@ -113,7 +121,7 @@ adminShipmentsRouter.patch("/:id/status", requirePermission("can_manage_orders")
 
   audit(req, "shipment.status_changed", { targetType: "Shipment", targetId: shipment._id, customerId: shipment.customerId, meta: { status } });
   notifyShipmentUpdate(shipment._id, status);
-  res.json(await rowFor(shipment));
+  res.json(await rowFor(shipment, req));
 });
 
 /**
@@ -157,7 +165,7 @@ adminShipmentsRouter.put("/:id/driver", requirePermission("can_manage_drivers"),
     meta: { driverId: String(driver._id) },
   });
   if (firstAssignment) notifyShipmentUpdate(shipment._id, "ASSIGNED");
-  res.json(await rowFor(shipment));
+  res.json(await rowFor(shipment, req));
 });
 
 adminShipmentsRouter.delete("/:id/driver", requirePermission("can_manage_drivers"), async (req, res) => {
@@ -173,7 +181,7 @@ adminShipmentsRouter.delete("/:id/driver", requirePermission("can_manage_drivers
   }
   await shipment.save();
   audit(req, "shipment.driver_unassigned", { targetType: "Shipment", targetId: shipment._id, customerId: shipment.customerId });
-  res.json(await rowFor(shipment));
+  res.json(await rowFor(shipment, req));
 });
 
 // --- Fahrer ---------------------------------------------------------------------------

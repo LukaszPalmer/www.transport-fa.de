@@ -5,4 +5,5 @@ export * from "./auth";
 export * from "./chat";
 export * from "./company";
 export * from "./domain";
+export * from "./invoicing";
 export * from "./portal";

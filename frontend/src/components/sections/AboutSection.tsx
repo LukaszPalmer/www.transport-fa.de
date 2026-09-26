@@ -1,5 +1,5 @@
 import { sectionIds } from "@/content/navigation";
-import { aboutSection, certifications, values } from "@/content/home";
+import { aboutSection, commitments, values } from "@/content/home";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -45,19 +45,19 @@ export function AboutSection() {
           </ul>
         </div>
 
-        {/* Zertifizierungen */}
+        {/* Leistungsversprechen */}
         <div className="mt-20 rounded-2xl border border-slate-200/80 bg-surface p-6 sm:p-8 lg:p-10">
-          <h3 className="text-lg font-bold text-primary">{aboutSection.certificationsTitle}</h3>
+          <h3 className="text-lg font-bold text-primary">{aboutSection.commitmentsTitle}</h3>
           <ul className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-            {certifications.map((cert) => (
+            {commitments.map((item) => (
               <li
-                key={cert.code}
+                key={item.label}
                 className="flex flex-col items-center gap-2 rounded-xl bg-white px-3 py-5 text-center ring-1 ring-slate-200 transition-[box-shadow] duration-300 hover:shadow-card hover:ring-accent/50"
               >
-                <Icon name="award" className="size-6 text-accent-ink" />
-                <span className="font-display text-sm font-bold text-primary">{cert.code}</span>
+                <Icon name={item.icon} className="size-6 text-accent-ink" />
+                <span className="font-display text-sm font-bold text-primary">{item.value}</span>
                 <span className="text-xs leading-snug text-balance text-slate-500 hyphens-auto">
-                  {cert.title}
+                  {item.label}
                 </span>
               </li>
             ))}

@@ -16,6 +16,18 @@ export interface MailMessage {
   html: string;
   userId?: Types.ObjectId;
   customerId?: Types.ObjectId;
+  /** Z. B. die Rechnungs-PDF (Resend erlaubt bis 40 MB je Mail). */
+  attachments?: MailAttachment[];
+  /** Verknüpfungen fürs E-Mail-Log (Kommunikationsverlauf in der Kundenakte). */
+  invoiceId?: Types.ObjectId;
+  documentIds?: Types.ObjectId[];
+  sentById?: Types.ObjectId;
+}
+
+export interface MailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
 }
 
 /** Lokale Vorschau der Mails (gitignored) – im Browser öffnen. */
@@ -37,6 +49,9 @@ export async function sendMail(message: MailMessage, options: { log?: boolean } 
     bodyText: message.text,
     userId: message.userId,
     customerId: message.customerId,
+    invoiceId: message.invoiceId,
+    documentIds: message.documentIds,
+    sentById: message.sentById,
     provider: env.MAIL_PROVIDER,
   });
 
@@ -80,9 +95,12 @@ async function sendViaResend(message: MailMessage, idempotencyKey: string): Prom
       text: message.text,
       html: message.html,
       // Logo als eingebettetes Bild: erscheint sofort, ohne „Bilder laden"
-      attachments: [{ filename: "fa-transport.png", content: LOGO_MARK_PNG_BASE64, content_type: "image/png", content_id: LOGO_CID }],
+      attachments: [
+        { filename: "fa-transport.png", content: LOGO_MARK_PNG_BASE64, content_type: "image/png", content_id: LOGO_CID },
+        ...(message.attachments ?? []).map((file) => ({ filename: file.filename, content: file.content.toString("base64"), content_type: file.contentType })),
+      ],
     }),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(message.attachments?.length ? 30_000 : 10_000),
   });
   const body = (await response.json().catch(() => ({}))) as { id?: string; message?: string };
   if (!response.ok) throw new Error(`Resend ${response.status}: ${body.message ?? "unbekannter Fehler"}`);
@@ -94,6 +112,7 @@ function writePreview(message: MailMessage, id: string): undefined {
   mkdirSync(PREVIEW_DIR, { recursive: true });
   const file = path.join(PREVIEW_DIR, `${new Date().toISOString().replace(/[:.]/g, "-")}-${message.type.toLowerCase()}-${id.slice(-6)}.html`);
   writeFileSync(file, message.html.replaceAll(`cid:${LOGO_CID}`, `data:image/png;base64,${LOGO_MARK_PNG_BASE64}`));
+  for (const attachment of message.attachments ?? []) writeFileSync(file.replace(/\.html$/, `-${attachment.filename}`), attachment.content);
   logger.info(
     `\n✉  E-Mail (${message.type}) an ${message.to}\n   Betreff: ${message.subject}\n   Vorschau: ${file}\n\n${message.text}\n`,
   );

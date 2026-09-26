@@ -67,7 +67,7 @@ export const services: ServiceArea[] = [
           icon: "globe",
           title: "Fern- & Auslandsumzug",
           description: "Deutschlandweit und in ganz Europa – mit eigener Flotte und klaren Zeitfenstern.",
-          highlights: ["Direktfahrt ohne Umladen", "Zoll & Dokumente (Nicht-EU)", "Live-Status im Portal"],
+          highlights: ["Direktfahrt ohne Umladen", "Zoll & Dokumente (Nicht-EU)", "Fester Ansprechpartner"],
         },
         {
           icon: "wrench",
@@ -366,31 +366,31 @@ export const services: ServiceArea[] = [
     icon: "truck",
     showTrackingApp: true,
     teaser: "Spedition, Schwerlast, Kontraktlogistik und Express – termintreu in ganz Europa.",
-    highlights: ["FTL & LTL europaweit", "Echtzeit-Tracking", "Disposition 24/7"],
+    highlights: ["FTL & LTL europaweit", "Fester Ansprechpartner", "Disposition 24/7"],
     seo: {
       title: "Transport & Logistik – Spedition, Schwerlast, Express",
       description:
-        "Spedition, Schwertransporte, Kontraktlogistik und Express-Direktfahrten: termintreu in ganz Europa, mit Euro-6-Flotte, Echtzeit-Tracking und Disposition rund um die Uhr.",
+        "Spedition, Schwertransporte, Kontraktlogistik und Express-Direktfahrten: termintreu in ganz Europa, mit Euro-6-Flotte, festem Ansprechpartner und Disposition rund um die Uhr.",
     },
     hero: {
       eyebrow: "Transport & Logistik · B2B",
       headline: ["Ihre Fracht.", "Europaweit."],
       headlineAccent: "Termintreu geliefert.",
       subheadline:
-        "Komplett- und Teilladungen, Schwertransporte, Lagerlogistik und zeitkritische Direktfahrten: Wir planen, steuern und verantworten Ihre Transporte aus einer Hand – mit moderner Flotte und Echtzeit-Tracking.",
+        "Komplett- und Teilladungen, Schwertransporte, Lagerlogistik und zeitkritische Direktfahrten: Wir planen, steuern und verantworten Ihre Transporte aus einer Hand – mit moderner Flotte und festem Ansprechpartner.",
       media: heroMedia("transport-logistik"),
       factsTitle: "Ihr Logistikpartner",
       facts: [
-        "Echtzeit-Tracking im Kundenportal",
+        "Fester Ansprechpartner je Sendung",
         "100 % Euro-6-Flotte",
         "Disposition rund um die Uhr",
-        "ISO 9001 & 14001 zertifiziert",
+        "Haftung nach HGB & CMR",
         "Angebot innerhalb von 2 Stunden",
       ],
     },
     stats: [
       { value: "99,8 %", label: "Termintreue", detail: "Über alle Sendungen 2025" },
-      { value: "180+", label: "Eigene Fahrzeuge", detail: "Ø jünger als 3 Jahre" },
+      { value: "10", label: "Eigene Fahrzeuge", detail: "Ø jünger als 3 Jahre" },
       { value: "24/7", label: "Disposition", detail: "Persönliche Ansprechpartner" },
       { value: "EU-weit", label: "Netzwerk", detail: "Tägliche Linienverkehre" },
     ],
@@ -419,14 +419,14 @@ export const services: ServiceArea[] = [
           title: "Kontraktlogistik",
           description:
             "Maßgeschneiderte Lager- und Distributionslösungen, nahtlos in Ihre Systeme integriert – von Beschaffung bis Auslieferung.",
-          highlights: ["45.000 m² Lagerfläche", "Value-Added Services", "WMS-Anbindung via EDI/API"],
+          highlights: ["45.000 m² Lagerfläche", "Value-Added Services", "EDI/API-Anbindung in Vorbereitung"],
         },
         {
           icon: "zap",
           title: "Express-Transporte",
           description:
             "Zeitkritische Sendungen per Direktfahrt – rund um die Uhr disponiert, ohne Umschlag und mit garantierter Zustellzeit.",
-          highlights: ["Direktfahrten in 24 h", "Sonderfahrten 24/7", "Live-Status per Portal & SMS"],
+          highlights: ["Direktfahrten in 24 h", "Sonderfahrten 24/7", "Proaktive Statusmeldungen"],
         },
       ],
     },
@@ -434,8 +434,8 @@ export const services: ServiceArea[] = [
     process: [
       { title: "Anfrage", description: "Sendungsdaten per Formular, E-Mail, Telefon oder direkt über das Kundenportal übermitteln." },
       { title: "Angebot in 2 Stunden", description: "Sie erhalten ein transparentes Angebot mit fester Laufzeit und Ansprechpartner." },
-      { title: "Disposition & Tracking", description: "Wir disponieren, informieren proaktiv und Sie verfolgen jede Sendung live." },
-      { title: "Zustellung & ePOD", description: "Zustellung im Zeitfenster – der digitale Abliefernachweis liegt sofort im Portal." },
+      { title: "Disposition & Status", description: "Wir disponieren und informieren Sie proaktiv über jeden Statuswechsel Ihrer Sendung." },
+      { title: "Zustellung & Nachweis", description: "Zustellung im vereinbarten Zeitfenster – den Abliefernachweis erhalten Sie umgehend." },
     ],
     faqs: [
       {
@@ -446,7 +446,7 @@ export const services: ServiceArea[] = [
       {
         question: "Kann ich meine Sendungen live verfolgen?",
         answer:
-          "Ja. Im Kundenportal sehen Sie Position, ETA-Prognose und Status jeder Sendung. Auf Wunsch binden wir die Daten per API oder EDI direkt in Ihr ERP ein.",
+          "Das GPS-Tracking im Kundenportal ist in Vorbereitung: Bald sehen Sie dort Position, voraussichtliche Ankunft und Status jeder Sendung. Die direkte Anbindung an Ihr ERP per API oder EDI folgt im nächsten Schritt. Bis dahin informiert Sie Ihr fester Ansprechpartner proaktiv über jeden Statuswechsel.",
       },
       {
         question: "Wie schnell erhalte ich ein Angebot?",

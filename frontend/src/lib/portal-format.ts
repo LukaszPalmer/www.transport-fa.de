@@ -1,4 +1,4 @@
-import type { DocumentCategory, EffectivePaymentStatus, InvoiceType, ShipmentStatus } from "@fa/shared";
+import type { DocumentCategory, EffectivePaymentStatus, InvoiceType, PaymentMethod, ShipmentStatus } from "@fa/shared";
 
 /** Anzeige-Texte und Formatierung für das Kundenportal – eine Quelle für alle Seiten. */
 
@@ -9,7 +9,7 @@ export const shipmentStatus: Record<ShipmentStatus, { label: string; tone: Badge
   ASSIGNED: { label: "Fahrer zugewiesen", tone: "info" },
   EN_ROUTE_TO_PICKUP: { label: "Unterwegs zur Abholung", tone: "progress" },
   IN_TRANSIT: { label: "Unterwegs zu Ihnen", tone: "progress" },
-  DELIVERED: { label: "Zugestellt", tone: "success" },
+  DELIVERED: { label: "Abgeschlossen", tone: "success" },
   CANCELLED: { label: "Storniert", tone: "danger" },
 };
 
@@ -18,6 +18,11 @@ export const paymentStatus: Record<EffectivePaymentStatus, { label: string; tone
   OVERDUE: { label: "Überfällig", tone: "danger" },
   PAID: { label: "Bezahlt", tone: "success" },
   CANCELLED: { label: "Storniert", tone: "neutral" },
+};
+
+export const paymentMethodLabel: Record<PaymentMethod, string> = {
+  BANK_TRANSFER: "per Überweisung",
+  CASH: "bar",
 };
 
 export const invoiceTypeLabel: Record<InvoiceType, string> = {

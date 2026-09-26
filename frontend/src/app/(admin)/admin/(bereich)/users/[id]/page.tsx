@@ -1,5 +1,5 @@
 import type { AdminCustomerDetail } from "@fa/shared";
-import { ArrowLeft, Download, Eye, Lock, MessagesSquare } from "lucide-react";
+import { ArrowLeft, Download, Eye, FilePlus2, Lock, MessagesSquare } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -12,9 +12,12 @@ import { apiServer } from "@/lib/api/server";
 import { documentCategoryLabel, formatDate, formatDateTime, formatFileSize } from "@/lib/portal-format";
 import { CredentialsForm } from "@/components/admin/CredentialsForm";
 import { LiveOnlineStatus } from "@/components/admin/customers/CustomerTable";
+import { InvoiceTable } from "@/components/admin/invoices/InvoiceTable";
+import { SendInvoiceButton } from "@/components/admin/invoices/SendInvoiceDialog";
 import { CreateShipmentButton } from "@/components/admin/orders/CreateShipmentDialog";
 import { ShipmentTable } from "@/components/admin/orders/ShipmentTable";
 import { AdminPage, Card, NoAccess, tableClasses } from "@/components/admin/ui";
+import { buttonClasses } from "@/components/ui/button-styles";
 import { StatusBadge } from "@/components/portal/dashboard/ui";
 
 export const metadata: Metadata = { title: "Kundenakte" };
@@ -34,8 +37,9 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
   }
-  const { customer, user, shipments, documents, chats } = detail;
+  const { customer, user, shipments, documents, invoices, chats } = detail;
   const displayName = customer.companyName || `${customer.firstName} ${customer.lastName}`;
+  const presetCustomer = { id: customer.id, name: displayName, customerNumber: customer.customerNumber };
 
   return (
     <AdminPage
@@ -46,7 +50,7 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
           <Link href={routes.adminUsers} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-primary">
             <ArrowLeft aria-hidden="true" className="size-4" /> Alle Kunden
           </Link>
-          {can(me, "can_manage_orders") && <CreateShipmentButton presetCustomer={{ id: customer.id, name: displayName, customerNumber: customer.customerNumber }} />}
+          {can(me, "can_manage_orders") && <CreateShipmentButton presetCustomer={presetCustomer} />}
         </>
       }
     >
@@ -82,9 +86,28 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
             hideCustomer
             canManageOrders={can(me, "can_manage_orders")}
             canManageDrivers={can(me, "can_manage_drivers")}
+            canManageInvoices={can(me, "can_manage_invoices")}
             emptyText="Noch keine Aufträge."
           />
         </Card>
+
+        {can(me, "can_manage_invoices") && (
+          <Card
+            title={`Rechnungen & Belege (${invoices.length})`}
+            description="Angebote, Auftragsbestätigungen und Rechnungen, die dieser Kunde im Portal sieht."
+            action={
+              <div className="flex flex-wrap gap-2">
+                <SendInvoiceButton presetCustomer={presetCustomer} />
+                <Link href={`${routes.adminInvoiceNew}?kunde=${customer.id}`} className={buttonClasses({ variant: "dark", size: "sm" })}>
+                  <FilePlus2 aria-hidden="true" className="size-4" /> Rechnung erstellen
+                </Link>
+              </div>
+            }
+            className="xl:col-span-3"
+          >
+            <InvoiceTable invoices={invoices} hideCustomer emptyText="Noch keine Belege gesendet." />
+          </Card>
+        )}
 
         <Card title={`Dokumente (${documents.length})`} className="xl:col-span-2">
           {!can(me, "can_view_documents") ? (

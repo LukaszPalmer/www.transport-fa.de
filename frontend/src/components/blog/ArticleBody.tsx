@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { headingId, type BlogBlock } from "@/content/blog";
 import { Icon } from "@/components/ui/Icon";
+import { SmartLink } from "@/components/ui/SmartLink";
 
 /**
  * Setzt die Textblöcke eines Beitrags in eine ruhige Lesetypografie (~70 Zeichen je Zeile).
@@ -69,6 +70,61 @@ function Block({ block }: { block: BlogBlock }) {
             ))}
           </ul>
         </div>
+      );
+
+    case "table":
+      return (
+        <figure className="!mt-10">
+          <div className="overflow-x-auto rounded-2xl ring-1 ring-slate-200">
+            <table className="w-full min-w-[32rem] border-collapse text-left text-base leading-6">
+              <caption className="bg-surface px-5 py-4 text-left text-sm font-bold tracking-wide text-primary uppercase">
+                {block.caption}
+              </caption>
+              <thead>
+                <tr className="bg-primary text-white">
+                  {block.head.map((cell) => (
+                    <th key={cell} scope="col" className="px-5 py-3 text-sm font-semibold">
+                      {cell}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-200">
+                {block.rows.map((row) => (
+                  <tr key={row.join("|")} className="even:bg-surface/60">
+                    {row.map((cell, index) =>
+                      index === 0 ? (
+                        <th key={index} scope="row" className="px-5 py-3 font-semibold text-primary">
+                          {cell}
+                        </th>
+                      ) : (
+                        <td key={index} className="px-5 py-3 text-slate-700">
+                          {cell}
+                        </td>
+                      ),
+                    )}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {block.note && <figcaption className="mt-3 text-sm leading-6 text-slate-500">{block.note}</figcaption>}
+        </figure>
+      );
+
+    case "link":
+      return (
+        <SmartLink
+          href={block.href}
+          className="group flex items-center justify-between gap-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-card-hover sm:p-6"
+        >
+          <span>
+            <span className="block text-xs font-bold tracking-[0.14em] text-accent-ink uppercase">Lesetipp</span>
+            <span className="mt-1 block font-display text-lg leading-snug font-bold text-primary">{block.label}</span>
+            {block.text && <span className="mt-1 block text-base leading-6 text-slate-600">{block.text}</span>}
+          </span>
+          <Icon name="arrow-right" className="size-5 shrink-0 text-accent-ink transition-transform duration-300 group-hover:translate-x-1" />
+        </SmartLink>
       );
 
     case "tip":

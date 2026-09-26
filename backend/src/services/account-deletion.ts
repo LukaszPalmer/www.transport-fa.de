@@ -12,6 +12,7 @@ import {
   DocumentModel,
   EmailLog,
   Invoice,
+  InvoiceDraft,
   LocationLog,
   RateLimit,
   Session,
@@ -55,6 +56,7 @@ export async function deleteCustomerAccount(userId: Types.ObjectId): Promise<voi
       await ChatSession.deleteMany({ customerId }, { session });
       await DocumentModel.deleteMany({ customerId }, { session });
       await Invoice.deleteMany({ customerId }, { session });
+      await InvoiceDraft.deleteMany({ customerId }, { session });
       await Shipment.deleteMany({ customerId }, { session });
       await CustomerProfile.deleteOne({ _id: customerId }, { session });
     }

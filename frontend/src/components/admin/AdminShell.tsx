@@ -1,7 +1,7 @@
 "use client";
 
 import type { StaffMe } from "@fa/shared";
-import { Bell, BellOff, LayoutDashboard, LoaderCircle, LogOut, MessagesSquare, Truck, UserCog, Users } from "lucide-react";
+import { Bell, BellOff, LayoutDashboard, LoaderCircle, LogOut, MessagesSquare, ReceiptText, Truck, UserCog, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -23,6 +23,7 @@ export function AdminShell({ me, children }: { me: StaffMe; children: ReactNode 
     { label: "Übersicht", href: routes.admin, icon: LayoutDashboard, visible: true },
     { label: "Kunden", href: routes.adminUsers, icon: Users, visible: has("can_view_customers") },
     { label: "Aufträge", href: routes.adminOrders, icon: Truck, visible: has("can_manage_orders") || has("can_manage_drivers") || has("can_view_customers") },
+    { label: "Rechnungen", href: routes.adminInvoices, icon: ReceiptText, visible: has("can_manage_invoices") },
     { label: "Live-Chat", href: routes.adminChat, icon: MessagesSquare, visible: has("can_chat"), badge: unreadChats },
     { label: me.user.role === "ADMIN" ? "Team & Zugang" : "Mein Zugang", href: routes.adminTeam, icon: UserCog, visible: true },
   ];

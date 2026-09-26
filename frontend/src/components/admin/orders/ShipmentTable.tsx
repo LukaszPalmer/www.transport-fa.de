@@ -1,7 +1,7 @@
 "use client";
 
-import { SHIPMENT_STATUSES, type AdminShipmentRow, type ShipmentStatus } from "@fa/shared";
-import { FileText, Phone, UserPlus } from "lucide-react";
+import { SHIPMENT_STATUSES, type AdminInvoiceRow, type AdminShipmentRow, type ShipmentStatus } from "@fa/shared";
+import { CircleCheck, FilePenLine, FilePlus2, FileText, Phone, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -10,22 +10,32 @@ import { cn } from "@/lib/cn";
 import { serviceLabel } from "@/lib/admin-format";
 import { apiRequest } from "@/lib/api/client";
 import { errorMessage } from "@/lib/api/errors";
-import { formatDateTime, shipmentStatus } from "@/lib/portal-format";
+import { formatDateTime, formatEuro, shipmentStatus } from "@/lib/portal-format";
 import { StatusBadge } from "@/components/portal/dashboard/ui";
+import { PaymentStatusSelect } from "../invoices/PaymentStatusSelect";
 import { EmptyRow, tableClasses } from "../ui";
 import { DriverDialog } from "./DriverDialog";
 
-/** Auftragsliste mit Status-Pflege und Fahrer-Zuweisung (je nach Recht). */
+/** Endgültige Status – vor dem Setzen nachfragen (der Kunde wird benachrichtigt). */
+const CONFIRM_STATUS: Partial<Record<ShipmentStatus, (shipmentNumber: string) => string>> = {
+  DELIVERED: (number) => `Auftrag ${number} als abgeschlossen markieren?\n\nDer Kunde sieht den Auftrag danach als „Abgeschlossen“ und erhält eine Benachrichtigung.`,
+  CANCELLED: (number) => `Auftrag ${number} wirklich stornieren?`,
+};
+
+/** Auftragsliste mit Status-Pflege, Fahrer-Zuweisung und Rechnung (je nach Recht). */
 export function ShipmentTable({
   shipments,
   canManageOrders,
   canManageDrivers,
+  canManageInvoices = false,
   hideCustomer,
   emptyText = "Keine Aufträge gefunden.",
 }: {
   shipments: AdminShipmentRow[];
   canManageOrders: boolean;
   canManageDrivers: boolean;
+  /** Spalte „Rechnung“: offen/bezahlt markieren, Rechnung erstellen. */
+  canManageInvoices?: boolean;
   hideCustomer?: boolean;
   emptyText?: string;
 }) {
@@ -47,6 +57,8 @@ export function ShipmentTable({
   };
 
   const changeStatus = async (row: AdminShipmentRow, status: ShipmentStatus) => {
+    const question = CONFIRM_STATUS[status];
+    if (question && !window.confirm(question(row.shipmentNumber))) return;
     setErrors((current) => ({ ...current, [row.id]: "" }));
     try {
       replace(await apiRequest<AdminShipmentRow>(`/admin/shipments/${row.id}/status`, { method: "PATCH", body: { status } }));
@@ -55,7 +67,17 @@ export function ShipmentTable({
     }
   };
 
-  const columns = hideCustomer ? 6 : 7;
+  /** Zahlstatus aus der Rechnungs-API in die Auftragszeile übernehmen. */
+  const replaceInvoice = (shipmentId: string, invoice: AdminInvoiceRow) =>
+    setRows((current) =>
+      current.map((item) =>
+        item.id === shipmentId && item.invoice
+          ? { ...item, invoice: { ...item.invoice, paymentStatus: invoice.paymentStatus ?? "PENDING", paymentMethod: invoice.paymentMethod, paidAt: invoice.paidAt } }
+          : item,
+      ),
+    );
+
+  const columns = (hideCustomer ? 5 : 6) + (canManageInvoices ? 1 : 0);
 
   return (
     <>
@@ -65,9 +87,9 @@ export function ShipmentTable({
             <tr>
               <th className={tableClasses.th}>Auftrag</th>
               {!hideCustomer && <th className={tableClasses.th}>Kunde</th>}
-              <th className={tableClasses.th}>Strecke</th>
-              <th className={tableClasses.th}>Abholung</th>
+              <th className={tableClasses.th}>Strecke & Abholung</th>
               <th className={tableClasses.th}>Status</th>
+              {canManageInvoices && <th className={tableClasses.th}>Rechnung</th>}
               <th className={tableClasses.th}>Fahrer & LKW</th>
               <th className={tableClasses.th}>Dok.</th>
             </tr>
@@ -87,13 +109,15 @@ export function ShipmentTable({
                       <Link href={`${routes.adminUsers}/${row.customer.id}`} className="font-semibold text-primary hover:text-accent-ink">
                         {row.customer.name}
                       </Link>
-                      <p className="text-xs text-slate-500">{row.customer.customerNumber}</p>
+                      <p className="text-xs whitespace-nowrap text-slate-500">{row.customer.customerNumber}</p>
                     </td>
                   )}
                   <td className={cn(tableClasses.td, "text-slate-700")}>
-                    {row.pickupCity} → {row.deliveryCity}
+                    <p>
+                      {row.pickupCity} → {row.deliveryCity}
+                    </p>
+                    {row.plannedPickupAt && <p className="text-xs whitespace-nowrap text-slate-500">Abholung {formatDateTime(row.plannedPickupAt)}</p>}
                   </td>
-                  <td className={cn(tableClasses.td, "whitespace-nowrap text-slate-600")}>{row.plannedPickupAt ? formatDateTime(row.plannedPickupAt) : "–"}</td>
                   <td className={tableClasses.td}>
                     {canManageOrders ? (
                       <select
@@ -111,8 +135,22 @@ export function ShipmentTable({
                     ) : (
                       <StatusBadge tone={shipmentStatus[row.status].tone}>{shipmentStatus[row.status].label}</StatusBadge>
                     )}
+                    {canManageOrders && !closed && (
+                      <button
+                        type="button"
+                        onClick={() => void changeStatus(row, "DELIVERED")}
+                        className="mt-1.5 flex items-center gap-1 text-xs font-semibold whitespace-nowrap text-emerald-700 hover:underline"
+                      >
+                        <CircleCheck aria-hidden="true" className="size-3.5" /> Abschließen
+                      </button>
+                    )}
                     {errors[row.id] && <p className="mt-1 max-w-48 text-xs font-medium text-red-600">{errors[row.id]}</p>}
                   </td>
+                  {canManageInvoices && (
+                    <td className={tableClasses.td}>
+                      <InvoiceCell row={row} onChange={(invoice) => replaceInvoice(row.id, invoice)} />
+                    </td>
+                  )}
                   <td className={tableClasses.td}>
                     {row.driver ? (
                       <div>
@@ -157,5 +195,41 @@ export function ShipmentTable({
 
       {driverFor && <DriverDialog shipment={driverFor} open onClose={() => setDriverFor(undefined)} onSaved={replace} />}
     </>
+  );
+}
+
+/** Rechnung zum Auftrag: Nummer, Betrag und Zahlstatus (offen/bezahlt) – oder erstellen. */
+function InvoiceCell({ row, onChange }: { row: AdminShipmentRow; onChange: (invoice: AdminInvoiceRow) => void }) {
+  if (row.invoice) {
+    return (
+      <div className="space-y-1.5">
+        <p className="text-xs whitespace-nowrap">
+          <Link href={`${routes.adminInvoices}?beleg=${row.invoice.id}&q=${encodeURIComponent(row.invoice.number)}`} className="font-semibold text-primary hover:text-accent-ink">
+            {row.invoice.number}
+          </Link>
+          <span className="text-slate-500 tabular-nums"> · {formatEuro(row.invoice.grossCents)}</span>
+        </p>
+        <PaymentStatusSelect invoice={row.invoice} onChange={onChange} compact />
+      </div>
+    );
+  }
+  if (row.invoiceDraftId) {
+    return (
+      <Link href={`${routes.adminInvoiceDrafts}/${row.invoiceDraftId}`} className="inline-flex items-center gap-1.5 text-xs font-semibold whitespace-nowrap text-amber-700 hover:underline">
+        <FilePenLine aria-hidden="true" className="size-3.5" /> Entwurf fortsetzen
+      </Link>
+    );
+  }
+  if (row.status === "CANCELLED") return <span className="text-slate-400">–</span>;
+  return (
+    <Link
+      href={`${routes.adminInvoiceNew}?kunde=${row.customer.id}&auftrag=${row.id}`}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold whitespace-nowrap ring-1",
+        row.status === "DELIVERED" ? "bg-accent/10 text-accent-ink ring-accent/30 hover:bg-accent/20" : "text-slate-600 ring-slate-200 hover:text-primary",
+      )}
+    >
+      <FilePlus2 aria-hidden="true" className="size-3.5" /> Rechnung erstellen
+    </Link>
   );
 }

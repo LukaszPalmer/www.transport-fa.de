@@ -1,12 +1,21 @@
 import type { IconName } from "@/components/ui/Icon";
+import type { Faq, ServiceSlug } from "@/types/content";
+import { entruempelungPosts } from "./blog-posts/entruempelung";
+import { haushaltsaufloesungPosts } from "./blog-posts/haushaltsaufloesung";
+import { transportPosts } from "./blog-posts/transport-logistik";
+import { umzugPosts } from "./blog-posts/umzug";
 
 /**
  * Blog & Ratgeber – Kategorien und Beiträge.
  *
- * Neuer Beitrag: Objekt in `blogPosts` ergänzen (Slug = URL unter /blog/…). Der Text besteht
- * aus typisierten Blöcken (Absatz, Zwischenüberschrift, Liste, Checkliste, Tipp, Zitat, Bild) –
- * so sieht jeder Beitrag einheitlich aus, ohne dass jemand HTML schreiben muss.
- * Übersicht, Startseiten-Teaser, Sitemap und JSON-LD aktualisieren sich automatisch.
+ * Neuer Beitrag: Objekt in der passenden Datei unter `blog-posts/` ergänzen (Slug = URL unter
+ * /blog/…). Der Text besteht aus typisierten Blöcken (Absatz, Zwischenüberschrift, Liste,
+ * Checkliste, Tabelle, Tipp, Zitat, Bild, Lesetipp) – so sieht jeder Beitrag einheitlich aus,
+ * ohne dass jemand HTML schreiben muss.
+ * Übersicht, Startseiten-Teaser, Sitemap und JSON-LD (inkl. FAQ) aktualisieren sich automatisch.
+ *
+ * SEO/GEO-Leitlinien: Kernaussage im ersten Absatz, Zwischenüberschriften als echte Suchfragen,
+ * Zahlen als Tabelle, „Das Wichtigste in Kürze“ als Checkliste oben, FAQ am Ende.
  */
 
 export type BlogBlock =
@@ -15,9 +24,12 @@ export type BlogBlock =
   | { type: "subheading"; text: string }
   | { type: "list"; items: string[]; ordered?: boolean }
   | { type: "checklist"; title?: string; items: string[] }
+  | { type: "table"; caption: string; head: string[]; rows: string[][]; note?: string }
   | { type: "tip"; title: string; text: string }
   | { type: "quote"; text: string; cite?: string }
-  | { type: "image"; src: string; alt: string; caption?: string };
+  | { type: "image"; src: string; alt: string; caption?: string }
+  /** Interner Link als hervorgehobener Lesetipp (Beitrag, Leistungsseite, Kontakt). */
+  | { type: "link"; label: string; href: string; text?: string };
 
 export interface BlogCategory {
   slug: string;
@@ -25,22 +37,29 @@ export interface BlogCategory {
   description: string;
   icon: IconName;
   image: string;
+  /** Passende Leistungsseite – für den Angebots-Kasten unter jedem Beitrag. */
+  service: ServiceSlug;
 }
 
 export interface BlogPost {
   slug: string;
   title: string;
-  /** 1–2 Sätze für Karten, Suchmaschinen und Social Media. */
+  /** 1–2 Sätze für Karten, Suchmaschinen und Social Media (ideal 140–160 Zeichen). */
   excerpt: string;
   category: BlogCategory["slug"];
   /** ISO-Datum, z. B. "2026-10-15". */
   publishedAt: string;
   updatedAt?: string;
-  author: { name: string; role: string };
+  /** `team: true` → in den strukturierten Daten als Organisation statt Person. */
+  author: { name: string; role: string; team?: boolean };
   cover: { src: string; alt: string };
   /** Hervorgehobener Beitrag oben in der Übersicht. */
   featured?: boolean;
+  /** Such- und Themenbegriffe (JSON-LD `keywords`, Open-Graph-Tags). */
+  keywords: string[];
   body: BlogBlock[];
+  /** Häufige Fragen am Ende des Beitrags – zusätzlich als FAQPage-Daten ausgeliefert. */
+  faqs?: Faq[];
 }
 
 export const blogPage = {
@@ -53,7 +72,7 @@ export const blogPage = {
   titleLead: "Lesen Sie,",
   titleAccent: "worauf es ankommt.",
   description:
-    "Praxiswissen aus über 25 Jahren Umzug, Entrümpelung und Logistik – verständlich aufbereitet, damit Ihr Vorhaben von Anfang an gelingt.",
+    "Praxiswissen aus zehn Jahren Umzug, Entrümpelung und Logistik – verständlich aufbereitet, damit Ihr Vorhaben in Düsseldorf und Umgebung von Anfang an gelingt.",
   promises: [
     { icon: "award", title: "Aus der Praxis", text: "Wissen direkt von unseren Teams aus Umzug, Entrümpelung und Disposition." },
     { icon: "check", title: "Zum Abhaken", text: "Kompakte Checklisten, die Sie sofort für Ihr Vorhaben nutzen können." },
@@ -83,6 +102,7 @@ export const blogCategories: BlogCategory[] = [
     description: "Planung, Fristen und Checklisten für einen entspannten Umzug – privat wie gewerblich.",
     icon: "truck",
     image: "/media/umzuege/poster.jpg",
+    service: "umzuege",
   },
   {
     slug: "entruempelung",
@@ -90,6 +110,7 @@ export const blogCategories: BlogCategory[] = [
     description: "Was bleibt, was geht – und wie Sie Keller, Dachboden oder Lager richtig freiräumen.",
     icon: "recycle",
     image: "/media/entruempelungen/poster.jpg",
+    service: "entruempelungen",
   },
   {
     slug: "haushaltsaufloesung",
@@ -97,6 +118,7 @@ export const blogCategories: BlogCategory[] = [
     description: "Einfühlsam und strukturiert: Ablauf, Wertanrechnung und besenreine Übergabe.",
     icon: "house",
     image: "/media/haushaltsaufloesungen/poster.jpg",
+    service: "haushaltsaufloesungen",
   },
   {
     slug: "transport-logistik",
@@ -104,11 +126,12 @@ export const blogCategories: BlogCategory[] = [
     description: "Fracht, Dokumente und Abläufe verständlich erklärt – vom Einzelstück bis zur Teilladung.",
     icon: "package",
     image: "/media/transport-logistik/poster.jpg",
+    service: "transport-logistik",
   },
 ];
 
-/** Noch keine Beiträge veröffentlicht – Übersicht und Startseite zeigen dann die Themenvorschau. */
-export const blogPosts: BlogPost[] = [];
+/** Leere Liste → Übersicht und Startseite zeigen stattdessen die Themenvorschau. */
+export const blogPosts: BlogPost[] = [...umzugPosts, ...entruempelungPosts, ...haushaltsaufloesungPosts, ...transportPosts];
 
 // --- Hilfsfunktionen -------------------------------------------------------------------
 
@@ -137,14 +160,19 @@ export function readingMinutes(post: BlogPost): number {
         case "list":
         case "checklist":
           return [block.type === "checklist" ? block.title : "", ...block.items].join(" ");
+        case "table":
+          return [block.caption, ...block.head, ...block.rows.flat(), block.note ?? ""].join(" ");
         case "tip":
           return `${block.title} ${block.text}`;
         case "image":
           return block.caption ?? "";
+        case "link":
+          return `${block.label} ${block.text ?? ""}`;
         default:
           return block.text;
       }
     })
+    .concat((post.faqs ?? []).map((faq) => `${faq.question} ${faq.answer}`))
     .join(" ");
   return Math.max(1, Math.round(text.split(/\s+/).filter(Boolean).length / WORDS_PER_MINUTE));
 }

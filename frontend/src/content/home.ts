@@ -1,4 +1,4 @@
-import type { Certification, CtaLink, Feature, Stat } from "@/types/content";
+import type { Commitment, CtaLink, Feature, Stat } from "@/types/content";
 import { heroMedia } from "./media";
 import { routes, sectionIds } from "./navigation";
 
@@ -6,11 +6,11 @@ import { routes, sectionIds } from "./navigation";
    Hero
    -------------------------------------------------------------------------- */
 export const hero = {
-  eyebrow: "Transport & Logistik · seit 1999",
+  eyebrow: "Transport & Logistik · aus Düsseldorf",
   headline: ["Globale Logistik.", "Präzise. Zuverlässig."],
   headlineAccent: "Zukunftssicher.",
   subheadline:
-    "Wir bewegen Ihre Güter termintreu durch Europa – mit moderner Flotte, lückenloser Echtzeit-Transparenz und einem festen Ansprechpartner für jede Sendung.",
+    "Wir bewegen Ihre Güter termintreu durch Europa – mit moderner Flotte, transparenten Festpreisen und einem festen Ansprechpartner für jede Sendung.",
   primaryCta: { label: "Angebot anfordern", href: routes.contactForm } satisfies CtaLink,
   secondaryCta: { label: "Unsere Flotte entdecken", href: `#${sectionIds.fleet}` } satisfies CtaLink,
   proofPoints: ["Angebot in 2 Stunden", "Disposition 24/7", "Europaweites Netzwerk"],
@@ -27,7 +27,7 @@ export const heroShipment = {
   details: [
     { label: "Ladung", value: "24 t · 33 Pal." },
     { label: "Temperatur", value: "+4 °C" },
-    { label: "CO₂ / tkm", value: "−18 %" },
+    { label: "Fahrzeug", value: "Sattelzug" },
   ],
 };
 
@@ -35,9 +35,9 @@ export const heroShipment = {
    Trust-Bar
    -------------------------------------------------------------------------- */
 export const trustStats: Stat[] = [
-  { value: "25+", label: "Jahre Erfahrung", detail: "Inhabergeführt seit 1999" },
+  { value: "10", label: "Jahre Erfahrung", detail: "Know-how aus Transport & Umzug" },
   { value: "99,8 %", label: "Termintreue", detail: "Über alle Sendungen 2025" },
-  { value: "10.000+", label: "Transporte jährlich", detail: "National & international" },
+  { value: "Festpreis", label: "Verbindliche Angebote", detail: "Ohne versteckte Kosten" },
   { value: "24/7", label: "Disposition", detail: "Persönliche Ansprechpartner" },
 ];
 
@@ -46,7 +46,7 @@ export const trustStats: Stat[] = [
    -------------------------------------------------------------------------- */
 export const servicesSection = {
   eyebrow: "Leistungen",
-  title: "Vier Bereiche. Ein verlässlicher Partner.",
+  title: "Ein Ansprechpartner für alles, was bewegt werden muss.",
   description:
     "Ob Umzug, Entrümpelung, Haushaltsauflösung oder Frachttransport: Sie erhalten alles aus einer Hand – mit eigenen Teams, eigener Flotte und festen Preisen.",
   footnote: "Mehrere Leistungen kombinieren oder Sonderwunsch?",
@@ -64,17 +64,17 @@ export const fleetSection = {
 };
 
 export const fleetStats: Stat[] = [
-  { value: "180+", label: "Eigene Fahrzeuge" },
+  { value: "10", label: "Eigene Fahrzeuge" },
   { value: "< 3 J.", label: "Ø Flottenalter" },
   { value: "100 %", label: "Euro-6-Norm" },
-  { value: "24", label: "E-LKW im Einsatz" },
+  { value: "24/7", label: "Disposition erreichbar" },
 ];
 
-/** Kennzahlen unter der Live-Karte (dekorativ, Beispielwerte). */
+/** Kennzahlen unter der Live-Karte (dekorativ). */
 export const fleetLiveKpis: Stat[] = [
-  { value: "132", label: "Aktive Touren" },
+  { value: "EU-weit", label: "Einsatzgebiet" },
   { value: "99,8 %", label: "Pünktlichkeit" },
-  { value: "−18 %", label: "CO₂ je tkm" },
+  { value: "Direkt", label: "Fahrten ohne Umladen" },
 ];
 
 export const fleetFeatures: Feature[] = [
@@ -86,15 +86,16 @@ export const fleetFeatures: Feature[] = [
   },
   {
     icon: "satellite",
-    title: "GPS-Echtzeit-Tracking",
+    title: "GPS-Tracking & ERP-Anbindung",
+    badge: "In Kürze",
     description:
-      "Position, ETA-Prognose, Temperatur und digitaler Abliefernachweis live im Kundenportal – per API direkt in Ihr ERP.",
+      "Bald verfolgen Sie Position, voraussichtliche Ankunft und Abliefernachweis Ihrer Sendung live im Kundenportal. Im nächsten Schritt folgt die direkte Anbindung an Ihr ERP per API.",
   },
   {
-    icon: "leaf",
-    title: "Nachhaltig unterwegs",
+    icon: "zap",
+    title: "Effizient geplant",
     description:
-      "Wachsender E-LKW-Anteil, HVO-Kraftstoff und CO₂-Reporting nach ISO 14083 für Ihre Scope-3-Bilanz.",
+      "Durchdachte Touren und Direktfahrten ohne Umladen sparen Zeit, Kosten und unnötige Kilometer – gut für Ihr Budget und die Umwelt.",
   },
 ];
 
@@ -105,10 +106,10 @@ export const aboutSection = {
   eyebrow: "Über uns",
   title: "Ein Partner, auf den Sie sich verlassen können.",
   intro:
-    "Seit 1999 bewegt FA Transport Waren für Industrie, Handel und Mittelstand. Als inhabergeführtes Unternehmen verbinden wir die Leistungsfähigkeit eines internationalen Logistikers mit der Nähe und Verbindlichkeit eines Familienbetriebs.",
+    "FA Transport ist ein junges Unternehmen aus Düsseldorf – mit einem Team, das zehn Jahre Erfahrung aus Transport, Umzug und Räumung mitbringt. Wir verbinden moderne, digitale Abläufe mit dem, was in unserer Branche am meisten zählt: Pünktlichkeit, Sorgfalt und klare Absprachen.",
   mission: "Wir behandeln jede Sendung so, als wäre es unsere eigene.",
   missionSource: "Geschäftsführung, FA Transport",
-  certificationsTitle: "Zertifiziert nach internationalen Standards",
+  commitmentsTitle: "Unser Versprechen an Sie",
 };
 
 export const values: Feature[] = [
@@ -116,7 +117,7 @@ export const values: Feature[] = [
     icon: "shield-check",
     title: "Sicherheit",
     description:
-      "Geschulte Berufskraftfahrer, zertifizierte Ladungssicherung und TAPA-konforme Prozesse schützen Ihre Güter auf jedem Kilometer.",
+      "Sorgfältiges Verpacken, Schutzdecken und Kantenschutz sowie eine Haftung nach HGB – damit Umzugsgut und Fracht unversehrt ankommen.",
   },
   {
     icon: "clock",
@@ -128,7 +129,7 @@ export const values: Feature[] = [
     icon: "activity",
     title: "Transparenz",
     description:
-      "Echtzeit-Tracking, digitale Frachtdokumente und offene KPIs – Sie wissen jederzeit, wo Ihre Sendung steht.",
+      "Verbindliche Festpreise, klare Absprachen und Ihre Dokumente jederzeit im Kundenportal – Sie wissen immer, woran Sie sind.",
   },
   {
     icon: "handshake",
@@ -138,14 +139,18 @@ export const values: Feature[] = [
   },
 ];
 
-export const certifications: Certification[] = [
-  { code: "ISO 9001", title: "Qualitätsmanagement" },
-  { code: "ISO 14001", title: "Umweltmanagement" },
-  { code: "ISO 45001", title: "Arbeitsschutz" },
-  { code: "SQAS", title: "Chemie-Logistik" },
-  { code: "TAPA TSR", title: "Transportsicherheit" },
-  { code: "AEO-F", title: "Zugelassener Wirtschaftsbeteiligter" },
+/** Leistungsversprechen unter „Über uns“ – nur Zusagen, die für jeden Auftrag gelten. */
+export const commitments: Commitment[] = [
+  { icon: "coins", value: "Festpreis", label: "Verbindliches Angebot" },
+  { icon: "house", value: "Kostenlos", label: "Besichtigung vor Ort oder per Video" },
+  { icon: "clock", value: "< 2 Std.", label: "Antwort auf Ihre Anfrage" },
+  { icon: "handshake", value: "1", label: "Fester Ansprechpartner" },
+  { icon: "shield-check", value: "Versichert", label: "Haftung nach HGB" },
+  { icon: "phone", value: "24/7", label: "Disposition erreichbar" },
 ];
+
+/** Kurzzeile im Footer unter dem Logo. */
+export const footerClaim = "Festpreis · Versichert · Disposition 24/7";
 
 /* --------------------------------------------------------------------------
    Karriere
@@ -153,8 +158,7 @@ export const certifications: Certification[] = [
 export const careersTeaser = {
   eyebrow: "Karriere",
   title: "Anpacken, weiterkommen – in jedem unserer Bereiche.",
-  description:
-    "Wir suchen Berufskraftfahrer, Umzugshelfer, Möbelmonteure, Mitarbeiter für Entrümpelungen, Disponenten und Auszubildende (m/w/d).",
+  description: "Wir suchen Berufskraftfahrer, Fahrer für Umzüge, Umzugshelfer und Mitarbeiter für Entrümpelungen (m/w/d) in Düsseldorf.",
   cta: { label: "Offene Stellen ansehen", href: routes.careers } satisfies CtaLink,
 };
 

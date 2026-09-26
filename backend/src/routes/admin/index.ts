@@ -11,6 +11,7 @@ import { ChatSession, CustomerProfile, Shipment, StaffProfile, User } from "../.
 import { onlineUserIds } from "../../realtime/presence";
 import { adminCustomersRouter } from "./customers";
 import { adminDocumentsRouter } from "./documents";
+import { adminInvoicesRouter } from "./invoices";
 import { adminDriversRouter, adminShipmentsRouter } from "./shipments";
 import { adminUsersRouter } from "./users";
 
@@ -84,3 +85,4 @@ adminRouter.use("/users", adminUsersRouter);
 adminRouter.use("/shipments", adminShipmentsRouter);
 adminRouter.use("/drivers", adminDriversRouter);
 adminRouter.use("/documents", adminDocumentsRouter);
+adminRouter.use("/invoices", adminInvoicesRouter);

@@ -247,6 +247,103 @@ export function shipmentUpdateMail({ firstName, shipmentNumber, route, headline,
   };
 }
 
+// --- Neuer Beleg (Angebot, Auftragsbestätigung, Rechnung, Gutschrift) ----------------------
+
+export interface InvoiceIssuedInput {
+  firstName: string;
+  typeLabel: string;
+  number: string;
+  amount: string;
+  /** Z. B. „Fällig am“ + Datum oder „Gültig bis“ + Datum. */
+  deadline?: [label: string, value: string];
+  paidNote?: string;
+  shipmentNumber?: string;
+  url: string;
+  settingsUrl: string;
+}
+
+export function invoiceIssuedMail({ firstName, typeLabel, number, amount, deadline, paidNote, shipmentNumber, url, settingsUrl }: InvoiceIssuedInput): RenderedMail {
+  const rows: Array<[string, string]> = [
+    [typeLabel, number],
+    ["Betrag", amount],
+  ];
+  if (deadline) rows.push(deadline);
+  if (shipmentNumber) rows.push(["Auftrag", shipmentNumber]);
+  if (paidNote) rows.push(["Status", paidNote]);
+
+  const message = `wir haben Ihnen eine neue ${typeLabel} bereitgestellt. Sie finden sie im Kundenportal – dort können Sie sie jederzeit ansehen, ausdrucken und als PDF herunterladen.`;
+  const optOut = `Diese Benachrichtigung können Sie in den Einstellungen des Kundenportals abbestellen: ${settingsUrl}`;
+  return {
+    subject: `Ihre ${typeLabel} ${number} – ${COMPANY.name}`,
+    text: `Hallo ${firstName},\n\n${message}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join("\n")}\n\nIm Kundenportal ansehen: ${url}\n\n${optOut}` + textFooter(),
+    html: renderLayout({
+      preheader: `${typeLabel} ${number} über ${amount}`,
+      eyebrow: `${typeLabel} ${number}`,
+      title: `Ihre ${typeLabel} ist da`,
+      intro: `Ansehen, drucken und herunterladen – jederzeit im Kundenportal.`,
+      body: [paragraph(`Hallo ${firstName},`), paragraph(message), infoCard(rows), button(`${typeLabel} ansehen`, url), smallText(escapeHtml(optOut)), signature()],
+      reason: `Sie erhalten diese E-Mail, weil Sie Benachrichtigungen zu Rechnungen und Angeboten bei ${COMPANY.name} aktiviert haben.`,
+    }),
+  };
+}
+
+// --- Rechnung versenden (im Portal erstellte E-Rechnung, PDF im Anhang) --------------------
+
+export interface InvoiceDeliveryInput {
+  /** Anrede: Vorname bei Privatkunden, sonst leer („Guten Tag,“). */
+  greetingName?: string;
+  number: string;
+  issueDate: string;
+  amount: string;
+  /** Offen: Fälligkeit + Bankdaten; bezahlt: Hinweis statt Zahlungsaufforderung. */
+  payment: { dueDate: string; iban: string; accountHolder: string } | { paidNote: string };
+  shipmentNumber?: string;
+  fileName: string;
+  url: string;
+}
+
+export function invoiceDeliveryMail({ greetingName, number, issueDate, amount, payment, shipmentNumber, fileName, url }: InvoiceDeliveryInput): RenderedMail {
+  const hello = greetingName ? `Hallo ${greetingName},` : "Guten Tag,";
+  const rows: Array<[string, string]> = [
+    ["Rechnungsnummer", number],
+    ["Rechnungsdatum", issueDate],
+    ["Rechnungsbetrag", amount],
+  ];
+  if (shipmentNumber) rows.push(["Auftrag", shipmentNumber]);
+  if ("dueDate" in payment) {
+    rows.push(["Zahlbar bis", payment.dueDate], ["IBAN", payment.iban], ["Verwendungszweck", number]);
+  } else {
+    rows.push(["Status", payment.paidNote]);
+  }
+
+  const message = `anbei erhalten Sie unsere Rechnung ${number}. Sie ist als PDF angehängt – eine E-Rechnung im ZUGFeRD-Format, die sich ausdrucken und von Buchhaltungsprogrammen direkt einlesen lässt. Im Kundenportal finden Sie die Rechnung ebenfalls jederzeit.`;
+  const request = "dueDate" in payment ? `Bitte überweisen Sie den Betrag bis zum ${payment.dueDate} an ${payment.accountHolder}. Auf der Rechnung finden Sie außerdem einen GiroCode für Ihre Banking-App.` : undefined;
+  return {
+    subject: `Ihre Rechnung ${number} – ${COMPANY.name}`,
+    text:
+      `${hello}\n\n${message}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join("\n")}\n\n` +
+      (request ? `${request}\n\n` : "") +
+      `Anhang: ${fileName}\nIm Kundenportal ansehen: ${url}` +
+      textFooter(),
+    html: renderLayout({
+      preheader: `Rechnung ${number} über ${amount}`,
+      eyebrow: `Rechnung ${number}`,
+      title: "Ihre Rechnung",
+      intro: "Die PDF finden Sie im Anhang dieser E-Mail und jederzeit im Kundenportal.",
+      body: [
+        paragraph(hello),
+        paragraph(message),
+        infoCard(rows),
+        ...(request ? [paragraph(request)] : []),
+        button("Im Kundenportal ansehen", url),
+        smallText(`Anhang: ${escapeHtml(fileName)}`),
+        signature(),
+      ],
+      reason: `Sie erhalten diese E-Mail, weil ${COMPANY.name} Ihnen eine Rechnung gestellt hat.`,
+    }),
+  };
+}
+
 // --- Chat-Antwort (Kunde war offline) -------------------------------------------------------
 
 export function chatReplyMail({ firstName, staffName, preview, url, settingsUrl }: { firstName: string; staffName: string; preview: string; url: string; settingsUrl: string }): RenderedMail {

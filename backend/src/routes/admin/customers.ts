@@ -5,9 +5,10 @@ import { z } from "zod";
 import { requirePermission } from "../../auth/middleware";
 import { AppError } from "../../http/errors";
 import { audit } from "../../lib/audit";
-import { ChatSession, CustomerProfile, DocumentModel, Shipment, User } from "../../models";
+import { ChatSession, CustomerProfile, DocumentModel, Invoice, Shipment, User } from "../../models";
 import { isOnline, onlineUserIds } from "../../realtime/presence";
 import { toAdminShipmentRows } from "../../services/admin-shipments";
+import { toAdminInvoiceRows } from "../../services/invoices";
 
 /** /api/v1/admin/customers – Kundenliste mit Online-Status und 360°-Akte. */
 export const adminCustomersRouter = Router();
@@ -83,16 +84,18 @@ adminCustomersRouter.get("/", async (req, res) => {
   res.json(body);
 });
 
-/** 360°-Akte: Stammdaten, Konto, alle Aufträge, alle Dokumente (auch interne) und Chats. */
+/** 360°-Akte: Stammdaten, Konto, alle Aufträge, Dokumente (auch interne), Belege und Chats. */
 adminCustomersRouter.get("/:id", async (req, res) => {
   if (!Types.ObjectId.isValid(String(req.params.id))) throw AppError.notFound("Kunde nicht gefunden.");
   const profile = await CustomerProfile.findById(req.params.id).lean();
   if (!profile) throw AppError.notFound("Kunde nicht gefunden.");
 
-  const [user, shipments, documents, chats] = await Promise.all([
+  const canSeeInvoices = req.staff!.permissions.includes("can_manage_invoices");
+  const [user, shipments, documents, invoices, chats] = await Promise.all([
     User.findById(profile.userId).select("+passwordHash").lean(),
     Shipment.find({ customerId: profile._id }).sort({ createdAt: -1 }).limit(200).lean(),
     DocumentModel.find({ customerId: profile._id, status: "READY" }).sort({ createdAt: -1 }).limit(500).lean(),
+    canSeeInvoices ? Invoice.find({ customerId: profile._id }).sort({ issueDate: -1, createdAt: -1 }).limit(200).lean() : [],
     ChatSession.find({ customerId: profile._id }).sort({ lastMessageAt: -1 }).limit(50).lean(),
   ]);
   if (!user) throw AppError.notFound("Kunde nicht gefunden.");
@@ -137,8 +140,9 @@ adminCustomersRouter.get("/:id", async (req, res) => {
       createdAt: user.createdAt.toISOString(),
     },
     online: isOnline(user._id),
-    shipments: await toAdminShipmentRows(shipments),
+    shipments: await toAdminShipmentRows(shipments, { withInvoices: canSeeInvoices }),
     documents: documentItems,
+    invoices: await toAdminInvoiceRows(invoices),
     chats: chats.map((chat) => ({
       id: String(chat._id),
       status: chat.status,

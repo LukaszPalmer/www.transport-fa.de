@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { routes } from "@/content/navigation";
-import { getAuthProviders, getMe } from "@/lib/session";
+import { getAuthProviders, getMe, isCustomerSession } from "@/lib/session";
 import { AuthShell } from "@/components/portal/AuthShell";
 import { RegisterForm } from "@/components/portal/RegisterForm";
 
 export const metadata: Metadata = { title: "Kundenportal – Konto erstellen" };
 
 export default async function RegisterPage() {
-  if (await getMe()) redirect(routes.portal);
+  if (isCustomerSession(await getMe())) redirect(routes.portal);
   const { google } = await getAuthProviders();
 
   return (

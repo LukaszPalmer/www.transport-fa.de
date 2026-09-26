@@ -24,6 +24,7 @@ export const routes = {
   portal: "/kundenportal",
   portalLogin: "/kundenportal/anmelden",
   portalTracking: "/kundenportal/tracking",
+  portalInvoices: "/kundenportal/rechnungen",
   portalDocuments: "/kundenportal/dokumente",
   portalVerify: "/kundenportal/email-bestaetigen",
   portalRegister: "/kundenportal/registrieren",
@@ -36,6 +37,9 @@ export const routes = {
   adminLogin: "/admin/login",
   adminUsers: "/admin/users",
   adminOrders: "/admin/orders",
+  adminInvoices: "/admin/invoices",
+  adminInvoiceNew: "/admin/invoices/new",
+  adminInvoiceDrafts: "/admin/invoices/drafts",
   adminChat: "/admin/chat",
   adminTeam: "/admin/team",
 } as const;

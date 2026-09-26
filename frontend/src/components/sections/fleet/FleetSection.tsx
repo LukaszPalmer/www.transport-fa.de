@@ -63,7 +63,14 @@ export function FleetSection() {
               <div className="flex size-12 items-center justify-center rounded-xl bg-accent/10 text-accent ring-1 ring-accent/20 transition-colors duration-300 group-hover:bg-accent group-hover:text-primary">
                 <Icon name={feature.icon} className="size-5" />
               </div>
-              <h3 className="mt-6 text-lg font-semibold text-white">{feature.title}</h3>
+              <h3 className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-1 text-lg font-semibold text-white">
+                {feature.title}
+                {feature.badge && (
+                  <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-semibold text-accent ring-1 ring-accent/30">
+                    {feature.badge}
+                  </span>
+                )}
+              </h3>
               <p className="mt-2 text-[0.9375rem] leading-relaxed text-slate-400">{feature.description}</p>
             </li>
           ))}

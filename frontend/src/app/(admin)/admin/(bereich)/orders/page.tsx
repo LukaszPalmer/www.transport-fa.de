@@ -14,10 +14,13 @@ export const metadata: Metadata = { title: "Aufträge" };
 const FILTERS = [
   { value: "ACTIVE", label: "Aktiv" },
   { value: "UNASSIGNED", label: "Ohne Fahrer" },
-  { value: "DELIVERED", label: "Zugestellt" },
+  { value: "DELIVERED", label: "Abgeschlossen" },
   { value: "CANCELLED", label: "Storniert" },
   { value: "", label: "Alle" },
 ] as const;
+
+/** Nur mit „Rechnungen & Belege“: abgeschlossene Aufträge, für die noch keine Rechnung existiert. */
+const UNBILLED_FILTER = { value: "UNBILLED", label: "Nicht abgerechnet" } as const;
 
 const PAGE_SIZE = 50;
 
@@ -26,7 +29,10 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   if (!can(me, "can_manage_orders") && !can(me, "can_manage_drivers") && !can(me, "can_view_customers")) return <NoAccess />;
 
   const params = await searchParams;
-  const status = typeof params.status === "string" ? params.status : "ACTIVE";
+  const canManageInvoices = can(me, "can_manage_invoices");
+  const filters = canManageInvoices ? [...FILTERS.slice(0, 3), UNBILLED_FILTER, ...FILTERS.slice(3)] : FILTERS;
+  const requested = typeof params.status === "string" ? params.status : "ACTIVE";
+  const status = requested === UNBILLED_FILTER.value && !canManageInvoices ? "ACTIVE" : requested;
   const q = typeof params.q === "string" ? params.q : "";
   const page = Math.max(1, Number(params.seite) || 1);
 
@@ -44,12 +50,16 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
   return (
     <AdminPage
       title="Aufträge"
-      description="Status pflegen und Fahrer zuweisen – Kunden sehen Änderungen sofort im Tracking."
+      description={
+        canManageInvoices
+          ? "Status pflegen, Fahrer zuweisen und Rechnungen als offen oder bezahlt markieren – Kunden sehen Änderungen sofort im Portal."
+          : "Status pflegen und Fahrer zuweisen – Kunden sehen Änderungen sofort im Tracking."
+      }
       actions={can(me, "can_manage_orders") && can(me, "can_view_customers") ? <CreateShipmentButton /> : undefined}
     >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Filter" className="flex flex-wrap gap-2">
-          {FILTERS.map((filter) => (
+          {filters.map((filter) => (
             <Link
               key={filter.label}
               href={href({ status: filter.value, seite: "1" })}
@@ -76,7 +86,13 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
       </div>
 
       <Card>
-        <ShipmentTable shipments={data.shipments} canManageOrders={can(me, "can_manage_orders")} canManageDrivers={can(me, "can_manage_drivers")} />
+        <ShipmentTable
+          shipments={data.shipments}
+          canManageOrders={can(me, "can_manage_orders")}
+          canManageDrivers={can(me, "can_manage_drivers")}
+          canManageInvoices={canManageInvoices}
+          emptyText={status === UNBILLED_FILTER.value ? "Alle abgeschlossenen Aufträge sind abgerechnet." : undefined}
+        />
         {pages > 1 && (
           <div className="mt-5 flex items-center justify-between text-sm text-slate-600">
             <span>

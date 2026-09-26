@@ -20,7 +20,7 @@ export const trackingApp = {
     { icon: "message", title: "Direkter Draht", description: "Fahrer oder Disposition mit einem Tipp erreichen." },
   ] satisfies Feature[],
   note: "Kostenlos für iOS und Android · Anmeldung mit Ihrem Kundenportal-Zugang",
-  comingSoonNote: "Bis zum Start verfolgen Sie Ihre Sendung live im Kundenportal.",
+  comingSoonNote: "Bis zum Start hält Sie Ihr fester Ansprechpartner über jeden Status Ihrer Sendung auf dem Laufenden.",
   stores: {
     appStore: {
       href: undefined as string | undefined,

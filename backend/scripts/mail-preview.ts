@@ -7,7 +7,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { LOGO_MARK_PNG_BASE64 } from "../src/mail/assets/logo";
 import { LOGO_CID } from "../src/mail/layout";
-import { passwordResetMail, verificationMail, welcomeMail } from "../src/mail/templates";
+import { invoiceDeliveryMail, passwordResetMail, verificationMail, welcomeMail } from "../src/mail/templates";
 
 const dir = path.resolve(".mail-preview");
 mkdirSync(dir, { recursive: true });
@@ -22,6 +22,16 @@ const samples = {
   }),
   "bestaetigung": verificationMail("Anna", "https://www.transport-fa.de/kundenportal/email-bestaetigen?token=beispiel-token-1234567890"),
   "passwort-reset": passwordResetMail("Anna", "https://www.transport-fa.de/kundenportal/passwort-zuruecksetzen?token=beispiel-token-1234567890"),
+  rechnung: invoiceDeliveryMail({
+    greetingName: "Anna",
+    number: "RE-2026-00042",
+    issueDate: "26.09.2026",
+    amount: "2.981,55 €",
+    payment: { dueDate: "10.10.2026", iban: "DE00 0000 0000 0000 0000 00", accountHolder: "FA Transport GmbH" },
+    shipmentNumber: "SN-2026-00123",
+    fileName: "Rechnung_RE-2026-00042.pdf",
+    url: "https://www.transport-fa.de/kundenportal/rechnungen",
+  }),
 };
 
 for (const [name, mail] of Object.entries(samples)) {

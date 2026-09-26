@@ -20,7 +20,6 @@ const socialLinks: SocialLink[] = [
 export const company = {
   name: COMPANY.name,
   legalName: COMPANY.legalName,
-  foundingYear: 1999,
   description:
     "Umzüge, Entrümpelungen, Haushaltsauflösungen sowie Transport & Logistik – termintreu, transparent und zum Festpreis. Ihr Partner aus einer Hand.",
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? COMPANY.websiteUrl,

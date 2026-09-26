@@ -9,6 +9,7 @@ import {
   formatDateTime,
   formatEuro,
   formatFileSize,
+  invoiceTypeLabel,
   paymentStatus,
   shipmentStatus,
 } from "@/lib/portal-format";
@@ -91,17 +92,21 @@ function ShipmentItem({ shipment }: { shipment: ShipmentSummary }) {
 
 export function InvoicesPanel({ invoices }: { invoices: InvoiceSummary[] }) {
   return (
-    <Panel title="Offene Rechnungen" icon="coins">
+    <Panel title="Offene Rechnungen" icon="coins" action={{ label: "Alle Belege", href: routes.portalInvoices }}>
       {invoices.length === 0 ? (
-        <EmptyState title="Keine offenen Rechnungen" text="Neue Rechnungen, Angebote und Auftragsbestätigungen finden Sie hier, sobald wir sie für Sie hinterlegen." />
+        <EmptyState title="Keine offenen Rechnungen" text="Neue Rechnungen, Angebote und Auftragsbestätigungen finden Sie unter „Rechnungen“, sobald wir sie Ihnen senden." />
       ) : (
         <ul className="divide-y divide-slate-100">
           {invoices.map((invoice) => {
             const status = invoice.paymentStatus ? paymentStatus[invoice.paymentStatus] : undefined;
             return (
-              <li key={invoice.id} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
+              <li key={invoice.id} className="relative flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
                 <div className="min-w-0">
-                  <p className="truncate font-semibold text-primary">Rechnung {invoice.number}</p>
+                  <p className="truncate font-semibold text-primary">
+                    <Link href={`${routes.portalInvoices}?beleg=${invoice.id}`} className="after:absolute after:inset-0 hover:text-accent-ink">
+                      {invoiceTypeLabel[invoice.type]} {invoice.number}
+                    </Link>
+                  </p>
                   <p className="text-sm text-slate-500">
                     {invoice.dueDate ? `Fällig am ${formatDate(invoice.dueDate)}` : `Vom ${formatDate(invoice.issueDate)}`}
                   </p>
