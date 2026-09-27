@@ -1,5 +1,6 @@
 import {
   CreateStaffInput,
+  DeleteStaffInput,
   isStaffRole,
   ROLES,
   UpdateCredentialsInput,
@@ -11,7 +12,7 @@ import { Router, type Request } from "express";
 import mongoose, { Types } from "mongoose";
 import { z } from "zod";
 import { requireAdmin, requirePermission } from "../../auth/middleware";
-import { hashPassword, isPasswordPwned } from "../../auth/password";
+import { hashPassword, isPasswordPwned, verifyPassword } from "../../auth/password";
 import { consumeRateLimit } from "../../auth/rate-limit";
 import { revokeAllSessions } from "../../auth/sessions";
 import { AppError, emailTakenError } from "../../http/errors";
@@ -19,6 +20,7 @@ import { audit } from "../../lib/audit";
 import { CustomerProfile, StaffProfile, User, type IUser } from "../../models";
 import { isOnline } from "../../realtime/presence";
 import { changeCredentials } from "../../services/credentials";
+import { deleteStaffMember } from "../../services/staff-deletion";
 
 /**
  * /api/v1/admin/users – alle Konten, Zugangsdaten neu setzen, Mitarbeiter verwalten.
@@ -223,3 +225,30 @@ async function assertAnotherAdminRemains(excludeId: Types.ObjectId): Promise<voi
   const others = await User.countDocuments({ role: "ADMIN", state: "ACTIVE", _id: { $ne: excludeId } });
   if (others === 0) throw AppError.badRequest("Es muss mindestens ein aktiver Administrator bestehen bleiben.");
 }
+
+/**
+ * Mitarbeiter endgültig löschen – alle Daten zur Person verschwinden (siehe deleteStaffMember).
+ * Bestätigung: eigenes Passwort des Administrators plus Eingabe der E-Mail des Mitarbeiters.
+ */
+adminUsersRouter.post("/staff/:id/delete", requireAdmin, async (req, res) => {
+  const auth = req.auth!;
+  await consumeRateLimit(`staff-delete:user:${auth.user.id}`, 10, 15 * 60);
+  const targetId = objectIdParam(req);
+  const input = DeleteStaffInput.parse(req.body);
+
+  if (targetId.equals(auth.user.id)) throw AppError.badRequest("Den eigenen Zugang kann nur ein anderer Administrator löschen.");
+  const target = await User.findById(targetId).select("role email").lean();
+  if (!target || !isStaffRole(target.role)) throw AppError.notFound("Mitarbeiter nicht gefunden.");
+  if (input.confirmEmail !== target.email) throw AppError.validation({ confirmEmail: "Die E-Mail-Adresse stimmt nicht mit dem Mitarbeiter überein." });
+
+  const self = await User.findById(auth.user.id).select("+passwordHash").lean();
+  if (!self?.passwordHash || !(await verifyPassword(self.passwordHash, input.password))) {
+    throw AppError.validation({ password: "Das Passwort ist nicht korrekt." });
+  }
+  if (target.role === "ADMIN") await assertAnotherAdminRemains(targetId);
+
+  await deleteStaffMember(targetId, auth.user.id);
+  // Bewusst ohne Namen/E-Mail: Vom gelöschten Mitarbeiter soll nichts übrig bleiben.
+  audit(req, "admin.staff_deleted", { meta: { role: target.role } });
+  res.status(204).end();
+});

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { Locale } from "@/i18n/config";
 import { headingId, type BlogBlock } from "@/content/blog";
 import { Icon } from "@/components/ui/Icon";
 import { SmartLink } from "@/components/ui/SmartLink";
@@ -7,17 +8,17 @@ import { SmartLink } from "@/components/ui/SmartLink";
  * Setzt die Textblöcke eines Beitrags in eine ruhige Lesetypografie (~70 Zeichen je Zeile).
  * Alle Texte sind reiner Text – React escaped sie, es wird nie HTML eingeschleust.
  */
-export function ArticleBody({ blocks }: { blocks: BlogBlock[] }) {
+export function ArticleBody({ blocks, locale = "de" }: { blocks: BlogBlock[]; locale?: Locale }) {
   return (
     <div className="text-lg leading-8 text-slate-700 [&>*+*]:mt-6">
       {blocks.map((block, index) => (
-        <Block key={index} block={block} />
+        <Block key={index} block={block} locale={locale} />
       ))}
     </div>
   );
 }
 
-function Block({ block }: { block: BlogBlock }) {
+function Block({ block, locale }: { block: BlogBlock; locale: Locale }) {
   switch (block.type) {
     case "paragraph":
       return <p className="hyphens-auto">{block.text}</p>;
@@ -119,7 +120,7 @@ function Block({ block }: { block: BlogBlock }) {
           className="group flex items-center justify-between gap-6 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-card transition-[border-color,box-shadow] duration-300 hover:border-accent/50 hover:shadow-card-hover sm:p-6"
         >
           <span>
-            <span className="block text-xs font-bold tracking-[0.14em] text-accent-ink uppercase">Lesetipp</span>
+            <span className="block text-xs font-bold tracking-[0.14em] text-accent-ink uppercase">{locale === "en" ? "Further reading" : "Lesetipp"}</span>
             <span className="mt-1 block font-display text-lg leading-snug font-bold text-primary">{block.label}</span>
             {block.text && <span className="mt-1 block text-base leading-6 text-slate-600">{block.text}</span>}
           </span>

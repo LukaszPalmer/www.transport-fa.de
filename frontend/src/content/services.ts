@@ -1,4 +1,6 @@
 import type { ServiceArea, ServiceSlug } from "@/types/content";
+import type { Locale } from "@/i18n/config";
+import { servicesEn } from "./en/services";
 import { heroMedia } from "./media";
 
 /**
@@ -358,112 +360,114 @@ export const services: ServiceArea[] = [
   },
 
   /* ------------------------------------------------------------------------
-     Transport & Logistik (B2B)
+     Transport (privat & gewerblich) – keine Lager- oder Kontraktlogistik
      ------------------------------------------------------------------------ */
   {
-    slug: "transport-logistik",
-    name: "Transport & Logistik",
+    slug: "transport",
+    name: "Transport",
     icon: "truck",
     showTrackingApp: true,
-    teaser: "Spedition, Schwerlast, Kontraktlogistik und Express – termintreu in ganz Europa.",
-    highlights: ["FTL & LTL europaweit", "Fester Ansprechpartner", "Disposition 24/7"],
+    teaser: "Möbel-, Einzel- und Gewerbetransporte, Lieferung & Abholung – regional, deutschlandweit und in Europa.",
+    highlights: ["Vom Einzelstück bis zur Ladung", "Fester Ansprechpartner", "Deutschland- & europaweit"],
     seo: {
-      title: "Transport & Logistik – Spedition, Schwerlast, Express",
+      title: "Transporte – Möbel, Einzelstücke & Gewerbe",
       description:
-        "Spedition, Schwertransporte, Kontraktlogistik und Express-Direktfahrten: termintreu in ganz Europa, mit Euro-6-Flotte, festem Ansprechpartner und Disposition rund um die Uhr.",
+        "Möbel- und Einzeltransporte, Lieferung & Abholung, gewerbliche Transporte und Direktfahrten: sicher verladen, termintreu zugestellt – regional, deutschlandweit und in Europa. Festpreis-Angebot innerhalb von 24 Stunden.",
     },
     hero: {
-      eyebrow: "Transport & Logistik · B2B",
-      headline: ["Ihre Fracht.", "Europaweit."],
+      eyebrow: "Transport · Privat & Gewerbe",
+      headline: ["Ihre Ladung.", "Sicher bewegt."],
       headlineAccent: "Termintreu geliefert.",
       subheadline:
-        "Komplett- und Teilladungen, Schwertransporte, Lagerlogistik und zeitkritische Direktfahrten: Wir planen, steuern und verantworten Ihre Transporte aus einer Hand – mit moderner Flotte und festem Ansprechpartner.",
-      media: heroMedia("transport-logistik"),
-      factsTitle: "Ihr Logistikpartner",
+        "Vom einzelnen Möbelstück über die Lieferung aus dem Möbelhaus bis zur Palette für Ihr Unternehmen: Wir holen ab, verladen fachgerecht und liefern pünktlich – mit festem Ansprechpartner und transparentem Festpreis.",
+      media: heroMedia("transport"),
+      factsTitle: "Ihr Transport inklusive",
       facts: [
-        "Fester Ansprechpartner je Sendung",
-        "100 % Euro-6-Flotte",
-        "Disposition rund um die Uhr",
+        "Fester Ansprechpartner je Auftrag",
+        "Fachgerechte Ladungssicherung",
+        "Schutzdecken, Gurte & Verpackung",
         "Haftung nach HGB & CMR",
-        "Angebot innerhalb von 2 Stunden",
+        "Festpreis-Angebot innerhalb von 24 Stunden",
       ],
     },
     stats: [
-      { value: "99,8 %", label: "Termintreue", detail: "Über alle Sendungen 2025" },
-      { value: "10", label: "Eigene Fahrzeuge", detail: "Ø jünger als 3 Jahre" },
-      { value: "24/7", label: "Disposition", detail: "Persönliche Ansprechpartner" },
-      { value: "EU-weit", label: "Netzwerk", detail: "Tägliche Linienverkehre" },
+      { value: "Festpreis", label: "Verbindliches Angebot", detail: "Keine versteckten Kosten" },
+      { value: "24 h", label: "Angebot", detail: "Schriftlich & transparent" },
+      { value: "Direkt", label: "Ohne Umladen", detail: "Von Tür zu Tür" },
+      { value: "EU-weit", label: "Einsatzgebiet", detail: "Deutschland & Europa" },
     ],
     scope: {
       eyebrow: "Leistungsumfang",
-      title: "Logistiklösungen, die mit Ihrem Geschäft skalieren",
+      title: "Transporte für jeden Anlass",
       description:
-        "Vom einzelnen Stückgut bis zur komplexen Supply Chain: Wir planen, steuern und verantworten Ihre Transporte aus einer Hand.",
+        "Ob einzelnes Sofa, komplette Büroausstattung oder Ware für Ihre Kunden: Wir übernehmen Abholung, Verladung und Zustellung – zuverlässig und aus einer Hand.",
       items: [
         {
-          icon: "truck",
-          title: "Spedition",
-          description:
-            "Komplett- und Teilladungen im europäischen Straßengüterverkehr – mit festen Linienverkehren und flexiblen Kapazitäten.",
-          highlights: ["FTL & LTL europaweit", "Tägliche Linienverkehre", "Zoll- & Dokumentenabwicklung"],
+          icon: "sofa",
+          title: "Möbel- & Einzeltransporte",
+          description: "Sofa, Schrank, Waschmaschine oder der Kauf aus der Kleinanzeige – wir holen ab und liefern sicher verpackt.",
+          highlights: ["Schutzdecken & Gurte", "Tragen bis in die Wohnung", "Auf Wunsch mit Montage"],
         },
         {
-          icon: "weight",
-          title: "Schwerlast",
-          description:
-            "Großraum- und Schwertransporte inklusive Streckenprüfung, Genehmigungen und Begleitschutz – sicher bis ans Ziel.",
-          highlights: ["Bis 120 t Nutzlast", "Genehmigungsmanagement", "BF3/BF4-Begleitfahrzeuge"],
+          icon: "package",
+          title: "Lieferung & Abholung",
+          description: "Abholung aus Möbelhaus, Baumarkt oder Lager und Zustellung zu Ihnen – auch als Lieferservice für Ihre Kunden.",
+          highlights: ["Möbelhaus- & Online-Käufe", "Termin nach Wunsch", "Auf- und Abbau möglich"],
         },
         {
-          icon: "warehouse",
-          title: "Kontraktlogistik",
-          description:
-            "Maßgeschneiderte Lager- und Distributionslösungen, nahtlos in Ihre Systeme integriert – von Beschaffung bis Auslieferung.",
-          highlights: ["45.000 m² Lagerfläche", "Value-Added Services", "EDI/API-Anbindung in Vorbereitung"],
+          icon: "building",
+          title: "Gewerbliche Transporte",
+          description: "Büroausstattung, Paletten, Messe- und Ladenbau: planbare Transporte für Unternehmen mit festem Ansprechpartner.",
+          highlights: ["Paletten & Stückgut", "Messe- & Ladenbau", "E-Rechnung (ZUGFeRD/XRechnung)"],
         },
         {
           icon: "zap",
-          title: "Express-Transporte",
-          description:
-            "Zeitkritische Sendungen per Direktfahrt – rund um die Uhr disponiert, ohne Umschlag und mit garantierter Zustellzeit.",
-          highlights: ["Direktfahrten in 24 h", "Sonderfahrten 24/7", "Proaktive Statusmeldungen"],
+          title: "Direkt- & Expressfahrten",
+          description: "Eilige Sendungen fahren wir direkt – ohne Umladen, auf kürzestem Weg und mit Rückmeldung bei Zustellung.",
+          highlights: ["Direktfahrt ohne Umschlag", "Deutschland- & europaweit", "Zustellnachweis"],
         },
       ],
     },
     processTitle: "So läuft Ihr Transport ab",
     process: [
-      { title: "Anfrage", description: "Sendungsdaten per Formular, E-Mail, Telefon oder direkt über das Kundenportal übermitteln." },
-      { title: "Angebot in 2 Stunden", description: "Sie erhalten ein transparentes Angebot mit fester Laufzeit und Ansprechpartner." },
-      { title: "Disposition & Status", description: "Wir disponieren und informieren Sie proaktiv über jeden Statuswechsel Ihrer Sendung." },
-      { title: "Zustellung & Nachweis", description: "Zustellung im vereinbarten Zeitfenster – den Abliefernachweis erhalten Sie umgehend." },
+      { title: "Anfrage", description: "Was, von wo, wohin und wann – per Formular, E-Mail, Telefon oder direkt im Kundenportal." },
+      { title: "Angebot innerhalb von 24 Stunden", description: "Sie erhalten ein verbindliches Festpreis-Angebot mit Abhol- und Lieferzeitfenster." },
+      { title: "Abholung & Verladung", description: "Wir holen pünktlich ab, verpacken bei Bedarf und sichern die Ladung fachgerecht." },
+      { title: "Zustellung & Nachweis", description: "Zustellung im vereinbarten Zeitfenster – auf Wunsch bis in den Raum, mit Abliefernachweis." },
     ],
     faqs: [
       {
-        question: "Welche Sendungsgrößen transportieren Sie?",
+        question: "Welche Transporte übernehmen Sie?",
         answer:
-          "Vom einzelnen Stückgut über Teil- und Komplettladungen bis hin zu Schwertransporten mit bis zu 120 Tonnen – national und international.",
+          "Einzelne Möbel und Geräte, Lieferungen aus Möbelhaus oder Lager, gewerbliche Transporte wie Büroausstattung und Paletten sowie Direktfahrten – regional, deutschlandweit und in Europa. Lagerung und Logistikdienstleistungen bieten wir nicht an.",
       },
       {
-        question: "Kann ich meine Sendungen live verfolgen?",
+        question: "Kann ich meinen Transport live verfolgen?",
         answer:
-          "Das GPS-Tracking im Kundenportal ist in Vorbereitung: Bald sehen Sie dort Position, voraussichtliche Ankunft und Status jeder Sendung. Die direkte Anbindung an Ihr ERP per API oder EDI folgt im nächsten Schritt. Bis dahin informiert Sie Ihr fester Ansprechpartner proaktiv über jeden Statuswechsel.",
+          "Im Kundenportal sehen Sie Status, Fahrer und – während der Fahrt – die Position Ihres Transports. Die FA Tracking App für iOS und Android folgt in Kürze. Zusätzlich informiert Sie Ihr fester Ansprechpartner über jeden wichtigen Schritt.",
       },
       {
         question: "Wie schnell erhalte ich ein Angebot?",
-        answer:
-          "Für Standardtransporte in der Regel innerhalb von zwei Stunden während unserer Geschäftszeiten. Komplexe Projekte kalkulieren wir nach Abstimmung individuell.",
+        answer: "In der Regel innerhalb von 24 Stunden – bei einfachen Transporten oft noch am selben Tag.",
       },
       {
-        question: "Übernehmen Sie auch Zoll und Dokumente?",
+        question: "Sind die Güter während des Transports versichert?",
         answer:
-          "Ja, wir kümmern uns um Zollabwicklung, Frachtpapiere und Genehmigungen – auch für Transporte in Nicht-EU-Länder wie die Schweiz oder Großbritannien.",
+          "Ja. Wir haften nach HGB, bei grenzüberschreitenden Transporten nach CMR. Für besonders wertvolle Güter bieten wir auf Wunsch eine erweiterte Transportversicherung an.",
       },
     ],
   },
 ];
 
-export function getService(slug: string): ServiceArea | undefined {
-  return services.find((service) => service.slug === slug);
+const servicesByLocale: Record<Locale, ServiceArea[]> = { de: services, en: servicesEn };
+
+/** Leistungen in der gewünschten Sprache (Deutsch ist Standard, z. B. für Admin und Sitemap). */
+export function getServices(locale: Locale = "de"): ServiceArea[] {
+  return servicesByLocale[locale];
+}
+
+export function getService(slug: string, locale: Locale = "de"): ServiceArea | undefined {
+  return getServices(locale).find((service) => service.slug === slug);
 }
 
 export const serviceHref = (slug: ServiceSlug) => `/leistungen/${slug}`;

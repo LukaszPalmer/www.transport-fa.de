@@ -11,7 +11,7 @@ export const haushaltsaufloesungPosts: BlogPost[] = [
     category: "haushaltsaufloesung",
     publishedAt: "2026-09-26",
     author: editorialTeam,
-    cover: { src: "/media/haushaltsaufloesungen/poster.jpg", alt: "Wohnung während einer Haushaltsauflösung in Düsseldorf" },
+    cover: { src: "/media/stock/haushaltsaufloesung-wohnzimmer.jpg", alt: "Wohnzimmer mit Ledersessel und gerahmten Familienfotos an der Holzwand" },
     keywords: [
       "Haushaltsauflösung Düsseldorf",
       "Haushaltsauflösung Kosten",
@@ -136,7 +136,7 @@ export const haushaltsaufloesungPosts: BlogPost[] = [
     category: "haushaltsaufloesung",
     publishedAt: "2026-09-26",
     author: editorialTeam,
-    cover: { src: "/media/haushaltsaufloesungen/poster.jpg", alt: "Erinnerungsstücke werden bei einer Haushaltsauflösung sorgsam gesichert" },
+    cover: { src: "/media/stock/haushaltsaufloesung-erinnerungen.jpg", alt: "Alte Familienfotos werden bei einer Haushaltsauflösung sorgsam gesichtet" },
     keywords: [
       "Haushaltsauflösung Todesfall",
       "Haushaltsauflösung Erbfall",

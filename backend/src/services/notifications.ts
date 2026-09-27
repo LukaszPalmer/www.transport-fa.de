@@ -1,6 +1,7 @@
-import { DEFAULT_NOTIFICATION_PREFERENCES, type NotificationTopic, type ShipmentStatus } from "@fa/shared";
+import { DEFAULT_NOTIFICATION_PREFERENCES, type InvoiceType, type Locale, type NotificationTopic, type ShipmentStatus } from "@fa/shared";
 import type { Types } from "mongoose";
 import { env } from "../config/env";
+import { mailFormats } from "../lib/locale";
 import { logger } from "../lib/logger";
 import { sendMail } from "../mail/mailer";
 import { chatReplyMail, invoiceIssuedMail, shipmentUpdateMail } from "../mail/templates";
@@ -12,19 +13,43 @@ import { INVOICE_TYPE_LABEL } from "./invoices";
  * aktiviert ist. Läuft im Hintergrund und bricht nie die auslösende Aktion ab.
  */
 
-const SHIPMENT_MESSAGES: Partial<Record<ShipmentStatus, { headline: string; message: string }>> = {
-  ASSIGNED: { headline: "Fahrer zugewiesen", message: "Für Ihren Auftrag ist jetzt ein Fahrer eingeplant." },
-  EN_ROUTE_TO_PICKUP: { headline: "Fahrer ist unterwegs", message: "Unser Fahrer ist auf dem Weg zur Abholung – Sie können ihn live verfolgen." },
-  IN_TRANSIT: { headline: "Ware ist unterwegs", message: "Ihre Ware wurde abgeholt und ist auf dem Weg zum Ziel." },
-  DELIVERED: { headline: "Auftrag abgeschlossen", message: "Ihr Auftrag wurde erfolgreich abgeschlossen. Vielen Dank für Ihr Vertrauen!" },
+type ShipmentMessage = { headline: string; message: string };
+
+const SHIPMENT_MESSAGES: Record<Locale, Partial<Record<ShipmentStatus, ShipmentMessage>>> = {
+  de: {
+    ASSIGNED: { headline: "Fahrer zugewiesen", message: "Für Ihren Auftrag ist jetzt ein Fahrer eingeplant." },
+    EN_ROUTE_TO_PICKUP: { headline: "Fahrer ist unterwegs", message: "Unser Fahrer ist auf dem Weg zur Abholung – Sie können ihn live verfolgen." },
+    IN_TRANSIT: { headline: "Ware ist unterwegs", message: "Ihre Ware wurde abgeholt und ist auf dem Weg zum Ziel." },
+    DELIVERED: { headline: "Auftrag abgeschlossen", message: "Ihr Auftrag wurde erfolgreich abgeschlossen. Vielen Dank für Ihr Vertrauen!" },
+  },
+  en: {
+    ASSIGNED: { headline: "Driver assigned", message: "A driver has now been scheduled for your job." },
+    EN_ROUTE_TO_PICKUP: { headline: "Driver on the way", message: "Our driver is on the way to the pickup – you can follow them live." },
+    IN_TRANSIT: { headline: "Goods on the way", message: "Your goods have been picked up and are on the way to their destination." },
+    DELIVERED: { headline: "Job completed", message: "Your job has been completed successfully. Thank you for your trust!" },
+  },
 };
 
-const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
-const day = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Berlin" });
-const PAYMENT_METHOD_LABEL = { BANK_TRANSFER: "per Überweisung", CASH: "bar" } as const;
+/** Beleg- und Hinweistexte der Benachrichtigung „neuer Beleg“ je Sprache. */
+const INVOICE_TEXT: Record<Locale, { type: Record<InvoiceType, string>; due: string; valid: string; paid: (method: string) => string; method: Record<"BANK_TRANSFER" | "CASH", string> }> = {
+  de: {
+    type: INVOICE_TYPE_LABEL,
+    due: "Fällig am",
+    valid: "Gültig bis",
+    paid: (method) => `Bereits bezahlt (${method}) – vielen Dank!`,
+    method: { BANK_TRANSFER: "per Überweisung", CASH: "bar" },
+  },
+  en: {
+    type: { INVOICE: "invoice", OFFER: "quote", ORDER_CONFIRMATION: "order confirmation", CREDIT_NOTE: "credit note" },
+    due: "Due on",
+    valid: "Valid until",
+    paid: (method) => `Already paid (${method}) – thank you!`,
+    method: { BANK_TRANSFER: "by bank transfer", CASH: "in cash" },
+  },
+};
 
 async function recipient(customerId: Types.ObjectId, topic: NotificationTopic) {
-  const profile = await CustomerProfile.findById(customerId).select("userId firstName notifications").lean();
+  const profile = await CustomerProfile.findById(customerId).select("userId firstName notifications locale").lean();
   if (!profile) return null;
   const enabled = { ...DEFAULT_NOTIFICATION_PREFERENCES, ...profile.notifications }[topic];
   if (!enabled) return null;
@@ -37,13 +62,15 @@ async function recipient(customerId: Types.ObjectId, topic: NotificationTopic) {
 const portalUrl = (path: string) => new URL(path, env.FRONTEND_URL).toString();
 
 export function notifyShipmentUpdate(shipmentId: Types.ObjectId, status: ShipmentStatus): void {
-  const content = SHIPMENT_MESSAGES[status];
-  if (!content) return;
+  if (!SHIPMENT_MESSAGES.de[status]) return;
   void (async () => {
     const shipment = await Shipment.findById(shipmentId).select("customerId shipmentNumber pickup delivery driverId").lean();
     if (!shipment) return;
     const target = await recipient(shipment.customerId, "shipmentUpdates");
     if (!target) return;
+    const locale = target.profile.locale ?? "de";
+    const content = SHIPMENT_MESSAGES[locale][status];
+    if (!content) return;
     const driver =
       shipment.driverId && status !== "DELIVERED"
         ? await DriverProfile.findById(shipment.driverId).select("firstName lastName phone vehicle").lean()
@@ -62,6 +89,7 @@ export function notifyShipmentUpdate(shipmentId: Types.ObjectId, status: Shipmen
         driver: driver ? { name: `${driver.firstName} ${driver.lastName}`, phone: driver.phone, plate: driver.vehicle?.plate } : undefined,
         url: portalUrl(`/kundenportal/tracking?sendung=${String(shipment._id)}`),
         settingsUrl: portalUrl("/kundenportal/einstellungen"),
+        locale,
       }),
     });
   })().catch((error: unknown) => logger.error({ err: error }, "Status-Benachrichtigung fehlgeschlagen"));
@@ -75,14 +103,16 @@ export function notifyInvoiceIssued(invoiceId: Types.ObjectId): void {
     const target = await recipient(invoice.customerId, "invoices");
     if (!target) return;
     const shipment = invoice.shipmentId ? await Shipment.findById(invoice.shipmentId).select("shipmentNumber").lean() : null;
+    const locale = target.profile.locale ?? "de";
+    const text = INVOICE_TEXT[locale];
+    const { euro, day } = mailFormats(locale);
 
     const deadline: [string, string] | undefined = invoice.dueDate
-      ? ["Fällig am", day.format(invoice.dueDate)]
+      ? [text.due, day(invoice.dueDate)]
       : invoice.validUntil
-        ? ["Gültig bis", day.format(invoice.validUntil)]
+        ? [text.valid, day(invoice.validUntil)]
         : undefined;
-    const paidNote =
-      invoice.paymentStatus === "PAID" && invoice.paymentMethod ? `Bereits bezahlt (${PAYMENT_METHOD_LABEL[invoice.paymentMethod]}) – vielen Dank!` : undefined;
+    const paidNote = invoice.paymentStatus === "PAID" && invoice.paymentMethod ? text.paid(text.method[invoice.paymentMethod]) : undefined;
 
     await sendMail({
       type: "INVOICE_ISSUED",
@@ -91,14 +121,15 @@ export function notifyInvoiceIssued(invoiceId: Types.ObjectId): void {
       customerId: target.profile._id,
       ...invoiceIssuedMail({
         firstName: target.profile.firstName,
-        typeLabel: INVOICE_TYPE_LABEL[invoice.type],
+        typeLabel: text.type[invoice.type],
         number: invoice.number,
-        amount: euro.format(invoice.grossCents / 100),
+        amount: euro(invoice.grossCents),
         deadline: paidNote ? undefined : deadline,
         paidNote,
         shipmentNumber: shipment?.shipmentNumber,
         url: portalUrl(`/kundenportal/rechnungen?beleg=${String(invoice._id)}`),
         settingsUrl: portalUrl("/kundenportal/einstellungen"),
+        locale,
       }),
     });
   })().catch((error: unknown) => logger.error({ err: error }, "Beleg-Benachrichtigung fehlgeschlagen"));
@@ -121,6 +152,7 @@ export function notifyChatReply(customerId: Types.ObjectId, staffName: string, b
         preview,
         url: portalUrl("/kundenportal?chat=1"),
         settingsUrl: portalUrl("/kundenportal/einstellungen"),
+        locale: target.profile.locale,
       }),
     });
   })().catch((error: unknown) => logger.error({ err: error }, "Chat-Benachrichtigung fehlgeschlagen"));

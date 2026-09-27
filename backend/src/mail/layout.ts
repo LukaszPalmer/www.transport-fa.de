@@ -1,4 +1,4 @@
-import { COMPANY } from "@fa/shared";
+import { COMPANY, formattedVatId, hasRegisterEntry, ownerTitle, type Locale } from "@fa/shared";
 
 /**
  * E-Mail-Layout im Stil der Website (Navy #0b132b, Akzent #38bdf8).
@@ -53,8 +53,9 @@ export function button(label: string, url: string): string {
 }
 
 /** Link zum Kopieren, falls der Button nicht funktioniert. */
-export function linkFallback(url: string): string {
-  return `<p style="margin:12px 0 0;font-family:${FONT_BODY};font-size:13px;line-height:1.6;color:${C.muted}">Falls der Button nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:<br>
+export function linkFallback(url: string, locale: Locale = "de"): string {
+  const hint = locale === "en" ? "If the button doesn't work, copy this link into your browser:" : "Falls der Button nicht funktioniert, kopieren Sie diesen Link in Ihren Browser:";
+  return `<p style="margin:12px 0 0;font-family:${FONT_BODY};font-size:13px;line-height:1.6;color:${C.muted}">${hint}<br>
 <a href="${escapeHtml(url)}" style="color:${C.accentInk};word-break:break-all">${escapeHtml(url)}</a></p>`;
 }
 
@@ -93,9 +94,10 @@ export function note(text: string): string {
 </tr></table>`;
 }
 
-export function signature(): string {
-  return `<p style="margin:32px 0 0;font-family:${FONT_BODY};font-size:16px;line-height:1.65;color:${C.text}">Herzliche Grüße<br>
-<strong style="color:${C.heading}">Ihr Team von ${escapeHtml(COMPANY.name)}</strong></p>`;
+export function signature(locale: Locale = "de"): string {
+  const [closing, team] = locale === "en" ? ["Kind regards", `Your ${COMPANY.name} team`] : ["Herzliche Grüße", `Ihr Team von ${COMPANY.name}`];
+  return `<p style="margin:32px 0 0;font-family:${FONT_BODY};font-size:16px;line-height:1.65;color:${C.text}">${closing}<br>
+<strong style="color:${C.heading}">${escapeHtml(team)}</strong></p>`;
 }
 
 // --- Gesamtlayout -------------------------------------------------------------------
@@ -110,14 +112,31 @@ export interface LayoutOptions {
   body: string[];
   /** Warum der Empfänger diese Mail bekommt. */
   reason: string;
+  /** Sprache der Mail (Kunden: Profilsprache). Standard Deutsch. */
+  locale?: Locale;
 }
 
-export function renderLayout({ preheader, eyebrow, title, intro, body, reason }: LayoutOptions): string {
+/** Pflichtangaben im Fuß jeder Mail (§ 35a GmbHG bzw. § 37a HGB): Vertretung, Register, USt-IdNr. */
+export function legalFooterLine(locale: Locale = "de"): string {
+  return [
+    `${ownerTitle(locale)}: ${COMPANY.owner}`,
+    hasRegisterEntry() ? `${COMPANY.register.court}, ${COMPANY.register.number}` : "",
+    `${locale === "en" ? "VAT ID" : "USt-IdNr."} ${formattedVatId()}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+}
+
+export function renderLayout({ preheader, eyebrow, title, intro, body, reason, locale = "de" }: LayoutOptions): string {
   const site = COMPANY.websiteUrl;
   const address = `${COMPANY.address.street} · ${COMPANY.address.postalCode} ${COMPANY.address.city}`;
+  const labels =
+    locale === "en"
+      ? { portal: "Customer portal", imprint: "Legal notice", privacy: "Privacy" }
+      : { portal: "Kundenportal", imprint: "Impressum", privacy: "Datenschutz" };
 
   return `<!DOCTYPE html>
-<html lang="de" xmlns="http://www.w3.org/1999/xhtml">
+<html lang="${locale}" xmlns="http://www.w3.org/1999/xhtml">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -158,7 +177,7 @@ export function renderLayout({ preheader, eyebrow, title, intro, body, reason }:
         </tr></table>
       </a>
     </td>
-    <td align="right" valign="middle" class="hide-sm" style="font-family:${FONT_BODY};font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:${C.accent}">Kundenportal</td>
+    <td align="right" valign="middle" class="hide-sm" style="font-family:${FONT_BODY};font-size:11px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:${C.accent}">${labels.portal}</td>
   </tr></table>
 </td></tr>
 <tr><td bgcolor="${C.navy}" class="px" style="background:${C.navy};padding:36px 40px 40px">
@@ -179,7 +198,8 @@ ${body.join("\n")}
   ${escapeHtml(address)}<br>
   <a href="${escapeHtml(COMPANY.contact.phoneHref)}" style="color:${C.muted};text-decoration:none">${escapeHtml(COMPANY.contact.phone)}</a>
   &nbsp;·&nbsp; <a href="mailto:${COMPANY.contact.email}" style="color:${C.muted};text-decoration:none">${COMPANY.contact.email}</a><br>
-  <a href="${site}/impressum" style="color:${C.accentInk}">Impressum</a> &nbsp;·&nbsp; <a href="${site}/datenschutz" style="color:${C.accentInk}">Datenschutz</a> &nbsp;·&nbsp; <a href="${site}" style="color:${C.accentInk}">${site.replace(/^https?:\/\//, "")}</a>
+  <span style="font-size:12px">${escapeHtml(legalFooterLine(locale))}</span><br>
+  <a href="${site}/impressum" style="color:${C.accentInk}">${labels.imprint}</a> &nbsp;·&nbsp; <a href="${site}/datenschutz" style="color:${C.accentInk}">${labels.privacy}</a> &nbsp;·&nbsp; <a href="${site}" style="color:${C.accentInk}">${site.replace(/^https?:\/\//, "")}</a>
   <p style="margin:16px 0 0;font-size:12px;color:#94a3b8">${escapeHtml(reason)}</p>
 </td></tr>
 

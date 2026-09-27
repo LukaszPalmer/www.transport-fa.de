@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { routes } from "@/content/navigation";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { apiRequest } from "@/lib/api/client";
 import { ApiError, errorMessage } from "@/lib/api/errors";
 import { CheckboxField, TextField } from "@/components/forms/fields";
@@ -17,8 +19,28 @@ interface LoginFormProps {
   notice?: { tone: "error" | "success" | "info"; text: string };
 }
 
+const messages = defineMessages({
+  de: {
+    google: "Mit Google anmelden",
+    email: "E-Mail-Adresse",
+    password: "Passwort",
+    forgot: "Passwort vergessen?",
+    remember: "Angemeldet bleiben",
+    submit: "Anmelden",
+  },
+  en: {
+    google: "Sign in with Google",
+    email: "Email address",
+    password: "Password",
+    forgot: "Forgot password?",
+    remember: "Stay signed in",
+    submit: "Sign in",
+  },
+});
+
 /** Anmeldung per Google oder E-Mail + Passwort. */
 export function LoginForm({ googleEnabled, redirectTo, notice }: LoginFormProps) {
+  const t = useMessages(messages);
   const router = useRouter();
   const [error, setError] = useState<string>();
   const [emailError, setEmailError] = useState<string>();
@@ -53,29 +75,29 @@ export function LoginForm({ googleEnabled, redirectTo, notice }: LoginFormProps)
       {notice && !error && <AuthAlert tone={notice.tone}>{notice.text}</AuthAlert>}
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-      <GoogleButton enabled={googleEnabled} label="Mit Google anmelden" redirectTo={redirectTo} />
+      <GoogleButton enabled={googleEnabled} label={t.google} redirectTo={redirectTo} />
       <AuthDivider />
 
       <form onSubmit={onSubmit} className="space-y-5">
-        <TextField name="email" type="email" label="E-Mail-Adresse" required autoComplete="email" inputMode="email" error={emailError} />
+        <TextField name="email" type="email" label={t.email} required autoComplete="email" inputMode="email" error={emailError} />
         <div>
           <PasswordField
             name="password"
-            label="Passwort"
+            label={t.password}
             autoComplete="current-password"
             value={password}
             onValueChange={setPassword}
           />
           <div className="mt-2 text-right">
             <Link href={routes.portalForgot} className="text-sm font-medium text-accent-ink underline-offset-4 hover:underline">
-              Passwort vergessen?
+              {t.forgot}
             </Link>
           </div>
         </div>
         <CheckboxField name="remember" defaultChecked>
-          Angemeldet bleiben
+          {t.remember}
         </CheckboxField>
-        <PendingButton pending={pending}>Anmelden</PendingButton>
+        <PendingButton pending={pending}>{t.submit}</PendingButton>
       </form>
     </div>
   );

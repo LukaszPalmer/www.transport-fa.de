@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { company } from "@/content/company";
 
-export const alt = `${company.name} – Globale Logistik. Präzise. Zuverlässig. Zukunftssicher.`;
+export const alt = `${company.name} – Umzüge & Transporte. Präzise. Zuverlässig. Zum Festpreis.`;
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -32,14 +32,14 @@ export default function OpengraphImage() {
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", fontSize: 72, fontWeight: 800, lineHeight: 1.05 }}>
-          <span>Globale Logistik.</span>
+          <span>Umzüge & Transporte.</span>
           <span>Präzise. Zuverlässig.</span>
-          <span style={{ color: "#38bdf8" }}>Zukunftssicher.</span>
+          <span style={{ color: "#38bdf8" }}>Zum Festpreis.</span>
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 26, color: "#94a3b8" }}>
           <div style={{ width: 48, height: 4, borderRadius: 4, backgroundColor: "#38bdf8" }} />
-          Spedition · Schwerlast · Kontraktlogistik · Express
+          Umzüge · Entrümpelungen · Haushaltsauflösungen · Transporte
         </div>
       </div>
     ),

@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { routes } from "@/content/navigation";
+import { useLocale } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { apiRequest } from "@/lib/api/client";
-import { ApiError, errorMessage } from "@/lib/api/errors";
+import { ApiError, errorMessage, localizeMessage } from "@/lib/api/errors";
 import { CheckboxField, TextField } from "@/components/forms/fields";
 import { AuthAlert, PasswordField, PendingButton } from "./auth-fields";
 import { AuthDivider, GoogleButton } from "./GoogleButton";
@@ -14,8 +16,53 @@ import { AuthDivider, GoogleButton } from "./GoogleButton";
 /** API-Feldnamen → Formularfelder */
 const FIELD_ALIASES: Record<string, string> = { acceptPrivacy: "privacy" };
 
+const messages = defineMessages({
+  de: {
+    minLength: `Mindestens ${PASSWORD_MIN_LENGTH} Zeichen.`,
+    mismatch: "Die Passwörter stimmen nicht überein.",
+    privacyRequired: "Bitte stimmen Sie der Datenschutzerklärung zu.",
+    google: "Mit Google registrieren",
+    firstName: "Vorname",
+    lastName: "Nachname",
+    email: "E-Mail-Adresse",
+    haveAccount: "Sie haben bereits ein Konto?",
+    signIn: "Jetzt anmelden",
+    or: "oder",
+    reset: "Passwort zurücksetzen",
+    password: "Passwort",
+    passwordHint: `Mindestens ${PASSWORD_MIN_LENGTH} Zeichen – am besten eine Passphrase.`,
+    confirm: "Passwort wiederholen",
+    acceptBefore: "Ich akzeptiere die",
+    privacy: "Datenschutzerklärung",
+    acceptAfter: ".",
+    submit: "Konto erstellen",
+  },
+  en: {
+    minLength: `At least ${PASSWORD_MIN_LENGTH} characters.`,
+    mismatch: "The passwords do not match.",
+    privacyRequired: "Please accept the privacy policy.",
+    google: "Sign up with Google",
+    firstName: "First name",
+    lastName: "Last name",
+    email: "Email address",
+    haveAccount: "Already have an account?",
+    signIn: "Sign in now",
+    or: "or",
+    reset: "reset your password",
+    password: "Password",
+    passwordHint: `At least ${PASSWORD_MIN_LENGTH} characters – ideally a passphrase.`,
+    confirm: "Repeat password",
+    acceptBefore: "I accept the",
+    privacy: "privacy policy",
+    acceptAfter: ".",
+    submit: "Create account",
+  },
+});
+
 /** Konto anlegen – per Google oder E-Mail/Passwort (mit Bestätigungs-E-Mail). */
 export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
+  const locale = useLocale();
+  const t = messages[locale];
   const router = useRouter();
   const [error, setError] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -27,9 +74,9 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     const errors: Record<string, string> = {};
-    if (password.length < PASSWORD_MIN_LENGTH) errors.password = `Mindestens ${PASSWORD_MIN_LENGTH} Zeichen.`;
-    if (password !== confirm) errors.confirm = "Die Passwörter stimmen nicht überein.";
-    if (data.get("privacy") !== "on") errors.privacy = "Bitte stimmen Sie der Datenschutzerklärung zu.";
+    if (password.length < PASSWORD_MIN_LENGTH) errors.password = t.minLength;
+    if (password !== confirm) errors.confirm = t.mismatch;
+    if (data.get("privacy") !== "on") errors.privacy = t.privacyRequired;
     setFieldErrors(errors);
     setError(undefined);
     if (Object.keys(errors).length > 0) return;
@@ -43,6 +90,8 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
           email: String(data.get("email") ?? ""),
           password,
           acceptPrivacy: true,
+          // Sprache für E-Mails an den Kunden
+          locale,
         },
       });
       router.replace(`${routes.portal}?willkommen=1`);
@@ -63,40 +112,40 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
     <div className="space-y-6">
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
-      <GoogleButton enabled={googleEnabled} label="Mit Google registrieren" redirectTo={routes.portal} />
+      <GoogleButton enabled={googleEnabled} label={t.google} redirectTo={routes.portal} />
       <AuthDivider />
 
       <form onSubmit={onSubmit} className="space-y-5">
         <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-          <TextField name="firstName" label="Vorname" required autoComplete="given-name" error={fieldErrors.firstName} />
-          <TextField name="lastName" label="Nachname" required autoComplete="family-name" error={fieldErrors.lastName} />
+          <TextField name="firstName" label={t.firstName} required autoComplete="given-name" error={fieldErrors.firstName} />
+          <TextField name="lastName" label={t.lastName} required autoComplete="family-name" error={fieldErrors.lastName} />
         </div>
         <TextField
           name="email"
           type="email"
-          label="E-Mail-Adresse"
+          label={t.email}
           required
           autoComplete="email"
           inputMode="email"
           error={fieldErrors.email}
         />
-        {fieldErrors.email === EMAIL_TAKEN_MESSAGE && (
+        {fieldErrors.email === localizeMessage(EMAIL_TAKEN_MESSAGE) && (
           <p className="-mt-3 text-sm text-slate-600">
-            Sie haben bereits ein Konto?{" "}
+            {t.haveAccount}{" "}
             <Link href={routes.portalLogin} className="font-semibold text-accent-ink underline underline-offset-4">
-              Jetzt anmelden
+              {t.signIn}
             </Link>{" "}
-            oder{" "}
+            {t.or}{" "}
             <Link href={routes.portalForgot} className="font-semibold text-accent-ink underline underline-offset-4">
-              Passwort zurücksetzen
+              {t.reset}
             </Link>
           </p>
         )}
         <PasswordField
           name="password"
-          label="Passwort"
+          label={t.password}
           autoComplete="new-password"
-          hint={`Mindestens ${PASSWORD_MIN_LENGTH} Zeichen – am besten eine Passphrase.`}
+          hint={t.passwordHint}
           showStrength
           value={password}
           onValueChange={setPassword}
@@ -104,20 +153,20 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
         />
         <PasswordField
           name="confirm"
-          label="Passwort wiederholen"
+          label={t.confirm}
           autoComplete="new-password"
           value={confirm}
           onValueChange={setConfirm}
           error={fieldErrors.confirm}
         />
         <CheckboxField name="privacy" required error={fieldErrors.privacy}>
-          Ich akzeptiere die{" "}
+          {t.acceptBefore}{" "}
           <Link href="/datenschutz" target="_blank" className="font-semibold text-accent-ink underline underline-offset-4">
-            Datenschutzerklärung
+            {t.privacy}
           </Link>
-          .
+          {t.acceptAfter}
         </CheckboxField>
-        <PendingButton pending={pending}>Konto erstellen</PendingButton>
+        <PendingButton pending={pending}>{t.submit}</PendingButton>
       </form>
     </div>
   );

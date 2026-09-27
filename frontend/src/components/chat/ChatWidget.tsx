@@ -16,6 +16,9 @@ import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { Socket } from "socket.io-client";
 import { routes } from "@/content/navigation";
+import { useLocale } from "@/i18n/client";
+import { defineMessages, intlLocale, type Locale } from "@/i18n/config";
+import { localizeMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/cn";
 import { connectErrorCode, createRealtimeSocket, emitAck, newClientMessageId, RealtimeError, type ConnectionState } from "@/lib/realtime";
 
@@ -25,8 +28,79 @@ type WidgetMessage = ChatMessageView & { state: "sent" | "sending" | "failed" };
 const TYPING_THROTTLE_MS = 2_000;
 const TYPING_IDLE_MS = 3_000;
 
-const time = new Intl.DateTimeFormat("de-DE", { hour: "2-digit", minute: "2-digit" });
-const dateTime = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeStyle: "short" });
+const texts = defineMessages({
+  de: {
+    region: "Live-Chat mit FA Transport",
+    title: "Live-Chat",
+    customer: (number: string, email: string) => `Kundennr. ${number} · ${email}`,
+    connecting: "Verbinde …",
+    collapse: "Chat einklappen",
+    online: "Unser Team ist online – Antwort meist in wenigen Minuten",
+    offline: "Gerade niemand online – wir antworten so schnell wie möglich",
+    empty: "Wie können wir helfen? Fragen zu Aufträgen, Terminen oder Dokumenten – schreiben Sie uns einfach.",
+    sending: "Wird gesendet",
+    failed: "Nicht gesendet – erneut versuchen",
+    read: "Gelesen",
+    delivered: "Zugestellt",
+    typing: (name: string) => `${name} schreibt …`,
+    resolved: "Dieser Chat wurde beendet",
+    deletedOn: (date: string) => ` – der Verlauf wird am ${date} automatisch gelöscht.`,
+    deletedAfter: ` – der Verlauf wird nach ${CHAT_RETENTION_HOURS} Stunden automatisch gelöscht.`,
+    newChat: "Schreiben Sie einfach, um einen neuen Chat zu beginnen.",
+    expired: "Ihre Sitzung ist abgelaufen.",
+    signInAgain: "Bitte neu anmelden",
+    message: "Nachricht",
+    placeholder: "Nachricht schreiben …",
+    send: "Senden",
+    keys: "Enter zum Senden · Umschalt + Enter für neue Zeile",
+    start: "Fragen? Chat starten",
+    unread: " ungelesene Nachrichten",
+    state: {
+      connecting: "Verbinde mit dem Chat …",
+      reconnecting: "Verbindung unterbrochen – wird automatisch wiederhergestellt …",
+      offline: "Chat derzeit nicht verfügbar.",
+      ended: "Sitzung beendet.",
+    },
+  },
+  en: {
+    region: "Live chat with FA Transport",
+    title: "Live chat",
+    customer: (number: string, email: string) => `Customer no. ${number} · ${email}`,
+    connecting: "Connecting …",
+    collapse: "Minimise chat",
+    online: "Our team is online – usually replies within minutes",
+    offline: "Nobody online right now – we'll reply as soon as possible",
+    empty: "How can we help? Questions about jobs, dates or documents – just write to us. We reply in German or English.",
+    sending: "Sending",
+    failed: "Not sent – try again",
+    read: "Read",
+    delivered: "Delivered",
+    typing: (name: string) => `${name} is typing …`,
+    resolved: "This chat has ended",
+    deletedOn: (date: string) => ` – the history will be deleted automatically on ${date}.`,
+    deletedAfter: ` – the history will be deleted automatically after ${CHAT_RETENTION_HOURS} hours.`,
+    newChat: "Just write to start a new chat.",
+    expired: "Your session has expired.",
+    signInAgain: "Please sign in again",
+    message: "Message",
+    placeholder: "Write a message …",
+    send: "Send",
+    keys: "Enter to send · Shift + Enter for a new line",
+    start: "Questions? Start chat",
+    unread: " unread messages",
+    state: {
+      connecting: "Connecting to the chat …",
+      reconnecting: "Connection lost – reconnecting automatically …",
+      offline: "Chat currently unavailable.",
+      ended: "Session ended.",
+    },
+  },
+});
+
+const formats = (locale: Locale) => ({
+  time: new Intl.DateTimeFormat(intlLocale(locale), { hour: "2-digit", minute: "2-digit" }),
+  dateTime: new Intl.DateTimeFormat(intlLocale(locale), { dateStyle: "medium", timeStyle: "short" }),
+});
 
 /**
  * Live-Chat für Kunden: schwebt unten rechts, lässt sich einklappen und verbindet sich
@@ -34,6 +108,9 @@ const dateTime = new Intl.DateTimeFormat("de-DE", { dateStyle: "medium", timeSty
  * (gleiche ID → der Server speichert sie trotzdem nur einmal).
  */
 export function ChatWidget() {
+  const locale = useLocale();
+  const t = texts[locale];
+  const { time, dateTime } = formats(locale);
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(searchParams.get("chat") === "1");
   const [connection, setConnection] = useState<ConnectionState>("connecting");
@@ -84,7 +161,7 @@ export function ChatWidget() {
       } catch (error) {
         upsertMessage({ ...message, state: "failed" });
         // Ohne Verbindung übernimmt das automatische Neusenden nach dem Reconnect.
-        if (!(error instanceof RealtimeError && error.code === "OFFLINE")) setSendError(error instanceof Error ? error.message : undefined);
+        if (!(error instanceof RealtimeError && error.code === "OFFLINE")) setSendError(error instanceof Error ? localizeMessage(error.message) : undefined);
       }
     },
     [upsertMessage],
@@ -227,16 +304,16 @@ export function ChatWidget() {
     <div className="fixed right-4 bottom-4 z-50 flex flex-col items-end gap-3 print:hidden sm:right-6 sm:bottom-6">
       {open && (
         <section
-          aria-label="Live-Chat mit FA Transport"
+          aria-label={t.region}
           onKeyDown={(event) => event.key === "Escape" && setOpen(false)}
           className="fixed inset-0 flex flex-col overflow-hidden bg-white shadow-2xl ring-1 ring-primary/10 sm:static sm:h-[min(36rem,calc(100dvh-7rem))] sm:w-[23rem] sm:rounded-3xl"
         >
           <header className="bg-primary px-5 pt-4 pb-4 text-white">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-display text-base font-bold">Live-Chat</p>
+                <p className="font-display text-base font-bold">{t.title}</p>
                 <p className="mt-0.5 truncate text-xs text-slate-300">
-                  {customer ? `Kundennr. ${customer.customerNumber} · ${customer.email}` : "Verbinde …"}
+                  {customer ? t.customer(customer.customerNumber, customer.email) : t.connecting}
                 </p>
               </div>
               <button
@@ -245,22 +322,22 @@ export function ChatWidget() {
                 className="-mr-2 rounded-lg p-2 text-slate-300 transition-colors hover:bg-white/10 hover:text-white"
               >
                 <ChevronDown aria-hidden="true" className="size-5" />
-                <span className="sr-only">Chat einklappen</span>
+                <span className="sr-only">{t.collapse}</span>
               </button>
             </div>
             <p className="mt-3 flex items-center gap-2 text-xs text-slate-300">
               <span aria-hidden="true" className={cn("size-2 rounded-full", staffOnline ? "bg-emerald-400" : "bg-slate-500")} />
-              {staffOnline ? "Unser Team ist online – Antwort meist in wenigen Minuten" : "Gerade niemand online – wir antworten so schnell wie möglich"}
+              {staffOnline ? t.online : t.offline}
             </p>
           </header>
 
-          <ConnectionBanner state={connection} />
+          <ConnectionBanner state={connection} text={t.state} />
 
           <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-surface px-4 py-4" aria-live="polite">
             {visible.length === 0 && (
               <div className="mx-auto mt-6 max-w-64 text-center text-sm text-slate-500">
                 <MessageCircle aria-hidden="true" className="mx-auto mb-3 size-8 text-slate-300" />
-                Wie können wir helfen? Fragen zu Aufträgen, Terminen oder Dokumenten – schreiben Sie uns einfach.
+                {t.empty}
               </div>
             )}
             {visible.map((message) => {
@@ -281,12 +358,12 @@ export function ChatWidget() {
                   <span className="mt-1 flex items-center gap-1 px-1 text-[0.6875rem] text-slate-400">
                     {message.state === "sending" && (
                       <>
-                        <LoaderCircle aria-hidden="true" className="size-3 animate-spin" /> Wird gesendet
+                        <LoaderCircle aria-hidden="true" className="size-3 animate-spin" /> {t.sending}
                       </>
                     )}
                     {message.state === "failed" && (
                       <button type="button" onClick={() => void deliver(message)} className="inline-flex items-center gap-1 font-semibold text-red-700">
-                        <RotateCcw aria-hidden="true" className="size-3" /> Nicht gesendet – erneut versuchen
+                        <RotateCcw aria-hidden="true" className="size-3" /> {t.failed}
                       </button>
                     )}
                     {message.state === "sent" && (
@@ -294,9 +371,9 @@ export function ChatWidget() {
                         {time.format(new Date(message.createdAt))}
                         {own &&
                           (read ? (
-                            <CheckCheck aria-label="Gelesen" className="size-3.5 text-accent-ink" />
+                            <CheckCheck aria-label={t.read} className="size-3.5 text-accent-ink" />
                           ) : (
-                            <Check aria-label="Zugestellt" className="size-3.5" />
+                            <Check aria-label={t.delivered} className="size-3.5" />
                           ))}
                       </>
                     )}
@@ -306,25 +383,22 @@ export function ChatWidget() {
             })}
             {staffTyping && (
               <p className="flex items-center gap-2 px-1 text-xs text-slate-500">
-                <TypingDots /> {staffTyping} schreibt …
+                <TypingDots /> {t.typing(staffTyping)}
               </p>
             )}
             {resolved && session && (
               <p className="rounded-2xl bg-white px-4 py-3 text-center text-xs leading-relaxed text-slate-500 ring-1 ring-primary/5">
-                Dieser Chat wurde beendet
-                {session.expiresAt
-                  ? ` – der Verlauf wird am ${dateTime.format(new Date(session.expiresAt))} automatisch gelöscht.`
-                  : ` – der Verlauf wird nach ${CHAT_RETENTION_HOURS} Stunden automatisch gelöscht.`}{" "}
-                Schreiben Sie einfach, um einen neuen Chat zu beginnen.
+                {t.resolved}
+                {session.expiresAt ? t.deletedOn(dateTime.format(new Date(session.expiresAt))) : t.deletedAfter} {t.newChat}
               </p>
             )}
           </div>
 
           {connection === "ended" ? (
             <div className="border-t border-slate-100 p-4 text-center text-sm text-slate-600">
-              Ihre Sitzung ist abgelaufen.{" "}
+              {t.expired}{" "}
               <Link href={routes.portalLogin} className="font-semibold text-accent-ink underline underline-offset-4">
-                Bitte neu anmelden
+                {t.signInAgain}
               </Link>
             </div>
           ) : (
@@ -336,7 +410,7 @@ export function ChatWidget() {
               )}
               <div className="flex items-end gap-2">
                 <label htmlFor="chat-input" className="sr-only">
-                  Nachricht
+                  {t.message}
                 </label>
                 <textarea
                   id="chat-input"
@@ -346,7 +420,7 @@ export function ChatWidget() {
                   onKeyDown={onKeyDown}
                   rows={1}
                   maxLength={CHAT_MESSAGE_MAX_LENGTH}
-                  placeholder="Nachricht schreiben …"
+                  placeholder={t.placeholder}
                   className="field-sizing-content max-h-32 min-h-11 flex-1 resize-none rounded-xl border border-slate-200 bg-surface px-3.5 py-2.5 text-sm text-primary outline-none placeholder:text-slate-400 focus:border-accent-ink focus:bg-white focus:ring-4 focus:ring-accent/20"
                 />
                 <button
@@ -355,10 +429,10 @@ export function ChatWidget() {
                   className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-accent text-primary transition-colors hover:bg-accent/90 disabled:opacity-40"
                 >
                   <Send aria-hidden="true" className="size-5" />
-                  <span className="sr-only">Senden</span>
+                  <span className="sr-only">{t.send}</span>
                 </button>
               </div>
-              <p className="mt-2 px-1 text-[0.6875rem] text-slate-400">Enter zum Senden · Umschalt + Enter für neue Zeile</p>
+              <p className="mt-2 px-1 text-[0.6875rem] text-slate-400">{t.keys}</p>
             </form>
           )}
         </section>
@@ -374,11 +448,11 @@ export function ChatWidget() {
         )}
       >
         {open ? <ChevronDown aria-hidden="true" className="size-6 text-accent" /> : <MessageCircle aria-hidden="true" className="size-6 text-accent" />}
-        <span className="text-sm">{open ? "Chat einklappen" : "Fragen? Chat starten"}</span>
+        <span className="text-sm">{open ? t.collapse : t.start}</span>
         {!open && unread > 0 && (
           <span className="absolute -top-1 -right-1 flex min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-bold text-white ring-2 ring-white">
             {unread}
-            <span className="sr-only"> ungelesene Nachrichten</span>
+            <span className="sr-only">{t.unread}</span>
           </span>
         )}
       </button>
@@ -386,16 +460,9 @@ export function ChatWidget() {
   );
 }
 
-function ConnectionBanner({ state }: { state: ConnectionState }) {
+function ConnectionBanner({ state, text: labels }: { state: ConnectionState; text: Record<Exclude<ConnectionState, "online">, string> }) {
   if (state === "online") return null;
-  const text =
-    state === "connecting"
-      ? "Verbinde mit dem Chat …"
-      : state === "reconnecting"
-        ? "Verbindung unterbrochen – wird automatisch wiederhergestellt …"
-        : state === "offline"
-          ? "Chat derzeit nicht verfügbar."
-          : "Sitzung beendet.";
+  const text = labels[state];
   return (
     <p role="status" className="flex items-center gap-2 border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs font-medium text-amber-900">
       {state === "connecting" || state === "reconnecting" ? (

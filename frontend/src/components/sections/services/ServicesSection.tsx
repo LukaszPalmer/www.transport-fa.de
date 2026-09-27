@@ -1,6 +1,7 @@
 import { sectionIds } from "@/content/navigation";
-import { servicesSection } from "@/content/home";
-import { serviceHref, services } from "@/content/services";
+import { getHome } from "@/content/home";
+import { getServices, serviceHref } from "@/content/services";
+import { getLocale } from "@/i18n/server";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -8,8 +9,10 @@ import { SmartLink } from "@/components/ui/SmartLink";
 import { OfferingGrid } from "@/components/sections/offerings/OfferingGrid";
 
 /** Startseite: Übersicht der Leistungsbereiche mit Links auf die Detailseiten. */
-export function ServicesSection() {
-  const items = services.map((service) => ({
+export async function ServicesSection() {
+  const locale = await getLocale();
+  const { servicesSection } = getHome(locale);
+  const items = getServices(locale).map((service) => ({
     icon: service.icon,
     title: service.name,
     description: service.teaser,
@@ -27,7 +30,7 @@ export function ServicesSection() {
           description={servicesSection.description}
         />
 
-        <OfferingGrid items={items} ctaLabel="Mehr erfahren" className="mt-16" />
+        <OfferingGrid items={items} ctaLabel={locale === "en" ? "Learn more" : "Mehr erfahren"} className="mt-16" />
 
         <p className="mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-slate-600">
           {servicesSection.footnote}

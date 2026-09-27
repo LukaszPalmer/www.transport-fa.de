@@ -5,6 +5,8 @@ import type { LngLat, ShipmentLive, StopView } from "@fa/shared";
 import type { Map as MapLibreMap, Marker } from "maplibre-gl";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useLocale } from "@/i18n/client";
+import { defineMessages, type Locale } from "@/i18n/config";
 import { apiRequest } from "@/lib/api/client";
 import { decodePolyline } from "@/lib/polyline";
 import { formatDateTime } from "@/lib/portal-format";
@@ -48,12 +50,42 @@ function truckMarker(): HTMLElement {
   return element;
 }
 
-function relativeTime(iso: string | undefined, now: number): string | undefined {
+const messages = defineMessages({
+  de: {
+    justNow: "gerade eben",
+    minutesAgo: (minutes: number) => `vor ${minutes} Min.`,
+    hoursAgo: (hours: number) => `vor ${hours} Std.`,
+    mapLabel: "Karte der Sendungsverfolgung",
+    mapError: "Die Karte kann in diesem Browser nicht angezeigt werden. Alle Angaben zur Sendung finden Sie unten.",
+    livePosition: "Live-Position",
+    updated: (when: string) => `Aktualisiert ${when}`,
+    updating: "Wird aktualisiert",
+    arrival: (time: string) => ` · Ankunft ca. ${time}`,
+    soon: "Der Fahrer ist unterwegs – die Position erscheint in Kürze.",
+    notYet: "Die Live-Position erscheint, sobald der Fahrer zu Ihnen unterwegs ist.",
+  },
+  en: {
+    justNow: "just now",
+    minutesAgo: (minutes: number) => `${minutes} min ago`,
+    hoursAgo: (hours: number) => `${hours} h ago`,
+    mapLabel: "Shipment tracking map",
+    mapError: "The map can't be displayed in this browser. You'll find all shipment details below.",
+    livePosition: "Live position",
+    updated: (when: string) => `Updated ${when}`,
+    updating: "Updating",
+    arrival: (time: string) => ` · Arrival approx. ${time}`,
+    soon: "The driver is on the way – the position will appear shortly.",
+    notYet: "The live position appears as soon as the driver is on the way to you.",
+  },
+});
+
+function relativeTime(iso: string | undefined, now: number, locale: Locale): string | undefined {
   if (!iso) return undefined;
+  const t = messages[locale];
   const minutes = Math.round((now - new Date(iso).getTime()) / 60_000);
-  if (minutes < 1) return "gerade eben";
-  if (minutes < 60) return `vor ${minutes} Min.`;
-  return `vor ${Math.round(minutes / 60)} Std.`;
+  if (minutes < 1) return t.justNow;
+  if (minutes < 60) return t.minutesAgo(minutes);
+  return t.hoursAgo(Math.round(minutes / 60));
 }
 
 /**
@@ -62,6 +94,8 @@ function relativeTime(iso: string | undefined, now: number): string | undefined 
  */
 export function LiveTrackingMap({ shipmentId, pickup, delivery, routePolyline, initialLive }: LiveTrackingMapProps) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = messages[locale];
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const truckRef = useRef<Marker | null>(null);
@@ -186,16 +220,16 @@ export function LiveTrackingMap({ shipmentId, pickup, delivery, routePolyline, i
     return () => clearInterval(tick);
   }, []);
 
-  const updated = relativeTime(live.positionAt, now);
+  const updated = relativeTime(live.positionAt, now, locale);
 
   return (
     <div className="relative isolate overflow-hidden rounded-3xl bg-slate-100 shadow-card ring-1 ring-primary/5">
       <style>{`@keyframes fa-ping{75%,100%{transform:scale(2);opacity:0}}`}</style>
-      <div ref={containerRef} className="h-[380px] w-full sm:h-[460px]" role="region" aria-label="Karte der Sendungsverfolgung" />
+      <div ref={containerRef} className="h-[380px] w-full sm:h-[460px]" role="region" aria-label={t.mapLabel} />
 
       {mapError && (
         <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm text-slate-600">
-          Die Karte kann in diesem Browser nicht angezeigt werden. Alle Angaben zur Sendung finden Sie unten.
+          {t.mapError}
         </div>
       )}
 
@@ -207,16 +241,16 @@ export function LiveTrackingMap({ shipmentId, pickup, delivery, routePolyline, i
                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex size-2.5 rounded-full bg-emerald-500" />
               </span>
-              Live-Position
+              {t.livePosition}
             </p>
             <p className="mt-0.5 text-xs text-slate-500">
-              {updated ? `Aktualisiert ${updated}` : "Wird aktualisiert"}
-              {live.etaAt && ` · Ankunft ca. ${formatDateTime(live.etaAt)}`}
+              {updated ? t.updated(updated) : t.updating}
+              {live.etaAt && t.arrival(formatDateTime(live.etaAt, locale))}
             </p>
           </>
         ) : (
           <p className="text-sm text-slate-600">
-            {live.trackable ? "Der Fahrer ist unterwegs – die Position erscheint in Kürze." : "Die Live-Position erscheint, sobald der Fahrer zu Ihnen unterwegs ist."}
+            {live.trackable ? t.soon : t.notYet}
           </p>
         )}
       </div>

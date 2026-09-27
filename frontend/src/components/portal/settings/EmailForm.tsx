@@ -4,17 +4,43 @@ import type { AccountSettings } from "@fa/shared";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { routes } from "@/content/navigation";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { apiRequest, googleSignInUrl } from "@/lib/api/client";
 import { ApiError, errorMessage } from "@/lib/api/errors";
 import { TextField } from "@/components/forms/fields";
 import { AuthAlert, PasswordField } from "../auth-fields";
 import { mapFieldErrors, SaveButton } from "./form-parts";
 
+const messages = defineMessages({
+  de: {
+    changedBefore: "Ihre E-Mail-Adresse lautet jetzt ",
+    changedAfter: ". Bitte bestätigen Sie sie über den Link, den wir Ihnen gerade gesendet haben – bis dahin sind Aufträge und Dokumente gesperrt.",
+    change: "E-Mail-Adresse ändern",
+    newEmail: "Neue E-Mail-Adresse",
+    currentPassword: "Aktuelles Passwort zur Bestätigung",
+    reauth: "Bitte bestätigen Sie die Änderung mit einer erneuten Google-Anmeldung – danach kommen Sie hierher zurück.",
+    confirmGoogle: "Mit Google bestätigen",
+    cancel: "Abbrechen",
+  },
+  en: {
+    changedBefore: "Your email address is now ",
+    changedAfter: ". Please confirm it via the link we have just sent you – until then, jobs and documents are locked.",
+    change: "Change email address",
+    newEmail: "New email address",
+    currentPassword: "Current password to confirm",
+    reauth: "Please confirm the change by signing in with Google again – you'll then return here.",
+    confirmGoogle: "Confirm with Google",
+    cancel: "Cancel",
+  },
+});
+
 /**
  * E-Mail-Adresse ändern: Bestätigung per Passwort (Google-Konten: frische Anmeldung),
  * danach muss die neue Adresse per Link bestätigt werden. Die alte Adresse wird informiert.
  */
 export function EmailForm({ email, hasPassword }: { email: string; hasPassword: boolean }) {
+  const t = useMessages(messages);
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [password, setPassword] = useState("");
@@ -51,8 +77,9 @@ export function EmailForm({ email, hasPassword }: { email: string; hasPassword: 
     <div className="space-y-4">
       {changedTo && (
         <AuthAlert tone="success">
-          Ihre E-Mail-Adresse lautet jetzt <strong>{changedTo}</strong>. Bitte bestätigen Sie sie über den Link, den wir Ihnen gerade
-          gesendet haben – bis dahin sind Aufträge und Dokumente gesperrt.
+          {t.changedBefore}
+          <strong>{changedTo}</strong>
+          {t.changedAfter}
         </AuthAlert>
       )}
 
@@ -64,17 +91,17 @@ export function EmailForm({ email, hasPassword }: { email: string; hasPassword: 
             onClick={() => setOpen(true)}
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-slate-50"
           >
-            E-Mail-Adresse ändern
+            {t.change}
           </button>
         </div>
       ) : (
         <form onSubmit={onSubmit} className="space-y-5">
           {error && <AuthAlert tone="error">{error}</AuthAlert>}
-          <TextField name="email" type="email" label="Neue E-Mail-Adresse" required autoComplete="email" inputMode="email" error={fieldErrors.email} />
+          <TextField name="email" type="email" label={t.newEmail} required autoComplete="email" inputMode="email" error={fieldErrors.email} />
           {hasPassword ? (
             <PasswordField
               name="currentPassword"
-              label="Aktuelles Passwort zur Bestätigung"
+              label={t.currentPassword}
               autoComplete="current-password"
               value={password}
               onValueChange={setPassword}
@@ -82,14 +109,14 @@ export function EmailForm({ email, hasPassword }: { email: string; hasPassword: 
             />
           ) : needsReauth ? (
             <AuthAlert tone="info">
-              Bitte bestätigen Sie die Änderung mit einer erneuten Google-Anmeldung – danach kommen Sie hierher zurück.{" "}
+              {t.reauth}{" "}
               <a href={googleSignInUrl(routes.portalSettings)} className="font-semibold underline underline-offset-4">
-                Mit Google bestätigen
+                {t.confirmGoogle}
               </a>
             </AuthAlert>
           ) : null}
           <div className="flex flex-wrap gap-3">
-            <SaveButton pending={pending}>E-Mail-Adresse ändern</SaveButton>
+            <SaveButton pending={pending}>{t.change}</SaveButton>
             <button
               type="button"
               onClick={() => {
@@ -99,7 +126,7 @@ export function EmailForm({ email, hasPassword }: { email: string; hasPassword: 
               }}
               className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-primary hover:bg-slate-50"
             >
-              Abbrechen
+              {t.cancel}
             </button>
           </div>
         </form>

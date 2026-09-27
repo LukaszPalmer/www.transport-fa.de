@@ -90,7 +90,7 @@ export interface HeroMediaConfig {
 /* --------------------------------------------------------------------------
    Leistungsbereiche
    -------------------------------------------------------------------------- */
-export type ServiceSlug = "umzuege" | "entruempelungen" | "haushaltsaufloesungen" | "transport-logistik";
+export type ServiceSlug = "umzuege" | "entruempelungen" | "haushaltsaufloesungen" | "transport";
 
 export interface ServiceArea {
   slug: ServiceSlug;
@@ -129,6 +129,8 @@ export interface Review {
   id: string;
   source: ReviewSource;
   author: string;
+  /** Ort laut Plattform (ohne Adresse). */
+  location?: string;
   rating: 1 | 2 | 3 | 4 | 5;
   /** ISO-Datum der Bewertung auf der Plattform. */
   date: string;

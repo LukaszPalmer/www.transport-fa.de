@@ -2,6 +2,8 @@
 
 import { Eye, EyeOff, LoaderCircle } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { cn } from "@/lib/cn";
 import { buttonClasses } from "@/components/ui/button-styles";
 import { describedBy, FieldShell, inputClasses } from "@/components/forms/fields";
@@ -28,7 +30,20 @@ function passwordScore(password: string): number {
   return score;
 }
 
-const strengthLabels = ["Zu kurz", "Schwach", "Okay", "Gut", "Stark"];
+const messages = defineMessages({
+  de: {
+    strength: ["Zu kurz", "Schwach", "Okay", "Gut", "Stark"],
+    hide: "Passwort verbergen",
+    show: "Passwort anzeigen",
+    wait: "Bitte warten …",
+  },
+  en: {
+    strength: ["Too short", "Weak", "Okay", "Good", "Strong"],
+    hide: "Hide password",
+    show: "Show password",
+    wait: "Please wait …",
+  },
+});
 const strengthColors = ["bg-red-500", "bg-orange-500", "bg-amber-400", "bg-emerald-500", "bg-emerald-600"];
 
 /** Passwortfeld mit Sichtbarkeits-Umschalter und optionaler Stärke-Anzeige. */
@@ -42,6 +57,7 @@ export function PasswordField({
   value,
   onValueChange,
 }: PasswordFieldProps) {
+  const t = useMessages(messages);
   const id = useId();
   const [visible, setVisible] = useState(false);
   const [internalValue, setInternalValue] = useState("");
@@ -69,7 +85,7 @@ export function PasswordField({
           className="absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-xl text-slate-500 hover:text-primary"
         >
           {visible ? <EyeOff aria-hidden="true" className="size-5" /> : <Eye aria-hidden="true" className="size-5" />}
-          <span className="sr-only">{visible ? "Passwort verbergen" : "Passwort anzeigen"}</span>
+          <span className="sr-only">{visible ? t.hide : t.show}</span>
         </button>
       </div>
       {showStrength && current.length > 0 && (
@@ -82,7 +98,7 @@ export function PasswordField({
               />
             ))}
           </div>
-          <span className="text-xs font-medium text-slate-600">{strengthLabels[score]}</span>
+          <span className="text-xs font-medium text-slate-600">{t.strength[score]}</span>
         </div>
       )}
     </FieldShell>
@@ -91,6 +107,7 @@ export function PasswordField({
 
 /** Absende-Button mit explizitem Ladezustand (Portal-Formulare arbeiten mit onSubmit). */
 export function PendingButton({ pending, children }: { pending: boolean; children: ReactNode }) {
+  const t = useMessages(messages);
   return (
     <button
       type="submit"
@@ -99,7 +116,7 @@ export function PendingButton({ pending, children }: { pending: boolean; childre
       className={buttonClasses({ size: "lg", className: "w-full disabled:cursor-wait disabled:opacity-80" })}
     >
       {pending && <LoaderCircle aria-hidden="true" className="size-5 animate-spin" />}
-      <span>{pending ? "Bitte warten …" : children}</span>
+      <span>{pending ? t.wait : children}</span>
     </button>
   );
 }

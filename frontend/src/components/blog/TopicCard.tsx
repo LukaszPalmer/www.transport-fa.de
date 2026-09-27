@@ -1,5 +1,6 @@
 import Image from "next/image";
 import type { BlogCategory } from "@/content/blog";
+import type { Locale } from "@/i18n/config";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { SmartLink } from "@/components/ui/SmartLink";
@@ -11,14 +12,17 @@ interface TopicCardProps {
   href?: string;
   size?: "default" | "compact";
   className?: string;
+  locale: Locale;
 }
 
 /**
  * Themenkarte mit Bildmotiv: Kategorie, Kurzbeschreibung und Status. Bild zoomt beim
  * Hover leicht, ein Akzentstreifen läuft ein. Mit href ist die ganze Karte klickbar.
  */
-export function TopicCard({ category, count, href, size = "default", className }: TopicCardProps) {
-  const status = count > 0 ? `${count} ${count === 1 ? "Beitrag" : "Beiträge"}` : "In Vorbereitung";
+export function TopicCard({ category, count, href, size = "default", className, locale }: TopicCardProps) {
+  const en = locale === "en";
+  const status =
+    count > 0 ? `${count} ${en ? (count === 1 ? "article" : "articles") : count === 1 ? "Beitrag" : "Beiträge"}` : en ? "In preparation" : "In Vorbereitung";
 
   return (
     <article
@@ -71,7 +75,7 @@ export function TopicCard({ category, count, href, size = "default", className }
       <p className="mt-2 text-sm leading-relaxed text-slate-300">{category.description}</p>
       {href && (
         <span aria-hidden="true" className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-accent">
-          {count > 0 ? "Beiträge lesen" : "Zum Blog"}
+          {count > 0 ? (en ? "Read articles" : "Beiträge lesen") : en ? "To the blog" : "Zum Blog"}
           <Icon name="arrow-up-right" className="size-4 transition-transform duration-300 ease-out-expo group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
         </span>
       )}

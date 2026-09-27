@@ -1,8 +1,11 @@
 import type { Faq, ServiceArea } from "@/types/content";
 import { blogHref, getCategory, type BlogPost } from "@/content/blog";
+import { COMPANY } from "@fa/shared";
 import { company } from "@/content/company";
+import { intlLocale, type Locale } from "@/i18n/config";
+import { reviewPlatforms } from "@/content/reviews";
 import { routes } from "@/content/navigation";
-import { getService, serviceHref, services } from "@/content/services";
+import { getService, getServices, serviceHref } from "@/content/services";
 
 /**
  * Schema.org-Daten für Rich Results (Knowledge Panel, Sitelinks, FAQ).
@@ -13,7 +16,7 @@ import { getService, serviceHref, services } from "@/content/services";
  */
 const organizationId = `${company.siteUrl}/#organization`;
 
-export function organizationJsonLd() {
+export function organizationJsonLd(locale: Locale = "de") {
   const { address, contact } = company;
 
   return {
@@ -24,9 +27,10 @@ export function organizationJsonLd() {
     alternateName: company.name,
     url: company.siteUrl,
     logo: `${company.siteUrl}/icon.svg`,
-    description: company.description,
+    description: company.descriptions[locale],
     email: contact.email,
     telephone: contact.phoneHref.replace("tel:", ""),
+    vatID: COMPANY.register.vatId.replace(/\s/g, ""),
     address: {
       "@type": "PostalAddress",
       streetAddress: address.street,
@@ -42,11 +46,14 @@ export function organizationJsonLd() {
       availableLanguage: ["de", "en"],
     },
     // Nur echte Profile – Platzhalter („folgt demnächst") gehören nicht in die Suchmaschinen-Daten.
-    sameAs: company.social.flatMap((social) => (social.href ? [social.href] : [])),
+    sameAs: [
+      ...company.social.flatMap((social) => (social.href ? [social.href] : [])),
+      ...Object.values(reviewPlatforms).flatMap((platform) => (platform.available ? [platform.profileUrl.split("?")[0]!] : [])),
+    ],
     hasOfferCatalog: {
       "@type": "OfferCatalog",
-      name: "Leistungen",
-      itemListElement: services.map((service) => ({
+      name: locale === "en" ? "Services" : "Leistungen",
+      itemListElement: getServices(locale).map((service) => ({
         "@type": "Offer",
         itemOffered: {
           "@type": "Service",
@@ -59,7 +66,7 @@ export function organizationJsonLd() {
   };
 }
 
-export function serviceJsonLd(service: ServiceArea) {
+export function serviceJsonLd(service: ServiceArea, locale: Locale = "de") {
   return {
     "@context": "https://schema.org",
     "@type": "Service",
@@ -68,7 +75,8 @@ export function serviceJsonLd(service: ServiceArea) {
     description: service.seo.description,
     url: `${company.siteUrl}${serviceHref(service.slug)}`,
     provider: { "@id": organizationId, "@type": "MovingCompany", name: company.legalName },
-    areaServed: { "@type": "Country", name: company.address.country },
+    areaServed: { "@type": "Country", name: locale === "en" ? "Germany" : company.address.country },
+    inLanguage: intlLocale(locale),
   };
 }
 
@@ -90,13 +98,13 @@ export function faqJsonLd(faqs: Faq[]) {
 
 /** Serialisiert JSON-LD sicher für <script> (verhindert </script>-Injection). */
 /** Blog-Übersicht mit allen veröffentlichten Beiträgen. */
-export function blogJsonLd(posts: BlogPost[]) {
+export function blogJsonLd(posts: BlogPost[], locale: Locale = "de") {
   return {
     "@context": "https://schema.org",
     "@type": "Blog",
-    name: `${company.name} – Blog & Ratgeber`,
+    name: locale === "en" ? `${company.name} – Blog & guides` : `${company.name} – Blog & Ratgeber`,
     url: `${company.siteUrl}${routes.blog}`,
-    inLanguage: "de-DE",
+    inLanguage: intlLocale(locale),
     publisher: { "@id": organizationId },
     blogPost: posts.map((post) => ({
       "@type": "BlogPosting",
@@ -108,9 +116,9 @@ export function blogJsonLd(posts: BlogPost[]) {
 }
 
 /** Einzelner Beitrag inkl. Brotkrumen (Startseite › Blog › Beitrag) und – falls vorhanden – FAQ. */
-export function blogPostingJsonLd(post: BlogPost) {
+export function blogPostingJsonLd(post: BlogPost, locale: Locale = "de") {
   const url = `${company.siteUrl}${blogHref(post.slug)}`;
-  const category = getCategory(post.category);
+  const category = getCategory(post.category, locale);
   return {
     "@context": "https://schema.org",
     "@graph": [
@@ -121,12 +129,12 @@ export function blogPostingJsonLd(post: BlogPost) {
         image: `${company.siteUrl}${post.cover.src}`,
         datePublished: post.publishedAt,
         dateModified: post.updatedAt ?? post.publishedAt,
-        inLanguage: "de-DE",
+        inLanguage: intlLocale(locale),
         mainEntityOfPage: url,
         articleSection: category?.name,
         keywords: post.keywords.join(", "),
         // Themenbezug zur Leistungsseite – hilft Suchmaschinen, Beitrag und Angebot zu verknüpfen.
-        about: category ? { "@type": "Service", name: getService(category.service)?.name, url: `${company.siteUrl}${serviceHref(category.service)}` } : undefined,
+        about: category ? { "@type": "Service", name: getService(category.service, locale)?.name, url: `${company.siteUrl}${serviceHref(category.service)}` } : undefined,
         author: post.author.team
           ? { "@type": "Organization", name: company.legalName, url: company.siteUrl }
           : { "@type": "Person", name: post.author.name, jobTitle: post.author.role },
@@ -136,7 +144,7 @@ export function blogPostingJsonLd(post: BlogPost) {
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Startseite", item: company.siteUrl },
+          { "@type": "ListItem", position: 1, name: locale === "en" ? "Home" : "Startseite", item: company.siteUrl },
           { "@type": "ListItem", position: 2, name: "Blog", item: `${company.siteUrl}${routes.blog}` },
           { "@type": "ListItem", position: 3, name: post.title, item: url },
         ],

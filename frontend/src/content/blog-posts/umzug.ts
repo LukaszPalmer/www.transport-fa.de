@@ -11,7 +11,7 @@ export const umzugPosts: BlogPost[] = [
     category: "umzug",
     publishedAt: "2026-09-26",
     author: editorialTeam,
-    cover: { src: "/media/umzuege/poster.jpg", alt: "Umzugsteam trägt Kartons in einen Umzugs-LKW in Düsseldorf" },
+    cover: { src: "/media/stock/umzug-team-kartons.jpg", alt: "Zwei Umzugshelfer tragen Umzugskartons durch eine helle Wohnung" },
     featured: true,
     keywords: [
       "Umzugskosten Düsseldorf",
@@ -169,7 +169,7 @@ export const umzugPosts: BlogPost[] = [
     category: "umzug",
     publishedAt: "2026-09-26",
     author: editorialTeam,
-    cover: { src: "/media/umzuege/poster.jpg", alt: "Beschriftete Umzugskartons stehen bereit für den Umzug" },
+    cover: { src: "/media/stock/umzug-kartons-beschriftet.jpg", alt: "Beschriftete Umzugskartons und Klebeband stehen bereit für den Umzug" },
     keywords: [
       "Umzugscheckliste",
       "Umzug Checkliste",

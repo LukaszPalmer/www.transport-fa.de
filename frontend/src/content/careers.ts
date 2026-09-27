@@ -1,4 +1,6 @@
 import type { CareerArea, Feature, Job, ProcessStep, Stat } from "@/types/content";
+import type { Locale } from "@/i18n/config";
+import * as careersEn from "./en/careers";
 import { heroMedia } from "./media";
 
 /**
@@ -35,7 +37,7 @@ export const careersPage = {
 };
 
 export const careerAreas: CareerArea[] = [
-  { id: "transport", label: "Transport & Logistik", icon: "truck" },
+  { id: "transport", label: "Transport", icon: "truck" },
   { id: "umzug", label: "Umzüge & Montage", icon: "sofa" },
   { id: "raeumung", label: "Entrümpelung & Haushaltsauflösung", icon: "recycle" },
 ];
@@ -105,3 +107,11 @@ export const drivingLicenses = ["B", "BE", "C1", "C1E", "C", "CE"] as const;
 
 /** Maximale Größe des Lebenslauf-Uploads (Server Action Body-Limit in next.config beachten). */
 export const MAX_CV_MB = 5;
+
+const careersDe = { careersPage, careerAreas, benefits, jobs, applicationProcess, initiativeJob };
+const careersByLocale: Record<Locale, typeof careersDe> = { de: careersDe, en: careersEn };
+
+/** Karriere-Inhalte in der gewünschten Sprache (Stellen-IDs sind in beiden Sprachen gleich). */
+export function getCareers(locale: Locale) {
+  return careersByLocale[locale];
+}

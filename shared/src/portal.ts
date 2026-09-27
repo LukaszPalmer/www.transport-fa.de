@@ -162,10 +162,12 @@ export interface ShipmentDetail extends ShipmentSummary {
 // --- Konto löschen ------------------------------------------------------------------
 
 export const ACCOUNT_DELETE_CONFIRMATION = "LÖSCHEN";
+/** Bestätigungswort in der englischen Oberfläche. */
+export const ACCOUNT_DELETE_CONFIRMATION_EN = "DELETE";
 
 export function isDeleteConfirmation(value: string): boolean {
   const normalized = value.normalize("NFC").trim().toUpperCase();
-  return normalized === ACCOUNT_DELETE_CONFIRMATION || normalized === "LOESCHEN";
+  return normalized === ACCOUNT_DELETE_CONFIRMATION || normalized === "LOESCHEN" || normalized === ACCOUNT_DELETE_CONFIRMATION_EN;
 }
 
 export const DeleteAccountInput = z.object({

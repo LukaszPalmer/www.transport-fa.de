@@ -3,6 +3,7 @@ import {
   hasPaymentStatus,
   UploadInvoiceFields,
   type AdminInvoiceRow,
+  type AdminInvoiceStats,
   type AdminShipmentInvoice,
   type InvoiceItem,
   type InvoiceType,
@@ -10,6 +11,7 @@ import {
 } from "@fa/shared";
 import mongoose, { Types, type QueryFilter } from "mongoose";
 import { AppError } from "../http/errors";
+import { berlinMonthStart, berlinYearStart } from "../lib/berlin-time";
 import { CustomerProfile, DocumentModel, Invoice, InvoiceDraft, Shipment, type IInvoice } from "../models";
 import type { PreparedUpload } from "./documents";
 
@@ -56,7 +58,8 @@ type InvoiceLike = Pick<
   | "emailedAt"
   | "emailedTo"
   | "createdAt"
->;
+> &
+  Partial<Pick<IInvoice, "archivedCustomer" | "retainUntil" | "reminders">>;
 
 /** Lädt Kunden, Aufträge und Dateinamen in je einer Abfrage und baut die Tabellenzeilen. */
 export async function toAdminInvoiceRows(invoices: InvoiceLike[]): Promise<AdminInvoiceRow[]> {
@@ -75,16 +78,21 @@ export async function toAdminInvoiceRows(invoices: InvoiceLike[]): Promise<Admin
 
   return invoices.map((invoice) => {
     const customer = customerById.get(String(invoice.customerId));
+    const archived = invoice.archivedCustomer;
     const shipment = invoice.shipmentId ? shipmentById.get(String(invoice.shipmentId)) : undefined;
     return {
       id: String(invoice._id),
       type: invoice.type,
       number: invoice.number,
-      customer: {
-        id: String(invoice.customerId),
-        customerNumber: customer?.customerNumber ?? "–",
-        name: customer ? customer.companyName || `${customer.firstName} ${customer.lastName}` : "Gelöschter Kunde",
-      },
+      customer: customer
+        ? { id: String(invoice.customerId), customerNumber: customer.customerNumber, name: customer.companyName || `${customer.firstName} ${customer.lastName}` }
+        : {
+            id: String(invoice.customerId),
+            customerNumber: archived?.customerNumber ?? "–",
+            name: archived ? archived.companyName || archived.name : "Gelöschter Kunde",
+            deleted: true,
+          },
+      retainUntil: invoice.retainUntil?.toISOString(),
       shipment: shipment ? { id: String(shipment._id), shipmentNumber: shipment.shipmentNumber } : undefined,
       netCents: invoice.netCents,
       vatCents: invoice.vatCents,
@@ -99,6 +107,8 @@ export async function toAdminInvoiceRows(invoices: InvoiceLike[]): Promise<Admin
       source: invoice.source ?? "UPLOAD", // Belege von vor der Rechnungserstellung haben kein Feld
       emailedAt: invoice.emailedAt?.toISOString(),
       emailedTo: invoice.emailedTo,
+      reminderLevel: invoice.reminders?.at(-1)?.level,
+      lastReminderAt: invoice.reminders?.at(-1)?.sentAt.toISOString(),
       createdAt: invoice.createdAt.toISOString(),
     };
   });
@@ -141,26 +151,37 @@ export async function invoicesByShipment(shipmentIds: Types.ObjectId[]): Promise
   return { invoices: byShipment, drafts: draftByShipment };
 }
 
-/** Kennzahlen über alle Rechnungen, die zum Filter passen (ohne Seitenbegrenzung). */
-export async function invoiceStats(filter: QueryFilter<IInvoice> = {}) {
+/**
+ * Kennzahlen über alle Rechnungen, die zum Filter passen (ohne Seitenbegrenzung).
+ * Einnahmen zählen nach Zahlungsdatum – auch Rechnungen von Kunden, die ihr Konto gelöscht
+ * haben, denn deren Belege bleiben für die Aufbewahrungsfrist erhalten.
+ */
+export async function invoiceStats(filter: QueryFilter<IInvoice> = {}): Promise<AdminInvoiceStats> {
   const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const [result] = await Invoice.aggregate<{
-    openCount: number;
-    openGrossCents: number;
-    overdueCount: number;
-    overdueGrossCents: number;
-    paidThisMonthGrossCents: number;
-  }>([
+  const monthStart = berlinMonthStart(now);
+  const yearStart = berlinYearStart(now);
+  const paid = { $eq: ["$paymentStatus", "PAID"] };
+  const pending = { $eq: ["$paymentStatus", "PENDING"] };
+  const overdue = { $and: [pending, { $lt: ["$dueDate", now] }] };
+  const paidSince = (start: Date) => ({ $and: [paid, { $gte: ["$paidAt", start] }] });
+  const sumIf = (condition: unknown, field: string | number) => ({ $sum: { $cond: [condition, field, 0] } });
+
+  const [result] = await Invoice.aggregate<AdminInvoiceStats>([
     { $match: { ...filter, type: "INVOICE" } },
     {
       $group: {
         _id: null,
-        openCount: { $sum: { $cond: [{ $eq: ["$paymentStatus", "PENDING"] }, 1, 0] } },
-        openGrossCents: { $sum: { $cond: [{ $eq: ["$paymentStatus", "PENDING"] }, "$grossCents", 0] } },
-        overdueCount: { $sum: { $cond: [{ $and: [{ $eq: ["$paymentStatus", "PENDING"] }, { $lt: ["$dueDate", now] }] }, 1, 0] } },
-        overdueGrossCents: { $sum: { $cond: [{ $and: [{ $eq: ["$paymentStatus", "PENDING"] }, { $lt: ["$dueDate", now] }] }, "$grossCents", 0] } },
-        paidThisMonthGrossCents: { $sum: { $cond: [{ $and: [{ $eq: ["$paymentStatus", "PAID"] }, { $gte: ["$paidAt", monthStart] }] }, "$grossCents", 0] } },
+        openCount: sumIf(pending, 1),
+        openGrossCents: sumIf(pending, "$grossCents"),
+        overdueCount: sumIf(overdue, 1),
+        overdueGrossCents: sumIf(overdue, "$grossCents"),
+        paidThisMonthGrossCents: sumIf(paidSince(monthStart), "$grossCents"),
+        paidThisMonthNetCents: sumIf(paidSince(monthStart), "$netCents"),
+        paidThisMonthCount: sumIf(paidSince(monthStart), 1),
+        paidThisYearGrossCents: sumIf(paidSince(yearStart), "$grossCents"),
+        paidThisYearNetCents: sumIf(paidSince(yearStart), "$netCents"),
+        paidTotalGrossCents: sumIf(paid, "$grossCents"),
+        paidTotalNetCents: sumIf(paid, "$netCents"),
       },
     },
   ]);
@@ -170,6 +191,12 @@ export async function invoiceStats(filter: QueryFilter<IInvoice> = {}) {
     overdueCount: result?.overdueCount ?? 0,
     overdueGrossCents: result?.overdueGrossCents ?? 0,
     paidThisMonthGrossCents: result?.paidThisMonthGrossCents ?? 0,
+    paidThisMonthNetCents: result?.paidThisMonthNetCents ?? 0,
+    paidThisMonthCount: result?.paidThisMonthCount ?? 0,
+    paidThisYearGrossCents: result?.paidThisYearGrossCents ?? 0,
+    paidThisYearNetCents: result?.paidThisYearNetCents ?? 0,
+    paidTotalGrossCents: result?.paidTotalGrossCents ?? 0,
+    paidTotalNetCents: result?.paidTotalNetCents ?? 0,
   };
 }
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { PERMISSION_INFO, PERMISSIONS, type AdminUserRow, type Permission, type StaffRole } from "@fa/shared";
-import { ChevronDown, LoaderCircle, ShieldCheck, ShieldOff, UserPlus } from "lucide-react";
+import { ChevronDown, LoaderCircle, ShieldCheck, ShieldOff, Trash2, UserPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { cn } from "@/lib/cn";
@@ -93,6 +93,7 @@ function StaffEditor({ member, self }: { member: AdminUserRow; self: boolean }) 
   const [permissions, setPermissions] = useState<Permission[]>(member.staff?.permissions ?? []);
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string }>();
+  const [deleting, setDeleting] = useState(false);
 
   const save = async (body: Record<string, unknown>, success: string) => {
     setPending(true);
@@ -155,15 +156,97 @@ function StaffEditor({ member, self }: { member: AdminUserRow; self: boolean }) 
               >
                 <ShieldCheck aria-hidden="true" className="size-4" /> {member.state === "ACTIVE" ? "Zugang sperren" : "Zugang freigeben"}
               </button>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setDeleting(true)}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+              >
+                <Trash2 aria-hidden="true" className="size-4" /> Mitarbeiter löschen
+              </button>
             </>
           )}
         </div>
+        {deleting && <DeleteStaffDialog member={member} onClose={() => setDeleting(false)} />}
       </div>
       <div>
         <p className="mb-3 text-sm font-semibold text-primary">Zugangsdaten</p>
         <CredentialsForm userId={member.id} currentEmail={member.email} self={self} />
       </div>
     </div>
+  );
+}
+
+/** Endgültig löschen: eigenes Passwort + E-Mail des Mitarbeiters zur Bestätigung. */
+function DeleteStaffDialog({ member, onClose }: { member: AdminUserRow; onClose: () => void }) {
+  const router = useRouter();
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const name = member.staff?.displayName ?? member.name;
+  const matches = confirmEmail.trim().toLowerCase() === member.email;
+
+  const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPending(true);
+    setError(undefined);
+    setFieldErrors({});
+    try {
+      await apiRequest(`/admin/users/staff/${member.id}/delete`, { body: { confirmEmail, password } });
+      onClose();
+      router.refresh();
+    } catch (deleteError) {
+      if (deleteError instanceof ApiError && deleteError.fields) setFieldErrors(deleteError.fields);
+      else setError(errorMessage(deleteError));
+      setPending(false);
+    }
+  };
+
+  return (
+    <Dialog open onClose={onClose} title={`${name} endgültig löschen?`} description="Das lässt sich nicht rückgängig machen.">
+      <form onSubmit={onSubmit} className="space-y-4">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-900">
+          <p className="font-semibold">Gelöscht werden:</p>
+          <ul className="mt-2 list-disc space-y-1 pl-5">
+            <li>Zugang, Passwort, 2FA und alle Sitzungen – die Person wird sofort abgemeldet</li>
+            <li>Mitarbeiterprofil, Rechte und Anzeigename</li>
+            <li>alle Protokolleinträge und E-Mails zu dieser Person</li>
+          </ul>
+          <p className="mt-3">
+            Unternehmensdaten bleiben erhalten, nur ohne Namen: Chat-Antworten erscheinen als „Team“, Rechnungen und Aufträge
+            verlieren den Bearbeiter. Offene Rechnungsentwürfe und Anfragen übernehmen Sie.
+          </p>
+        </div>
+        {error && <AuthAlert tone="error">{error}</AuthAlert>}
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-primary">
+            Zur Bestätigung die E-Mail eingeben: <span className="font-mono text-red-700">{member.email}</span>
+          </span>
+          <input value={confirmEmail} onChange={(event) => setConfirmEmail(event.target.value)} autoComplete="off" spellCheck={false} className={`${inputClasses} h-11`} />
+          {fieldErrors.confirmEmail && <span className="mt-1 block text-sm font-medium text-red-600">{fieldErrors.confirmEmail}</span>}
+        </label>
+        <label className="block">
+          <span className="mb-1.5 block text-sm font-semibold text-primary">Ihr eigenes Passwort</span>
+          <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" className={`${inputClasses} h-11`} />
+          {fieldErrors.password && <span className="mt-1 block text-sm font-medium text-red-600">{fieldErrors.password}</span>}
+        </label>
+        <div className="flex flex-wrap gap-3">
+          <button
+            type="submit"
+            disabled={!matches || !password || pending}
+            className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-5 py-3 text-sm font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {pending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : <Trash2 aria-hidden="true" className="size-4" />}
+            Endgültig löschen
+          </button>
+          <button type="button" onClick={onClose} disabled={pending} className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-primary hover:bg-slate-50">
+            Abbrechen
+          </button>
+        </div>
+      </form>
+    </Dialog>
   );
 }
 

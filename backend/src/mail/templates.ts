@@ -1,9 +1,22 @@
-import { COMPANY } from "@fa/shared";
-import { button, checklist, escapeHtml, heading, infoCard, linkFallback, note, paragraph, renderLayout, signature, smallText } from "./layout";
+import { COMPANY, type Locale } from "@fa/shared";
+import { button, checklist, escapeHtml, heading, infoCard, legalFooterLine, linkFallback, note, paragraph, renderLayout, signature, smallText } from "./layout";
+import {
+  accountDeletedMailEn,
+  chatReplyMailEn,
+  invoiceDeliveryMailEn,
+  invoiceIssuedMailEn,
+  passwordResetMailEn,
+  paymentReminderMailEn,
+  securityNoticeMailEn,
+  shipmentUpdateMailEn,
+  verificationMailEn,
+  welcomeMailEn,
+} from "./templates-en";
 
 /**
  * E-Mail-Vorlagen: HTML im Website-Design plus Klartext (Pflicht für gute
  * Zustellbarkeit und Barrierefreiheit). Alle Nutzereingaben werden escaped.
+ * Kunden-Mails gibt es auch auf Englisch (templates-en.ts) – gewählt über `locale` (Profilsprache).
  */
 
 export interface RenderedMail {
@@ -20,7 +33,7 @@ const PORTAL_FEATURES = [
 ];
 
 function textFooter(): string {
-  return `\n\nHerzliche Grüße\nIhr Team von ${COMPANY.name}\n\n—\n${COMPANY.legalName} · ${COMPANY.address.street} · ${COMPANY.address.postalCode} ${COMPANY.address.city}\n${COMPANY.contact.phone} · ${COMPANY.contact.email} · ${COMPANY.websiteUrl}`;
+  return `\n\nHerzliche Grüße\nIhr Team von ${COMPANY.name}\n\n—\n${COMPANY.legalName} · ${COMPANY.address.street} · ${COMPANY.address.postalCode} ${COMPANY.address.city}\n${COMPANY.contact.phone} · ${COMPANY.contact.email} · ${COMPANY.websiteUrl}\n${legalFooterLine()}`;
 }
 
 // --- Willkommen (nach Google-Registrierung bzw. nach E-Mail-Bestätigung) -----------
@@ -31,9 +44,12 @@ export interface WelcomeMailInput {
   customerNumber: string;
   signInMethod: "google" | "password";
   portalUrl: string;
+  locale?: Locale;
 }
 
-export function welcomeMail({ firstName, email, customerNumber, signInMethod, portalUrl }: WelcomeMailInput): RenderedMail {
+export function welcomeMail(input: WelcomeMailInput): RenderedMail {
+  if (input.locale === "en") return welcomeMailEn(input);
+  const { firstName, email, customerNumber, signInMethod, portalUrl } = input;
   const method = signInMethod === "google" ? "Mit Ihrem Google-Konto" : "Mit E-Mail und Passwort";
   const contactLine = `Fragen? Antworten Sie einfach auf diese E-Mail oder rufen Sie uns an: ${COMPANY.contact.phone} (${COMPANY.contact.hours}).`;
 
@@ -76,7 +92,8 @@ export function welcomeMail({ firstName, email, customerNumber, signInMethod, po
 
 // --- E-Mail-Adresse bestätigen ---------------------------------------------------------
 
-export function verificationMail(firstName: string, url: string, purpose: "register" | "change" = "register"): RenderedMail {
+export function verificationMail(firstName: string, url: string, purpose: "register" | "change" = "register", locale: Locale = "de"): RenderedMail {
+  if (locale === "en") return verificationMailEn(firstName, url, purpose);
   if (purpose === "change") {
     return {
       subject: `Bitte bestätigen Sie Ihre neue E-Mail-Adresse – ${COMPANY.name}`,
@@ -130,7 +147,8 @@ export function verificationMail(firstName: string, url: string, purpose: "regis
 
 // --- Passwort zurücksetzen ---------------------------------------------------------------
 
-export function passwordResetMail(firstName: string, url: string): RenderedMail {
+export function passwordResetMail(firstName: string, url: string, locale: Locale = "de"): RenderedMail {
+  if (locale === "en") return passwordResetMailEn(firstName, url);
   return {
     subject: `Passwort zurücksetzen – ${COMPANY.name} Kundenportal`,
     text:
@@ -166,9 +184,12 @@ export interface SecurityNoticeInput {
   newEmail?: string;
   loginUrl: string;
   account?: "customer" | "staff";
+  locale?: Locale;
 }
 
-export function securityNoticeMail({ firstName, changedBy, passwordChanged, newEmail, loginUrl, account = "customer" }: SecurityNoticeInput): RenderedMail {
+export function securityNoticeMail(input: SecurityNoticeInput): RenderedMail {
+  if (input.locale === "en" && input.account !== "staff") return securityNoticeMailEn(input);
+  const { firstName, changedBy, passwordChanged, newEmail, loginUrl, account = "customer" } = input;
   const parts = [newEmail ? ["E-Mail-Adresse", "die E-Mail-Adresse"] : undefined, passwordChanged ? ["Passwort", "das Passwort"] : undefined].filter(
     (part): part is string[] => part !== undefined,
   );
@@ -221,9 +242,12 @@ export interface ShipmentUpdateInput {
   driver?: { name: string; phone: string; plate?: string };
   url: string;
   settingsUrl: string;
+  locale?: Locale;
 }
 
-export function shipmentUpdateMail({ firstName, shipmentNumber, route, headline, message, driver, url, settingsUrl }: ShipmentUpdateInput): RenderedMail {
+export function shipmentUpdateMail(input: ShipmentUpdateInput): RenderedMail {
+  if (input.locale === "en") return shipmentUpdateMailEn(input);
+  const { firstName, shipmentNumber, route, headline, message, driver, url, settingsUrl } = input;
   const rows: Array<[string, string]> = [
     ["Auftrag", shipmentNumber],
     ["Strecke", route],
@@ -260,9 +284,12 @@ export interface InvoiceIssuedInput {
   shipmentNumber?: string;
   url: string;
   settingsUrl: string;
+  locale?: Locale;
 }
 
-export function invoiceIssuedMail({ firstName, typeLabel, number, amount, deadline, paidNote, shipmentNumber, url, settingsUrl }: InvoiceIssuedInput): RenderedMail {
+export function invoiceIssuedMail(input: InvoiceIssuedInput): RenderedMail {
+  if (input.locale === "en") return invoiceIssuedMailEn(input);
+  const { firstName, typeLabel, number, amount, deadline, paidNote, shipmentNumber, url, settingsUrl } = input;
   const rows: Array<[string, string]> = [
     [typeLabel, number],
     ["Betrag", amount],
@@ -300,9 +327,12 @@ export interface InvoiceDeliveryInput {
   shipmentNumber?: string;
   fileName: string;
   url: string;
+  locale?: Locale;
 }
 
-export function invoiceDeliveryMail({ greetingName, number, issueDate, amount, payment, shipmentNumber, fileName, url }: InvoiceDeliveryInput): RenderedMail {
+export function invoiceDeliveryMail(input: InvoiceDeliveryInput): RenderedMail {
+  if (input.locale === "en") return invoiceDeliveryMailEn(input);
+  const { greetingName, number, issueDate, amount, payment, shipmentNumber, fileName, url } = input;
   const hello = greetingName ? `Hallo ${greetingName},` : "Guten Tag,";
   const rows: Array<[string, string]> = [
     ["Rechnungsnummer", number],
@@ -346,7 +376,18 @@ export function invoiceDeliveryMail({ greetingName, number, issueDate, amount, p
 
 // --- Chat-Antwort (Kunde war offline) -------------------------------------------------------
 
-export function chatReplyMail({ firstName, staffName, preview, url, settingsUrl }: { firstName: string; staffName: string; preview: string; url: string; settingsUrl: string }): RenderedMail {
+export interface ChatReplyInput {
+  firstName: string;
+  staffName: string;
+  preview: string;
+  url: string;
+  settingsUrl: string;
+  locale?: Locale;
+}
+
+export function chatReplyMail(input: ChatReplyInput): RenderedMail {
+  if (input.locale === "en") return chatReplyMailEn(input);
+  const { firstName, staffName, preview, url, settingsUrl } = input;
   const optOut = `Diese Benachrichtigung können Sie in den Einstellungen des Kundenportals abbestellen: ${settingsUrl}`;
   return {
     subject: `Neue Antwort von ${staffName} – ${COMPANY.name}`,
@@ -371,36 +412,166 @@ export function chatReplyMail({ firstName, staffName, preview, url, settingsUrl 
 
 // --- Konto gelöscht ---------------------------------------------------------------------
 
-export function accountDeletedMail(firstName: string): RenderedMail {
+export interface AccountDeletedInput {
+  firstName: string;
+  /** Anzahl der Rechnungen/Gutschriften im Anhang. */
+  attached: number;
+  /** Belege, die nicht mehr in den Anhang passten (auf Anfrage erhältlich). */
+  omitted: number;
+  /** Anzahl aller aufbewahrten Belege (inkl. Angebote). */
+  retained: number;
+  locale?: Locale;
+}
+
+export function accountDeletedMail(input: AccountDeletedInput): RenderedMail {
+  if (input.locale === "en") return accountDeletedMailEn(input);
+  const { firstName, attached, omitted, retained } = input;
   const greeting = firstName ? `Hallo ${firstName},` : "Guten Tag,";
+  const deletedText = `wie gewünscht haben wir Ihr Kundenkonto bei ${COMPANY.name} gelöscht – mit Ihrer Anmeldung, allen Aufträgen, Dokumenten und Nachrichten.`;
+  const invoiceText =
+    attached > 0
+      ? `Damit Ihnen nichts fehlt, finden Sie ${attached === 1 ? "Ihre Rechnung" : `Ihre ${attached} Rechnungen`} als PDF im Anhang dieser E-Mail.${omitted > 0 ? ` ${omitted} weitere senden wir Ihnen auf Anfrage gern zu.` : ""}`
+      : "";
+  const retentionText =
+    retained > 0
+      ? `Ihre Rechnungen und Belege müssen wir gesetzlich aufbewahren (bis zu 8 Jahre, § 147 AO). Sie sind im Portal nicht mehr sichtbar und werden nach Ablauf der Frist automatisch gelöscht. Eine Kopie erhalten Sie jederzeit unter ${COMPANY.contact.email}.`
+      : "";
+  const warning = `Falls Sie die Löschung nicht veranlasst haben, melden Sie sich bitte umgehend: ${COMPANY.contact.phone}.`;
+
   return {
     subject: `Ihr Kundenkonto wurde gelöscht – ${COMPANY.name}`,
-    text:
-      `${greeting}
-
-wie gewünscht haben wir Ihr Kundenkonto bei ${COMPANY.name} gelöscht – mit allen Aufträgen, Dokumenten, Nachrichten und Anmeldedaten. ` +
-      `Gesetzlich aufbewahrungspflichtige Belege (z. B. Rechnungen) liegen ausschließlich in unserer Buchhaltung.
-
-` +
-      `Falls Sie das nicht veranlasst haben, melden Sie sich bitte umgehend bei uns: ${COMPANY.contact.phone}.` +
-      textFooter(),
+    text: [greeting, deletedText, invoiceText, retentionText, warning].filter(Boolean).join("\n\n") + textFooter(),
     html: renderLayout({
-      preheader: "Ihr Kundenkonto und alle zugehörigen Daten wurden gelöscht.",
+      preheader: attached > 0 ? "Ihr Konto ist gelöscht – Ihre Rechnungen finden Sie im Anhang." : "Ihr Kundenkonto wurde gelöscht.",
       eyebrow: "Konto gelöscht",
       title: "Schade, dass Sie gehen",
-      intro: "Ihr Kundenkonto und alle zugehörigen Daten wurden vollständig gelöscht.",
+      intro: "Ihr Kundenkonto wurde gelöscht.",
       body: [
         paragraph(greeting),
-        paragraph(
-          `wie gewünscht haben wir Ihr Kundenkonto bei ${COMPANY.name} gelöscht – mit allen Aufträgen, Dokumenten, Nachrichten und Anmeldedaten.`,
-        ),
+        paragraph(deletedText),
+        ...(invoiceText ? [paragraph(invoiceText)] : []),
         paragraph("Sie sind uns jederzeit wieder willkommen – ein neues Konto ist in einer Minute angelegt."),
-        note(
-          `Gesetzlich aufbewahrungspflichtige Belege (z. B. Rechnungen) liegen ausschließlich in unserer Buchhaltung. Falls Sie die Löschung nicht veranlasst haben, melden Sie sich bitte umgehend: ${COMPANY.contact.phone}.`,
-        ),
+        ...(retentionText ? [note(retentionText)] : []),
+        note(warning),
         signature(),
       ],
       reason: `Sie erhalten diese E-Mail als Bestätigung der Löschung Ihres Kundenkontos bei ${COMPANY.name}.`,
+    }),
+  };
+}
+
+// --- Belegpaket an die Steuerberatung ------------------------------------------------------
+
+export interface AccountingExportMailInput {
+  accountantName?: string;
+  period: string;
+  invoiceCount: number;
+  creditNoteCount: number;
+  grossTotal: string;
+  includesDatev: boolean;
+  fileName: string;
+  message?: string;
+  senderName: string;
+}
+
+export function accountingExportMail(input: AccountingExportMailInput): RenderedMail {
+  const hello = input.accountantName ? `Guten Tag ${input.accountantName},` : "Guten Tag,";
+  const intro = `anbei erhalten Sie die Ausgangsbelege von ${COMPANY.legalName} für den Zeitraum ${input.period}.`;
+  const contents = [
+    `${input.invoiceCount} ${input.invoiceCount === 1 ? "Rechnung" : "Rechnungen"} und ${input.creditNoteCount} ${input.creditNoteCount === 1 ? "Gutschrift" : "Gutschriften"} als PDF (E-Rechnungen im ZUGFeRD-Format, zusätzlich als XRechnung-XML)`,
+    input.includesDatev ? "DATEV-Buchungsstapel (EXTF 700) – nicht festgeschrieben" : "Kein DATEV-Buchungsstapel (Berater-/Mandantennummer fehlt)",
+    "Rechnungsausgangsbuch und Debitorenliste als CSV",
+    "Hinweise.txt mit Summen je Steuersatz und offenen Punkten",
+  ];
+  const rows: Array<[string, string]> = [
+    ["Zeitraum", input.period],
+    ["Belege", `${input.invoiceCount + input.creditNoteCount}`],
+    ["Umsatz brutto", input.grossTotal],
+    ["Anhang", input.fileName],
+  ];
+  return {
+    subject: `Belegpaket ${input.period} – ${COMPANY.legalName}`,
+    text:
+      `${hello}\n\n${intro}\n\nInhalt:\n${contents.map((item) => `- ${item}`).join("\n")}\n\n` +
+      (input.message ? `Nachricht von ${input.senderName}:\n${input.message}\n\n` : "") +
+      `Bei Rückfragen antworten Sie einfach auf diese E-Mail.` +
+      textFooter(),
+    html: renderLayout({
+      preheader: `Ausgangsbelege ${input.period} mit DATEV-Export`,
+      eyebrow: "Buchhaltung",
+      title: `Belegpaket ${input.period}`,
+      intro: "Rechnungen, Gutschriften und DATEV-Export im Anhang.",
+      body: [
+        paragraph(hello),
+        paragraph(intro),
+        infoCard(rows),
+        heading("Inhalt des Pakets"),
+        checklist(contents),
+        ...(input.message ? [heading(`Nachricht von ${input.senderName}`), note(input.message)] : []),
+        paragraph("Bei Rückfragen antworten Sie einfach auf diese E-Mail."),
+        signature(),
+      ],
+      reason: `Sie erhalten diese E-Mail, weil ${COMPANY.name} Ihnen Buchhaltungsunterlagen übermittelt.`,
+    }),
+  };
+}
+
+// --- Zahlungserinnerung und Mahnung ------------------------------------------------------------
+
+export interface PaymentReminderMailInput {
+  level: 1 | 2 | 3;
+  greetingName: string;
+  number: string;
+  issueDate: string;
+  dueDate: string;
+  amount: string;
+  iban: string;
+  accountHolder: string;
+  newDueDate: string;
+  url?: string;
+  locale?: Locale;
+}
+
+const REMINDER_TITLE = { 1: "Zahlungserinnerung", 2: "1. Mahnung", 3: "2. Mahnung" } as const;
+
+export function paymentReminderMail(input: PaymentReminderMailInput): RenderedMail {
+  if (input.locale === "en") return paymentReminderMailEn(input);
+  const title = REMINDER_TITLE[input.level];
+  const hello = input.greetingName ? `Hallo ${input.greetingName},` : "Guten Tag,";
+  const message =
+    input.level === 1
+      ? `sicher ist es Ihrer Aufmerksamkeit entgangen: Für unsere Rechnung ${input.number} vom ${input.issueDate} konnten wir bis zum ${input.dueDate} noch keinen Zahlungseingang feststellen.`
+      : `leider ist unsere Rechnung ${input.number} vom ${input.issueDate} trotz Fälligkeit am ${input.dueDate}${input.level === 3 ? " und unserer bisherigen Mahnung" : " und unserer Zahlungserinnerung"} weiterhin offen.`;
+  const request = `Bitte überweisen Sie ${input.amount} bis zum ${input.newDueDate} an ${input.accountHolder} (IBAN ${input.iban}), Verwendungszweck ${input.number}.`;
+  const closing =
+    input.level === 3
+      ? "Sollte die Zahlung bis dahin nicht eingehen, behalten wir uns weitere Schritte vor. Haben Sie den Betrag bereits überwiesen, betrachten Sie dieses Schreiben bitte als gegenstandslos."
+      : "Haben Sie den Betrag bereits überwiesen, betrachten Sie diese E-Mail bitte als gegenstandslos. Bei Fragen sind wir gern für Sie da.";
+  const rows: Array<[string, string]> = [
+    ["Rechnungsnummer", input.number],
+    ["Rechnungsdatum", input.issueDate],
+    ["Fällig seit", input.dueDate],
+    ["Offener Betrag", input.amount],
+    ["Bitte zahlen bis", input.newDueDate],
+  ];
+  return {
+    subject: `${title}: Rechnung ${input.number} – ${COMPANY.name}`,
+    text: `${hello}\n\n${message}\n\n${rows.map(([label, value]) => `${label}: ${value}`).join("\n")}\n\n${request}\n\n${closing}` + (input.url ? `\n\nRechnung im Kundenportal: ${input.url}` : "") + textFooter(),
+    html: renderLayout({
+      preheader: `${title} zu Rechnung ${input.number} über ${input.amount}`,
+      eyebrow: title,
+      title: input.level === 1 ? "Kleine Erinnerung" : title,
+      intro: `Rechnung ${input.number} ist noch offen.`,
+      body: [
+        paragraph(hello),
+        paragraph(message),
+        infoCard(rows),
+        paragraph(request),
+        ...(input.url ? [button("Rechnung ansehen", input.url)] : []),
+        note(closing),
+        signature(),
+      ],
+      reason: `Sie erhalten diese E-Mail, weil eine Rechnung von ${COMPANY.name} an Sie noch offen ist.`,
     }),
   };
 }

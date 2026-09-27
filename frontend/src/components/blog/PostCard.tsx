@@ -1,5 +1,7 @@
 import Image from "next/image";
-import { blogHref, formatPostDate, getCategory, readingMinutes, type BlogPost } from "@/content/blog";
+import type { BlogCategory, BlogPost } from "@/content/blog";
+import { blogHref, formatPostDate, readingMinutes } from "@/content/blog-utils";
+import type { Locale } from "@/i18n/config";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { SmartLink } from "@/components/ui/SmartLink";
@@ -8,9 +10,22 @@ import { SmartLink } from "@/components/ui/SmartLink";
  * Beitragskarte. „featured" = großes Querformat für den Aufmacher der Übersicht.
  * Die ganze Karte ist klickbar (Stretched Link), bleibt aber ein einzelner Link.
  */
-export function PostCard({ post, variant = "default", className }: { post: BlogPost; variant?: "default" | "featured"; className?: string }) {
-  const category = getCategory(post.category);
+export function PostCard({
+  post,
+  category,
+  locale,
+  variant = "default",
+  className,
+}: {
+  post: BlogPost;
+  /** Kategorie in der Sprache der Seite (Name und Icon für das Label). */
+  category?: Pick<BlogCategory, "name" | "icon">;
+  locale: Locale;
+  variant?: "default" | "featured";
+  className?: string;
+}) {
   const featured = variant === "featured";
+  const en = locale === "en";
 
   return (
     <article
@@ -39,9 +54,9 @@ export function PostCard({ post, variant = "default", className }: { post: BlogP
 
       <div className={cn("flex flex-1 flex-col", featured ? "p-7 sm:p-10 lg:justify-center" : "p-6 sm:p-7")}>
         <p className="flex items-center gap-2 text-xs font-medium text-slate-500">
-          <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt)}</time>
+          <time dateTime={post.publishedAt}>{formatPostDate(post.publishedAt, locale)}</time>
           <span aria-hidden="true">·</span>
-          <span>{readingMinutes(post)} Min. Lesezeit</span>
+          <span>{en ? `${readingMinutes(post)} min read` : `${readingMinutes(post)} Min. Lesezeit`}</span>
         </p>
         <h3 className={cn("mt-3 font-bold text-primary", featured ? "text-2xl leading-tight sm:text-3xl" : "text-lg leading-snug")}>
           <SmartLink href={blogHref(post.slug)} className="after:absolute after:inset-0">
@@ -50,7 +65,7 @@ export function PostCard({ post, variant = "default", className }: { post: BlogP
         </h3>
         <p className={cn("mt-3 leading-relaxed text-slate-600", featured ? "text-base sm:text-lg" : "line-clamp-3 text-[0.9375rem]")}>{post.excerpt}</p>
         <span aria-hidden="true" className="mt-auto inline-flex items-center gap-1.5 pt-6 text-sm font-semibold text-accent-ink">
-          Weiterlesen
+          {en ? "Read more" : "Weiterlesen"}
           <Icon name="arrow-right" className="size-4 transition-transform duration-300 ease-out-expo group-hover:translate-x-1" />
         </span>
       </div>

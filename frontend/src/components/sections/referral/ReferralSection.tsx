@@ -1,6 +1,8 @@
 import { company } from "@/content/company";
 import { sectionIds } from "@/content/navigation";
-import { referralProgram } from "@/content/referral";
+import { getReferralProgram } from "@/content/referral";
+import type { Locale } from "@/i18n/config";
+import { getLocale } from "@/i18n/server";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
@@ -11,8 +13,10 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
  * Startseite: Empfehlungsprogramm – Kunden vermitteln, Provision bei Auftrag.
  * Links Botschaft und Zielgruppen, rechts die Provisionskarte, darunter der Ablauf in drei Schritten.
  */
-export function ReferralSection() {
-  const program = referralProgram;
+export async function ReferralSection() {
+  const locale = await getLocale();
+  const program = getReferralProgram(locale);
+  const en = locale === "en";
 
   return (
     <section id={sectionIds.referral} aria-labelledby="referral-title" className="defer-render relative isolate overflow-hidden bg-primary py-24 lg:py-32">
@@ -41,7 +45,7 @@ export function ReferralSection() {
               description={program.description}
             />
 
-            <p className="mt-10 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase">Ideal für</p>
+            <p className="mt-10 text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase">{en ? "Ideal for" : "Ideal für"}</p>
             <ul className="mt-4 flex flex-wrap gap-2.5">
               {program.audiences.map((audience) => (
                 <li key={audience} className="glass inline-flex items-center gap-2 rounded-full px-3.5 py-1.5 text-sm font-medium text-slate-200">
@@ -53,13 +57,13 @@ export function ReferralSection() {
           </div>
 
           <div className="lg:col-span-5 xl:col-span-5 xl:col-start-8">
-            <CommissionCard />
+            <CommissionCard locale={locale} />
           </div>
         </div>
 
         <div className="relative mt-20 lg:mt-28">
           <div aria-hidden="true" className="absolute top-10 right-[16.66%] left-[16.66%] hidden h-px bg-linear-to-r from-accent/10 via-accent/60 to-accent/10 md:block" />
-          <ol className="relative grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8" aria-label="So funktioniert es">
+          <ol className="relative grid grid-cols-1 gap-12 md:grid-cols-3 md:gap-8" aria-label={en ? "How it works" : "So funktioniert es"}>
             {program.steps.map((step, index) => (
               <li key={step.title} className="relative flex flex-col items-center text-center">
                 <span className="relative flex size-20 items-center justify-center rounded-full bg-primary ring-1 ring-white/15">
@@ -82,8 +86,9 @@ export function ReferralSection() {
 }
 
 /** Provisionskarte: „Verhandelbar" als Kernaussage, Vorteile, Handlungsaufforderung. */
-function CommissionCard() {
-  const { card, cta } = referralProgram;
+function CommissionCard({ locale }: { locale: Locale }) {
+  const { card, cta } = getReferralProgram(locale);
+  const en = locale === "en";
   const { contact } = company;
 
   return (
@@ -96,8 +101,8 @@ function CommissionCard() {
           <Icon name="handshake" className="size-5" />
         </span>
         <span className="leading-tight">
-          <span className="block text-xs font-bold text-white">Empfehlung erfolgreich</span>
-          <span className="block text-[0.6875rem] text-slate-300">Auftrag erteilt · Provision folgt</span>
+          <span className="block text-xs font-bold text-white">{en ? "Referral successful" : "Empfehlung erfolgreich"}</span>
+          <span className="block text-[0.6875rem] text-slate-300">{en ? "Job confirmed · commission follows" : "Auftrag erteilt · Provision folgt"}</span>
         </span>
       </div>
 
@@ -108,7 +113,7 @@ function CommissionCard() {
           <p className="text-xs font-semibold tracking-[0.16em] text-accent uppercase">{card.label}</p>
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/15 px-2.5 py-1 text-[0.6875rem] font-semibold text-emerald-300">
             <span aria-hidden="true" className="size-1.5 rounded-full bg-emerald-400" />
-            Bei erteiltem Auftrag
+            {en ? "When the job is confirmed" : "Bei erteiltem Auftrag"}
           </span>
         </div>
 
@@ -142,7 +147,7 @@ function CommissionCard() {
           {cta.label}
         </ButtonLink>
         <p className="mt-4 text-center text-sm text-slate-400">
-          Lieber persönlich?{" "}
+          {en ? "Prefer to talk?" : "Lieber persönlich?"}{" "}
           <a href={contact.phoneHref} className="font-semibold text-white underline-offset-4 hover:underline">
             {contact.phone}
           </a>

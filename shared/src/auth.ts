@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { CustomerType, Role } from "./domain";
+import { LOCALES, type CustomerType, type Role } from "./domain";
 
 /**
  * Anmeldung & Konto – Eingaben (Zod, identisch im Browser und in der API)
@@ -56,6 +56,8 @@ export const RegisterInput = z.object({
   email,
   password: newPassword,
   acceptPrivacy: z.literal(true, { error: "Bitte stimmen Sie der Datenschutzerklärung zu." }),
+  /** Sprache der Website bei der Registrierung – für E-Mails an den Kunden. */
+  locale: z.enum(LOCALES).optional(),
 });
 export type RegisterInput = z.infer<typeof RegisterInput>;
 

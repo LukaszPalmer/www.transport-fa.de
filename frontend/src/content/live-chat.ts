@@ -1,4 +1,6 @@
 import type { Feature } from "@/types/content";
+import type { Locale } from "@/i18n/config";
+import { liveChat as liveChatEn } from "./en/live-chat";
 
 /** Live-Chat im Kundenportal – Inhalte der Marketing-Sektion auf der Startseite. */
 export const liveChat = {
@@ -19,6 +21,10 @@ export const liveChat = {
       { from: "customer", text: "Hallo! Kommt der LKW morgen wie geplant um 8 Uhr?", time: "09:41" },
       { from: "staff", text: "Guten Morgen! Ja – Fahrer Marco ist eingeplant. Ab Abfahrt sehen Sie ihn live im Tracking.", time: "09:42" },
       { from: "customer", text: "Super, danke! Kann er auch die Kartons aus dem Keller mitnehmen?", time: "09:43" },
-    ] as const,
+    ] as Array<{ from: "customer" | "staff"; text: string; time: string }>,
   },
 };
+
+export function getLiveChat(locale: Locale): typeof liveChat {
+  return locale === "en" ? liveChatEn : liveChat;
+}

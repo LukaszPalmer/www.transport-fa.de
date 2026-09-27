@@ -11,7 +11,7 @@ export const entruempelungPosts: BlogPost[] = [
     category: "entruempelung",
     publishedAt: "2026-09-26",
     author: editorialTeam,
-    cover: { src: "/media/entruempelungen/poster.jpg", alt: "Entrümpelungsteam räumt einen Keller in Düsseldorf besenrein" },
+    cover: { src: "/media/stock/entruempelung-besenrein.jpg", alt: "Leere, besenrein übergebene Wohnung nach einer Entrümpelung" },
     keywords: [
       "Entrümpelung Düsseldorf",
       "Entrümpelung Kosten",
@@ -154,7 +154,7 @@ export const entruempelungPosts: BlogPost[] = [
     category: "entruempelung",
     publishedAt: "2026-09-26",
     author: editorialTeam,
-    cover: { src: "/media/entruempelungen/poster.jpg", alt: "Sortierte Gegenstände beim Entrümpeln einer Wohnung" },
+    cover: { src: "/media/stock/entruempelung-sortieren.jpg", alt: "Beim Entrümpeln wird Kleidung in Kartons zum Behalten und Spenden sortiert" },
     keywords: [
       "Wohnung entrümpeln",
       "Entrümpeln Checkliste",

@@ -1,4 +1,4 @@
-import type { CustomerSummary } from "@fa/shared";
+import type { CustomerSummary, Locale } from "@fa/shared";
 import type { ClientSession, Types } from "mongoose";
 import { CustomerProfile, nextSequence, type ICustomerProfile } from "../models";
 
@@ -9,6 +9,8 @@ interface NewCustomer {
   email: string;
   firstName: string;
   lastName: string;
+  /** Sprache der Website bei der Registrierung – bestimmt die Sprache der E-Mails. */
+  locale?: Locale;
 }
 
 /** Legt das Kundenprofil mit fortlaufender Kundennummer an (K-10001, K-10002, …). */
@@ -21,6 +23,7 @@ export async function createCustomerProfile(input: NewCustomer, session?: Client
         customerNumber,
         firstName: input.firstName,
         lastName: input.lastName,
+        locale: input.locale ?? "de",
         searchText: buildSearchText({ customerNumber, firstName: input.firstName, lastName: input.lastName }, input.email),
       },
     ],

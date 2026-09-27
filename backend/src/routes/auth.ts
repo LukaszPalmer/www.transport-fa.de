@@ -6,6 +6,7 @@ import {
   ResetPasswordInput,
   VerifyEmailInput,
   type AuthProvidersResponse,
+  type Locale,
   type Role,
 } from "@fa/shared";
 import { Router, type Request, type Response } from "express";
@@ -19,6 +20,7 @@ import { createSession, revokeAllSessions, revokeSession } from "../auth/session
 import { env } from "../config/env";
 import { AppError, emailTakenError } from "../http/errors";
 import { audit } from "../lib/audit";
+import { customerLocaleOf, requestLocale } from "../lib/locale";
 import { logger } from "../lib/logger";
 import { sendMail } from "../mail/mailer";
 import { passwordResetMail, verificationMail, welcomeMail } from "../mail/templates";
@@ -63,7 +65,8 @@ async function startSession(req: Request, res: Response, user: Pick<IUser, "_id"
 
 async function sendVerificationMail(user: Pick<IUser, "_id" | "email" | "name">, customerId?: Types.ObjectId) {
   const token = await issueAuthToken(user._id, "EMAIL_VERIFICATION");
-  const mail = verificationMail(user.name.split(" ")[0] || user.name, frontendUrl(`/kundenportal/email-bestaetigen?token=${token}`));
+  const locale = await customerLocaleOf(user._id);
+  const mail = verificationMail(user.name.split(" ")[0] || user.name, frontendUrl(`/kundenportal/email-bestaetigen?token=${token}`), "register", locale);
   await sendMail({ type: "VERIFICATION", to: user.email, userId: user._id, customerId, ...mail });
 }
 
@@ -79,6 +82,7 @@ function sendWelcomeMail(user: Pick<IUser, "_id" | "email">, signInMethod: "goog
         customerNumber: profile.customerNumber,
         signInMethod,
         portalUrl: frontendUrl("/kundenportal"),
+        locale: profile.locale,
       });
       await sendMail({ type: "WELCOME", to: user.email, userId: user._id, customerId: profile._id, ...mail });
     })
@@ -113,7 +117,7 @@ authRouter.post("/register", async (req, res) => {
     );
     if (!created) throw new Error("Nutzer konnte nicht angelegt werden");
     const customer = await createCustomerProfile(
-      { userId: created._id, email: input.email, firstName: input.firstName, lastName: input.lastName },
+      { userId: created._id, email: input.email, firstName: input.firstName, lastName: input.lastName, locale: input.locale ?? requestLocale(req) },
       session,
     );
     return { user: created, profile: customer };
@@ -240,7 +244,8 @@ authRouter.post("/forgot-password", async (req, res) => {
   const user = await User.findOne({ email, state: "ACTIVE", role: { $ne: "DRIVER" } }).lean();
   if (user) {
     const token = await issueAuthToken(user._id, "PASSWORD_RESET");
-    const mail = passwordResetMail(user.name.split(" ")[0] || user.name, frontendUrl(`/kundenportal/passwort-zuruecksetzen?token=${token}`));
+    const locale = user.role === "CUSTOMER" ? await customerLocaleOf(user._id) : "de";
+    const mail = passwordResetMail(user.name.split(" ")[0] || user.name, frontendUrl(`/kundenportal/passwort-zuruecksetzen?token=${token}`), locale);
     await sendMail({ type: "PASSWORD_RESET", to: user.email, userId: user._id, ...mail });
     audit(req, "auth.password_reset_requested", { actorId: user._id, targetType: "User", targetId: user._id });
   }
@@ -331,7 +336,7 @@ authRouter.get("/google/callback", async (req, res) => {
     return;
   }
 
-  const { user, created } = await findOrCreateGoogleUser(profile);
+  const { user, created } = await findOrCreateGoogleUser(profile, requestLocale(req));
   if (user.state !== "ACTIVE" || user.role === "DRIVER") {
     fail("disabled");
     return;
@@ -351,7 +356,7 @@ authRouter.get("/google/callback", async (req, res) => {
  *    Google hat die Adresse bestätigt, damit gilt sie auch bei uns als bestätigt.
  * 3. Sonst neues Kundenkonto samt Kundenprofil anlegen.
  */
-async function findOrCreateGoogleUser(profile: GoogleProfile) {
+async function findOrCreateGoogleUser(profile: GoogleProfile, locale: Locale) {
   const byGoogle = await User.findOne({ googleSub: profile.sub });
   if (byGoogle) return { user: byGoogle, created: false };
 
@@ -379,7 +384,7 @@ async function findOrCreateGoogleUser(profile: GoogleProfile) {
     );
     if (!created) throw new Error("Nutzer konnte nicht angelegt werden");
     await createCustomerProfile(
-      { userId: created._id, email: profile.email, firstName: profile.firstName, lastName: profile.lastName },
+      { userId: created._id, email: profile.email, firstName: profile.firstName, lastName: profile.lastName, locale },
       session,
     );
     return created;

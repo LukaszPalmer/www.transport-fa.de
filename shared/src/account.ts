@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { EmailSchema, NewPasswordSchema, PhoneSchema, personName } from "./auth";
-import { NOTIFICATION_TOPICS, type NotificationPreferences } from "./domain";
+import { LOCALES, NOTIFICATION_TOPICS, type Locale, type NotificationPreferences } from "./domain";
 
 /** Kunden-Einstellungen: Profil, Zugangsdaten, Benachrichtigungen. */
 
@@ -38,6 +38,10 @@ export const NotificationPreferencesInput = z.object(
   Object.fromEntries(NOTIFICATION_TOPICS.map((topic) => [topic, z.boolean()])) as Record<(typeof NOTIFICATION_TOPICS)[number], z.ZodBoolean>,
 );
 
+/** Sprache des Kundenkontos – bestimmt die Sprache der E-Mails (vom Sprachumschalter gesetzt). */
+export const UpdateLocaleInput = z.object({ locale: z.enum(LOCALES) });
+export type UpdateLocaleInput = z.infer<typeof UpdateLocaleInput>;
+
 export interface AccountSettings {
   profile: {
     firstName: string;
@@ -48,6 +52,7 @@ export interface AccountSettings {
     customerNumber: string;
   };
   notifications: NotificationPreferences;
+  locale: Locale;
   hasPassword: boolean;
   googleLinked: boolean;
   emailVerified: boolean;

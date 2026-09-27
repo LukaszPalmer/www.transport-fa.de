@@ -3,23 +3,31 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { routes } from "@/content/navigation";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { cn } from "@/lib/cn";
 import { Icon, type IconName } from "@/components/ui/Icon";
 
-const items: Array<{ label: string; href: string; icon: IconName }> = [
-  { label: "Übersicht", href: routes.portal, icon: "house" },
-  { label: "Tracking", href: routes.portalTracking, icon: "map-pin" },
-  { label: "Rechnungen", href: routes.portalInvoices, icon: "coins" },
-  { label: "Dokumente", href: routes.portalDocuments, icon: "file-text" },
-  { label: "Einstellungen", href: routes.portalSettings, icon: "settings" },
+const messages = defineMessages({
+  de: { nav: "Kundenportal", overview: "Übersicht", tracking: "Tracking", invoices: "Rechnungen", documents: "Dokumente", settings: "Einstellungen" },
+  en: { nav: "Customer portal", overview: "Overview", tracking: "Tracking", invoices: "Invoices", documents: "Documents", settings: "Settings" },
+});
+
+const items: Array<{ key: "overview" | "tracking" | "invoices" | "documents" | "settings"; href: string; icon: IconName }> = [
+  { key: "overview", href: routes.portal, icon: "house" },
+  { key: "tracking", href: routes.portalTracking, icon: "map-pin" },
+  { key: "invoices", href: routes.portalInvoices, icon: "coins" },
+  { key: "documents", href: routes.portalDocuments, icon: "file-text" },
+  { key: "settings", href: routes.portalSettings, icon: "settings" },
 ];
 
 /** Bereichs-Navigation des Kundenportals. */
 export function PortalNav() {
   const pathname = usePathname();
+  const t = useMessages(messages);
 
   return (
-    <nav aria-label="Kundenportal" className="-mb-px flex gap-1 overflow-x-auto">
+    <nav aria-label={t.nav} className="-mb-px flex gap-1 overflow-x-auto">
       {items.map((item) => {
         const active = item.href === routes.portal ? pathname === item.href : pathname.startsWith(item.href);
         return (
@@ -33,7 +41,7 @@ export function PortalNav() {
             )}
           >
             <Icon name={item.icon} className="size-4" />
-            {item.label}
+            {t[item.key]}
           </Link>
         );
       })}

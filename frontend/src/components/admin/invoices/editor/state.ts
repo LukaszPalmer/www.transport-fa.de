@@ -104,7 +104,7 @@ const SERVICE_LINE: Record<ServiceSlug, (from: string, to: string) => string> = 
   umzuege: (from, to) => (from === to ? `Umzug innerhalb ${from}` : `Umzug ${from} → ${to}`),
   entruempelungen: (from) => `Entrümpelung in ${from}`,
   haushaltsaufloesungen: (from) => `Haushaltsauflösung in ${from}`,
-  "transport-logistik": (from, to) => `Transport ${from} → ${to}`,
+  transport: (from, to) => `Transport ${from} → ${to}`,
 };
 
 /** Auftrag gewählt: Leistungsdatum, Referenz und – bei leerer Rechnung – die erste Position vorbelegen. */

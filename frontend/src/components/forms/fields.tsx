@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, type ReactNode } from "react";
+import { useLocale } from "@/i18n/client";
 import { cn } from "@/lib/cn";
 
 /**
@@ -39,7 +40,7 @@ export function FieldShell({ id, label, required, hint, error, className, childr
             *
           </span>
         ) : (
-          <span className="ml-1.5 font-normal text-slate-500">(optional)</span>
+          <OptionalHint />
         )}
       </label>
       {children}
@@ -55,6 +56,10 @@ export function FieldShell({ id, label, required, hint, error, className, childr
       )}
     </div>
   );
+}
+
+function OptionalHint() {
+  return <span className="ml-1.5 font-normal text-slate-500">(optional)</span>;
 }
 
 /** aria-Attribute für ein Feld mit optionalem Hinweis/Fehler. */
@@ -150,9 +155,10 @@ export function SelectField({
   defaultValue,
   className,
   options,
-  placeholder = "Bitte wählen",
+  placeholder,
 }: BaseProps & { options: Array<{ value: string; label: string }>; placeholder?: string }) {
   const id = useId();
+  const en = useLocale() === "en";
   return (
     <FieldShell id={id} label={label} required={required} hint={hint} error={error} className={className}>
       <select
@@ -164,7 +170,7 @@ export function SelectField({
         {...describedBy(id, hint, error)}
       >
         <option value="" disabled>
-          {placeholder}
+          {placeholder ?? (en ? "Please choose" : "Bitte wählen")}
         </option>
         {options.map((option) => (
           <option key={option.value} value={option.value}>

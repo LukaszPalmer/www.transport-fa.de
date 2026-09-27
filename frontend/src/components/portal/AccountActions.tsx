@@ -5,13 +5,33 @@ import { LoaderCircle, LogOut, MailCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { routes } from "@/content/navigation";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { apiRequest } from "@/lib/api/client";
 import { errorMessage } from "@/lib/api/errors";
 import { buttonClasses } from "@/components/ui/button-styles";
 import { AuthAlert } from "./auth-fields";
 
+const messages = defineMessages({
+  de: {
+    signOut: "Abmelden",
+    sent: "E-Mail gesendet – bitte prüfen Sie Ihr Postfach (auch den Spam-Ordner).",
+    resend: "Bestätigungs-E-Mail erneut senden",
+    wait: "Bitte warten …",
+    confirm: "E-Mail-Adresse jetzt bestätigen",
+  },
+  en: {
+    signOut: "Sign out",
+    sent: "Email sent – please check your inbox (including the spam folder).",
+    resend: "Resend confirmation email",
+    wait: "Please wait …",
+    confirm: "Confirm email address now",
+  },
+});
+
 /** Abmelden – beendet die Sitzung serverseitig und führt zur Anmeldung. */
 export function SignOutButton({ tone = "light" }: { tone?: "light" | "dark" }) {
+  const t = useMessages(messages);
   const router = useRouter();
   const [pending, setPending] = useState(false);
 
@@ -34,13 +54,14 @@ export function SignOutButton({ tone = "light" }: { tone?: "light" | "dark" }) {
       }
     >
       {pending ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : <LogOut aria-hidden="true" className="size-4" />}
-      Abmelden
+      {t.signOut}
     </button>
   );
 }
 
 /** Bestätigungs-E-Mail erneut senden (bei unbestätigter Adresse). */
 export function ResendVerificationButton() {
+  const t = useMessages(messages);
   const [state, setState] = useState<"idle" | "pending" | "sent">("idle");
   const [error, setError] = useState<string>();
 
@@ -57,7 +78,7 @@ export function ResendVerificationButton() {
   };
 
   if (state === "sent") {
-    return <AuthAlert tone="success">E-Mail gesendet – bitte prüfen Sie Ihr Postfach (auch den Spam-Ordner).</AuthAlert>;
+    return <AuthAlert tone="success">{t.sent}</AuthAlert>;
   }
 
   return (
@@ -65,7 +86,7 @@ export function ResendVerificationButton() {
       {error && <AuthAlert tone="error">{error}</AuthAlert>}
       <button type="button" onClick={resend} disabled={state === "pending"} className={buttonClasses({ variant: "dark" })}>
         {state === "pending" ? <LoaderCircle aria-hidden="true" className="size-4 animate-spin" /> : <MailCheck aria-hidden="true" className="size-4" />}
-        Bestätigungs-E-Mail erneut senden
+        {t.resend}
       </button>
     </div>
   );
@@ -73,6 +94,7 @@ export function ResendVerificationButton() {
 
 /** Ziel des Links aus der Bestätigungs-E-Mail – bestätigt erst auf Klick (E-Mail-Scanner öffnen Links automatisch). */
 export function ConfirmEmailButton({ token }: { token: string }) {
+  const t = useMessages(messages);
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
@@ -100,7 +122,7 @@ export function ConfirmEmailButton({ token }: { token: string }) {
         className={buttonClasses({ size: "lg", className: "w-full disabled:cursor-wait disabled:opacity-80" })}
       >
         {pending ? <LoaderCircle aria-hidden="true" className="size-5 animate-spin" /> : <MailCheck aria-hidden="true" className="size-5" />}
-        <span>{pending ? "Bitte warten …" : "E-Mail-Adresse jetzt bestätigen"}</span>
+        <span>{pending ? t.wait : t.confirm}</span>
       </button>
     </div>
   );

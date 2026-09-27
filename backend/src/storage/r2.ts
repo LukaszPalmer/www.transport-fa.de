@@ -1,5 +1,5 @@
 import type { Readable } from "node:stream";
-import { DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { CopyObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../config/env";
@@ -30,6 +30,16 @@ export const R2_BUCKET = env.R2_BUCKET;
 /** Alles eines Kunden liegt unter einem Präfix → Kontolöschung = Präfix leeren. */
 export function customerPrefix(customerId: string): string {
   return `customers/${customerId}/`;
+}
+
+/** Belege gelöschter Kunden – außerhalb des Kundenpräfixes, damit die Kontolöschung sie nicht erfasst. */
+export function invoiceArchiveKey(invoiceId: string, extension = "pdf"): string {
+  return `archive/invoices/${invoiceId}.${extension}`;
+}
+
+/** Kopiert ein Objekt innerhalb des Buckets (serverseitig, ohne Download). */
+export async function copyObject(fromKey: string, toKey: string): Promise<void> {
+  await r2.send(new CopyObjectCommand({ Bucket: R2_BUCKET, CopySource: `${R2_BUCKET}/${fromKey.split("/").map(encodeURIComponent).join("/")}`, Key: toKey }));
 }
 
 /** Lädt einen Datenstrom hoch (Multipart, unbekannte Länge) – die Datei liegt nie komplett im Speicher. */

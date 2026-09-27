@@ -2,6 +2,7 @@
 
 import { useState, useSyncExternalStore } from "react";
 import type { BlogCategory, BlogPost } from "@/content/blog";
+import { useLocale } from "@/i18n/client";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { PostCard } from "./PostCard";
@@ -15,6 +16,9 @@ const readCategoryFromUrl = () => new URLSearchParams(window.location.search).ge
  * steht groß oben, sobald kein Filter aktiv ist. Filter landet in der URL (teilbar).
  */
 export function BlogBrowser({ posts, categories }: { posts: BlogPost[]; categories: BlogCategory[] }) {
+  const locale = useLocale();
+  const en = locale === "en";
+  const categoryOf = (slug: string) => categories.find((category) => category.slug === slug);
   const urlCategory = useSyncExternalStore(noopSubscribe, readCategoryFromUrl, () => null);
   const [chosen, setChosen] = useState<string | null>();
   const active = chosen !== undefined ? chosen : categories.some((category) => category.slug === urlCategory) ? urlCategory : null;
@@ -34,8 +38,8 @@ export function BlogBrowser({ posts, categories }: { posts: BlogPost[]; categori
 
   return (
     <div>
-      <div role="toolbar" aria-label="Nach Thema filtern" className="flex flex-wrap gap-2">
-        <FilterChip active={!active} onClick={() => select(null)} label="Alle Themen" count={posts.length} />
+      <div role="toolbar" aria-label={en ? "Filter by topic" : "Nach Thema filtern"} className="flex flex-wrap gap-2">
+        <FilterChip active={!active} onClick={() => select(null)} label={en ? "All topics" : "Alle Themen"} count={posts.length} />
         {categories
           .filter((category) => (counts.get(category.slug) ?? 0) > 0)
           .map((category) => (
@@ -50,17 +54,17 @@ export function BlogBrowser({ posts, categories }: { posts: BlogPost[]; categori
           ))}
       </div>
 
-      {lead && <PostCard post={lead} variant="featured" className="mt-10" />}
+      {lead && <PostCard post={lead} category={categoryOf(lead.category)} locale={locale} variant="featured" className="mt-10" />}
 
       {rest.length > 0 && (
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {rest.map((post) => (
-            <PostCard key={post.slug} post={post} />
+            <PostCard key={post.slug} post={post} category={categoryOf(post.category)} locale={locale} />
           ))}
         </div>
       )}
 
-      {filtered.length === 0 && <p className="mt-10 text-center text-slate-500">Zu diesem Thema gibt es noch keine Beiträge.</p>}
+      {filtered.length === 0 && <p className="mt-10 text-center text-slate-500">{en ? "There are no articles on this topic yet." : "Zu diesem Thema gibt es noch keine Beiträge."}</p>}
     </div>
   );
 }

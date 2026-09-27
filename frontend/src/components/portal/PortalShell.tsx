@@ -2,7 +2,10 @@ import type { MeResponse } from "@fa/shared";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { company } from "@/content/company";
-import { legalNav } from "@/content/navigation";
+import { getNavigation } from "@/content/navigation";
+import { defineMessages } from "@/i18n/config";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
+import { getLocale } from "@/i18n/server";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { Container } from "@/components/ui/Container";
 import { Logo } from "@/components/ui/Logo";
@@ -13,23 +16,34 @@ import { PortalNav } from "./PortalNav";
  * Rahmen der angemeldeten Portal-Seiten: Kopfzeile mit Navigation und Konto,
  * schlanker Fuß. Die Auth-Prüfung selbst passiert in den Seiten (DAL).
  */
-export function PortalShell({ me, children }: { me: MeResponse | null; children: ReactNode }) {
+const messages = defineMessages({
+  de: { customerNo: "Kundennr.", legal: "Rechtliches" },
+  en: { customerNo: "Customer no.", legal: "Legal" },
+});
+
+export async function PortalShell({ me, children }: { me: MeResponse | null; children: ReactNode }) {
+  const locale = await getLocale();
+  const t = messages[locale];
+  const { legalNav } = getNavigation(locale);
   return (
     <div className="flex min-h-dvh flex-col bg-surface">
       <header className="bg-primary">
         <Container className="flex h-18 items-center justify-between gap-4">
           <Logo />
+          <div className="flex items-center gap-4">
+            <LanguageSwitcher />
           {me && (
             <div className="flex items-center gap-4">
               <div className="hidden text-right sm:block">
                 <p className="text-sm font-semibold text-white">{me.user.name}</p>
                 <p className="text-xs text-slate-400">
-                  {me.customer ? `Kundennr. ${me.customer.customerNumber}` : me.user.email}
+                  {me.customer ? `${t.customerNo} ${me.customer.customerNumber}` : me.user.email}
                 </p>
               </div>
               <SignOutButton />
             </div>
           )}
+          </div>
         </Container>
         {me && (
           <Container>
@@ -52,7 +66,7 @@ export function PortalShell({ me, children }: { me: MeResponse | null; children:
           <p>
             © {new Date().getFullYear()} {company.legalName}
           </p>
-          <nav aria-label="Rechtliches" className="flex gap-5">
+          <nav aria-label={t.legal} className="flex gap-5">
             {legalNav
               .filter((link) => link.href !== "/sitemap.xml")
               .map((link) => (

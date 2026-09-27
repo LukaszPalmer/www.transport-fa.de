@@ -36,6 +36,8 @@ export interface IDocument {
   storage: StoredFile;
   status: UploadState; // READY erst nach vollständigem Upload + Dateityp-Prüfung
   handToDriver: boolean; // „Dem Fahrer mitgeben" – Büro druckt es für den LKW aus
+  /** Beleg-PDF eines gelöschten Kunden, das für die Aufbewahrungsfrist unter archive/ liegt. */
+  archivedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -64,6 +66,7 @@ const DocumentSchema = new Schema<IDocument>(
     },
     status: { type: String, enum: UPLOAD_STATES, default: "PENDING_UPLOAD" },
     handToDriver: { type: Boolean, default: false },
+    archivedAt: Date,
   },
   { timestamps: true },
 );

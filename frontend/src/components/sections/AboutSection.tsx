@@ -1,10 +1,14 @@
 import { sectionIds } from "@/content/navigation";
-import { aboutSection, commitments, values } from "@/content/home";
+import { getHome } from "@/content/home";
+import { getLocale } from "@/i18n/server";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-export function AboutSection() {
+export async function AboutSection() {
+  const locale = await getLocale();
+  const { aboutSection, commitments, values } = getHome(locale);
+  const [open, close] = locale === "en" ? ["“", "”"] : ["„", "“"];
   return (
     <section id={sectionIds.about} aria-labelledby="about-title" className="defer-render bg-white py-24 lg:py-32">
       <Container>
@@ -19,7 +23,9 @@ export function AboutSection() {
               />
               <figure className="mt-10 border-l-2 border-accent pl-6">
                 <blockquote className="font-display text-xl font-semibold leading-snug text-primary">
-                  „{aboutSection.mission}“
+                  {open}
+                  {aboutSection.mission}
+                  {close}
                 </blockquote>
                 <figcaption className="mt-3 text-sm text-slate-500">{aboutSection.missionSource}</figcaption>
               </figure>

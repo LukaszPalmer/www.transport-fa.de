@@ -30,7 +30,11 @@ const nextConfig: NextConfig = {
 
   async redirects() {
     // „Mein Konto" heißt jetzt „Einstellungen" – alte Links (z. B. aus E-Mails) führen weiter, Query bleibt erhalten.
-    return [{ source: "/kundenportal/konto", destination: "/kundenportal/einstellungen", permanent: true }];
+    return [
+      { source: "/kundenportal/konto", destination: "/kundenportal/einstellungen", permanent: true },
+      // „Transport & Logistik" heißt jetzt „Transport" – alte Links und Suchergebnisse führen weiter.
+      { source: "/leistungen/transport-logistik", destination: "/leistungen/transport", permanent: true },
+    ];
   },
 
   async headers() {

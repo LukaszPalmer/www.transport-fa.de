@@ -1,6 +1,9 @@
 import type { NavChild } from "@/types/content";
 import { company } from "@/content/company";
-import { mainNav, routes } from "@/content/navigation";
+import { getNavigation, routes } from "@/content/navigation";
+import { defineMessages } from "@/i18n/config";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
+import { getLocale } from "@/i18n/server";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
@@ -10,23 +13,32 @@ import { MobileMenu } from "./MobileMenu";
 import { NavDropdown } from "./NavDropdown";
 import { navLinkClass } from "./nav-styles";
 
+const messages = defineMessages({
+  de: { mainNav: "Hauptnavigation", portal: "Kundenportal", allServices: "Alle Leistungen im Überblick", advice: "Kostenlos beraten lassen" },
+  en: { mainNav: "Main navigation", portal: "Customer portal", allServices: "All services at a glance", advice: "Get free advice" },
+});
+
 /**
  * Sticky Header (Server Component). Der Wechsel transparent → Glass-Navy
  * läuft rein über CSS Scroll-Driven Animations (.site-header in globals.css).
- * Client-JS: nur Dropdown-Steuerung und Mobilmenü.
+ * Client-JS: nur Dropdown-Steuerung, Sprachwahl und Mobilmenü.
  */
-export function SiteHeader() {
+export async function SiteHeader() {
+  const locale = await getLocale();
+  const t = messages[locale];
+  const { mainNav } = getNavigation(locale);
+
   return (
     <header className="site-header fixed inset-x-0 top-0 z-50 border-b">
       <Container className="flex h-18 items-center justify-between gap-6">
         <Logo />
 
-        <nav aria-label="Hauptnavigation" className="hidden lg:block">
+        <nav aria-label={t.mainNav} className="hidden lg:block">
           <ul className="flex items-center gap-1">
             {mainNav.map((item) =>
               item.children ? (
                 <NavDropdown key={item.href} label={item.label}>
-                  <DropdownPanel items={item.children} overviewHref={item.href} />
+                  <DropdownPanel items={item.children} overviewHref={item.href} allServices={t.allServices} advice={t.advice} />
                 </NavDropdown>
               ) : (
                 <li key={item.href}>
@@ -42,15 +54,16 @@ export function SiteHeader() {
         <div className="flex items-center gap-2 sm:gap-4">
           <a
             href={company.contact.phoneHref}
-            className="hidden items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white xl:inline-flex"
+            className="hidden items-center gap-2 text-sm font-medium text-slate-300 transition-colors hover:text-white 2xl:inline-flex"
           >
             <Icon name="phone" className="size-4 text-accent" />
             {company.contact.phone}
           </a>
+          <LanguageSwitcher className="hidden md:inline-flex" />
           {/* Sichtbarkeit am Wrapper steuern – Button-Basis setzt selbst display:inline-flex */}
           <div className="hidden sm:block">
             <ButtonLink href={routes.portal} prefetch={false} variant="glass" size="sm" icon="log-in">
-              Kundenportal
+              {t.portal}
             </ButtonLink>
           </div>
           <MobileMenu items={mainNav} />
@@ -61,7 +74,7 @@ export function SiteHeader() {
 }
 
 /** Mega-Menü-Inhalt der Leistungen (server-gerendert). */
-function DropdownPanel({ items, overviewHref }: { items: NavChild[]; overviewHref: string }) {
+function DropdownPanel({ items, overviewHref, allServices, advice }: { items: NavChild[]; overviewHref: string; allServices: string; advice: string }) {
   return (
     // Kein eigener backdrop-filter: Der Header ist bereits Backdrop-Root, ein Blur hier hätte keinen Effekt.
     <div className="overflow-hidden rounded-2xl border border-white/10 bg-primary shadow-elevated">
@@ -91,13 +104,13 @@ function DropdownPanel({ items, overviewHref }: { items: NavChild[]; overviewHre
       </ul>
       <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 bg-white/[0.03] px-7 py-4 text-sm">
         <SmartLink href={overviewHref} className="font-medium text-slate-300 transition-colors hover:text-white">
-          Alle Leistungen im Überblick
+          {allServices}
         </SmartLink>
         <SmartLink
           href={routes.contactForm}
           className="group inline-flex items-center gap-1.5 font-semibold text-accent transition-colors hover:text-accent-bright"
         >
-          Kostenlos beraten lassen
+          {advice}
           <Icon name="arrow-right" className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
         </SmartLink>
       </div>

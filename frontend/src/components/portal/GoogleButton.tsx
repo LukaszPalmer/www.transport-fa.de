@@ -2,6 +2,8 @@
 
 import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { googleSignInUrl } from "@/lib/api/client";
 import { buttonClasses } from "@/components/ui/button-styles";
 
@@ -11,6 +13,11 @@ interface GoogleButtonProps {
   /** Ziel nach erfolgreicher Anmeldung (interner Pfad). */
   redirectTo: string;
 }
+
+const messages = defineMessages({
+  de: { soon: "Die Google-Anmeldung wird in Kürze freigeschaltet.", divider: "oder mit E-Mail" },
+  en: { soon: "Google sign-in will be available shortly.", divider: "or with email" },
+});
 
 /** Google-„G“ in Markenfarben (von Google für Sign-in-Buttons vorgegeben). */
 function GoogleMark() {
@@ -29,6 +36,7 @@ function GoogleMark() {
  * Ein normaler Link: Die API leitet zu Google und nach der Anmeldung zurück ins Portal.
  */
 export function GoogleButton({ enabled, label, redirectTo }: GoogleButtonProps) {
+  const t = useMessages(messages);
   const [pending, setPending] = useState(false);
   const classes = buttonClasses({ variant: "outline", size: "lg", className: "w-full" });
 
@@ -39,7 +47,7 @@ export function GoogleButton({ enabled, label, redirectTo }: GoogleButtonProps) 
           <GoogleMark />
           <span>{label}</span>
         </button>
-        <p className="mt-2 text-center text-xs text-slate-500">Die Google-Anmeldung wird in Kürze freigeschaltet.</p>
+        <p className="mt-2 text-center text-xs text-slate-500">{t.soon}</p>
       </div>
     );
   }
@@ -58,11 +66,12 @@ export function GoogleButton({ enabled, label, redirectTo }: GoogleButtonProps) 
 }
 
 /** Trennlinie „oder“ zwischen Social- und E-Mail-Anmeldung. */
-export function AuthDivider({ label = "oder mit E-Mail" }: { label?: string }) {
+export function AuthDivider({ label }: { label?: string }) {
+  const t = useMessages(messages);
   return (
     <div className="my-6 flex items-center gap-4 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">
       <span className="h-px flex-1 bg-slate-200" />
-      {label}
+      {label ?? t.divider}
       <span className="h-px flex-1 bg-slate-200" />
     </div>
   );

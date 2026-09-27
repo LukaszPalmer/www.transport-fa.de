@@ -1,11 +1,11 @@
-import type { AdminCustomerDetail, AdminCustomerList, AdminCustomerRow, AdminDocumentItem, ShipmentStatus } from "@fa/shared";
+import { UpdateCustomerCrmInput, type AdminCustomerDetail, type AdminCustomerList, type AdminCustomerRow, type AdminDocumentItem, type ShipmentStatus } from "@fa/shared";
 import { Router } from "express";
 import { Types } from "mongoose";
 import { z } from "zod";
 import { requirePermission } from "../../auth/middleware";
 import { AppError } from "../../http/errors";
 import { audit } from "../../lib/audit";
-import { ChatSession, CustomerProfile, DocumentModel, Invoice, Shipment, User } from "../../models";
+import { ChatSession, CustomerProfile, DocumentModel, Invoice, Lead, Shipment, StaffProfile, User } from "../../models";
 import { isOnline, onlineUserIds } from "../../realtime/presence";
 import { toAdminShipmentRows } from "../../services/admin-shipments";
 import { toAdminInvoiceRows } from "../../services/invoices";
@@ -87,16 +87,17 @@ adminCustomersRouter.get("/", async (req, res) => {
 /** 360°-Akte: Stammdaten, Konto, alle Aufträge, Dokumente (auch interne), Belege und Chats. */
 adminCustomersRouter.get("/:id", async (req, res) => {
   if (!Types.ObjectId.isValid(String(req.params.id))) throw AppError.notFound("Kunde nicht gefunden.");
-  const profile = await CustomerProfile.findById(req.params.id).lean();
+  const profile = await CustomerProfile.findById(req.params.id).select("+internalNotes").lean();
   if (!profile) throw AppError.notFound("Kunde nicht gefunden.");
 
   const canSeeInvoices = req.staff!.permissions.includes("can_manage_invoices");
-  const [user, shipments, documents, invoices, chats] = await Promise.all([
+  const [user, shipments, documents, invoices, chats, leads] = await Promise.all([
     User.findById(profile.userId).select("+passwordHash").lean(),
     Shipment.find({ customerId: profile._id }).sort({ createdAt: -1 }).limit(200).lean(),
     DocumentModel.find({ customerId: profile._id, status: "READY" }).sort({ createdAt: -1 }).limit(500).lean(),
     canSeeInvoices ? Invoice.find({ customerId: profile._id }).sort({ issueDate: -1, createdAt: -1 }).limit(200).lean() : [],
     ChatSession.find({ customerId: profile._id }).sort({ lastMessageAt: -1 }).limit(50).lean(),
+    Lead.find({ customerId: profile._id }).sort({ createdAt: -1 }).limit(20).select("number status topic createdAt").lean(),
   ]);
   if (!user) throw AppError.notFound("Kunde nicht gefunden.");
 
@@ -126,6 +127,7 @@ adminCustomersRouter.get("/:id", async (req, res) => {
       companyName: profile.companyName,
       phone: profile.phone,
       type: profile.type,
+      locale: profile.locale ?? "de",
       createdAt: profile.createdAt.toISOString(),
     },
     user: {
@@ -150,7 +152,34 @@ adminCustomersRouter.get("/:id", async (req, res) => {
       preview: chat.lastMessagePreview,
       unreadByStaff: chat.unreadByStaff,
     })),
+    crm: {
+      internalNotes: profile.internalNotes ?? "",
+      accountManagerId: profile.accountManagerId ? String(profile.accountManagerId) : undefined,
+      leads: leads.map((lead) => ({ id: String(lead._id), number: lead.number, status: lead.status, topic: lead.topic, createdAt: lead.createdAt.toISOString() })),
+    },
   };
   audit(req, "admin.customer_viewed", { targetType: "CustomerProfile", targetId: profile._id, customerId: profile._id });
   res.json(body);
+});
+
+/** CRM-Felder der Kundenakte: interne Notizen und zuständiger Betreuer. */
+adminCustomersRouter.patch("/:id/crm", async (req, res) => {
+  if (!Types.ObjectId.isValid(String(req.params.id))) throw AppError.notFound("Kunde nicht gefunden.");
+  const input = UpdateCustomerCrmInput.parse(req.body);
+  const set: Record<string, unknown> = {};
+  const unset: Record<string, 1> = {};
+  if (input.internalNotes !== undefined) {
+    if (input.internalNotes.trim()) set.internalNotes = input.internalNotes.trim();
+    else unset.internalNotes = 1;
+  }
+  if (input.accountManagerId !== undefined) {
+    if (input.accountManagerId) {
+      if (!(await StaffProfile.exists({ userId: input.accountManagerId }))) throw AppError.validation({ accountManagerId: "Mitarbeiter nicht gefunden." });
+      set.accountManagerId = new Types.ObjectId(input.accountManagerId);
+    } else unset.accountManagerId = 1;
+  }
+  const result = await CustomerProfile.updateOne({ _id: req.params.id }, { ...(Object.keys(set).length ? { $set: set } : {}), ...(Object.keys(unset).length ? { $unset: unset } : {}) });
+  if (result.matchedCount === 0) throw AppError.notFound("Kunde nicht gefunden.");
+  audit(req, "admin.customer_updated", { targetType: "CustomerProfile", targetId: new Types.ObjectId(String(req.params.id)), customerId: new Types.ObjectId(String(req.params.id)), meta: { fields: Object.keys({ ...set, ...unset }) } });
+  res.status(204).end();
 });

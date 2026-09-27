@@ -78,13 +78,14 @@ export async function changeCredentials({ userId, email, password, changedBy, ke
         newEmail,
         loginUrl: new URL(loginPath, env.FRONTEND_URL).toString(),
         account: user.role === "CUSTOMER" ? "customer" : "staff",
+        locale: profile?.locale,
       }),
     }),
   ];
   if (newEmail && user.role === "CUSTOMER") {
     const token = await issueAuthToken(userId, "EMAIL_VERIFICATION");
     const url = new URL(`/kundenportal/email-bestaetigen?token=${token}`, env.FRONTEND_URL).toString();
-    mails.push(sendMail({ type: "VERIFICATION", to: newEmail, userId, customerId: profile?._id, ...verificationMail(firstName, url, "change") }));
+    mails.push(sendMail({ type: "VERIFICATION", to: newEmail, userId, customerId: profile?._id, ...verificationMail(firstName, url, "change", profile?.locale) }));
   }
   await Promise.all(mails).catch((error: unknown) => logger.error({ err: error }, "Hinweis-Mails zu Zugangsdaten fehlgeschlagen"));
 

@@ -1,5 +1,8 @@
+"use client";
+
 import Link from "next/link";
 import { company } from "@/content/company";
+import { useLocale } from "@/i18n/client";
 import { cn } from "@/lib/cn";
 
 interface LogoProps {
@@ -21,11 +24,12 @@ export function LogoMark({ className }: { className?: string }) {
   );
 }
 
-export function Logo({ tone = "light", className, href = "/", label = `${company.name} – zur Startseite` }: LogoProps) {
+export function Logo({ tone = "light", className, href = "/", label }: LogoProps) {
+  const locale = useLocale();
   return (
     <Link
       href={href}
-      aria-label={label}
+      aria-label={label ?? (locale === "en" ? `${company.name} – home` : `${company.name} – zur Startseite`)}
       className={cn("group inline-flex items-center gap-3", className)}
     >
       <LogoMark className="size-9 transition-transform duration-300 ease-out-expo group-hover:-rotate-6" />

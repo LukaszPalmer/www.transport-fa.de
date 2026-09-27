@@ -19,6 +19,7 @@ import { buildCiiXml } from "../invoicing/cii";
 import { renderInvoicePdf } from "../invoicing/pdf";
 import { sellerWarnings } from "../invoicing/seller";
 import type { EInvoiceData } from "../invoicing/types";
+import { mailFormats } from "../lib/locale";
 import { logger } from "../lib/logger";
 import { sendMail } from "../mail/mailer";
 import { invoiceDeliveryMail } from "../mail/templates";
@@ -43,8 +44,6 @@ import { calendarDay } from "./invoices";
  * per E-Mail (PDF im Anhang) und sieht sie sofort im Kundenportal.
  */
 
-const euro = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" });
-const day = (isoDay: string) => isoDay.split("-").reverse().join(".");
 
 /** Nach so langer Zeit gilt ein hängengebliebener Versand als abgebrochen. */
 const ISSUE_LOCK_MS = 2 * 60 * 1000;
@@ -343,21 +342,29 @@ export async function deliverInvoiceMail(invoice: Pick<IInvoice, "_id" | "custom
   try {
     const stored = await Invoice.findById(invoice._id).select("+einvoice").lean();
     const data: EInvoiceData | undefined = stored?.einvoice;
-    const profile = await CustomerProfile.findById(invoice.customerId).select("userId firstName").lean();
+    const profile = await CustomerProfile.findById(invoice.customerId).select("userId firstName locale").lean();
     const user = profile ? await User.findById(profile.userId).select("email emailVerifiedAt state").lean() : null;
     const blocked = mailBlockedReason(user);
     if (!stored || !data || !profile || !user || blocked) return { status: "SKIPPED", to: user?.email, reason: blocked ?? "Rechnung nicht gefunden." };
 
     const due = data.grossCents - (data.prepaid?.cents ?? 0);
+    const locale = profile.locale ?? "de";
+    const format = mailFormats(locale);
+    const cash = data.prepaid?.method === "CASH";
+    const paidNote =
+      locale === "en"
+        ? `Already paid (${cash ? "in cash" : "by bank transfer"}) – thank you!`
+        : `Bereits bezahlt (${cash ? "bar" : "per Überweisung"}) – vielen Dank!`;
     const mail = invoiceDeliveryMail({
+      locale,
       greetingName: profile.firstName,
       number: data.number,
-      issueDate: day(data.issueDate),
-      amount: euro.format(data.grossCents / 100),
+      issueDate: format.isoDay(data.issueDate),
+      amount: format.euro(data.grossCents),
       payment:
         due > 0
-          ? { dueDate: day(data.dueDate), iban: data.seller.bank.iban.replace(/(.{4})(?=.)/g, "$1 "), accountHolder: data.seller.name }
-          : { paidNote: `Bereits bezahlt (${data.prepaid?.method === "CASH" ? "bar" : "per Überweisung"}) – vielen Dank!` },
+          ? { dueDate: format.isoDay(data.dueDate), iban: data.seller.bank.iban.replace(/(.{4})(?=.)/g, "$1 "), accountHolder: data.seller.name }
+          : { paidNote },
       shipmentNumber: data.shipmentNumber,
       fileName: invoiceFileName(data.number),
       url: new URL(`/kundenportal/rechnungen?beleg=${String(invoice._id)}`, env.FRONTEND_URL).toString(),

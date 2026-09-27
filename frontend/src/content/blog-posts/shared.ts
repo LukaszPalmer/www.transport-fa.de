@@ -8,6 +8,6 @@ import type { BlogPost } from "../blog";
 /** Autorenangabe für Beiträge, die das Team gemeinsam verantwortet. */
 export const editorialTeam: BlogPost["author"] = {
   name: "Redaktion FA Transport",
-  role: "Team Umzug, Räumung & Logistik",
+  role: "Team Umzug, Räumung & Transport",
   team: true,
 };

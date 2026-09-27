@@ -1,4 +1,5 @@
-import { trackingDemo } from "@/content/app";
+import { getTrackingApp } from "@/content/app";
+import { getLocale } from "@/i18n/server";
 import { cn } from "@/lib/cn";
 import { Icon } from "@/components/ui/Icon";
 import { LiveDot } from "@/components/ui/LiveDot";
@@ -34,8 +35,10 @@ function StatusBar() {
  * Bottom-Sheet mit ETA, Fortschritt und Fahrer. Größen orientieren sich an
  * einem 390 pt breiten iPhone-Display, skaliert auf die Mockup-Breite.
  */
-export function AppScreen() {
-  const { shipmentId, etaMinutes, etaTime, destination, status, steps, driver } = trackingDemo;
+export async function AppScreen() {
+  const locale = await getLocale();
+  const en = locale === "en";
+  const { shipmentId, etaMinutes, etaTime, destination, status, steps, driver } = getTrackingApp(locale).trackingDemo;
 
   return (
     <>
@@ -48,7 +51,7 @@ export function AppScreen() {
       <div className="glass-dark absolute inset-x-3.5 top-[54px] z-20 flex items-center gap-2.5 rounded-2xl px-3 py-2.5">
         <LogoMark className="size-7 shrink-0" />
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="text-[8.5px] font-semibold uppercase tracking-[0.14em] text-slate-400">Sendung</p>
+          <p className="text-[8.5px] font-semibold uppercase tracking-[0.14em] text-slate-400">{en ? "Shipment" : "Sendung"}</p>
           <p className="truncate text-[12px] font-bold text-white">{shipmentId}</p>
         </div>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-400/10 px-2 py-1 text-[9px] font-bold uppercase tracking-wider text-emerald-300 ring-1 ring-emerald-400/25">
@@ -63,9 +66,9 @@ export function AppScreen() {
 
         <div className="mt-3 flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] text-slate-400">Ankunft in</p>
+            <p className="text-[10px] text-slate-400">{en ? "Arriving in" : "Ankunft in"}</p>
             <p className="font-display text-[26px] leading-none font-extrabold text-white tabular-nums">
-              {etaMinutes} Min.
+              {etaMinutes} {en ? "min" : "Min."}
             </p>
           </div>
           <div className="text-right">
@@ -73,7 +76,7 @@ export function AppScreen() {
               <Icon name="check" className="size-2.5" strokeWidth={3} />
               {status}
             </span>
-            <p className="mt-1 text-[10px] text-slate-400 tabular-nums">ETA {etaTime} Uhr</p>
+            <p className="mt-1 text-[10px] text-slate-400 tabular-nums">ETA {etaTime}{en ? "" : " Uhr"}</p>
           </div>
         </div>
 

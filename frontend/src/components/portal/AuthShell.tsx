@@ -1,15 +1,40 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { defineMessages } from "@/i18n/config";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
+import { getLocale } from "@/i18n/server";
 import { Icon } from "@/components/ui/Icon";
 import { Logo } from "@/components/ui/Logo";
 
-const benefits = [
-  "Aufträge, Termine und Status jederzeit einsehen",
-  "Angebote, Rechnungen und Dokumente abrufen",
-  "Sendungen live verfolgen (Transport & Logistik)",
-  "Direkter Draht zu Ihrem Ansprechpartner",
-];
+const messages = defineMessages({
+  de: {
+    benefits: [
+      "Aufträge, Termine und Status jederzeit einsehen",
+      "Angebote, Rechnungen und Dokumente abrufen",
+      "Aufträge und Transporte live verfolgen",
+      "Direkter Draht zu Ihrem Ansprechpartner",
+    ],
+    portal: "Kundenportal",
+    claim: "Alle Aufträge.",
+    claimAccent: "Ein Login.",
+    security: "Verschlüsselte Übertragung · Daten werden nicht an Dritte weitergegeben",
+    toWebsite: "Zur Website",
+  },
+  en: {
+    benefits: [
+      "View jobs, dates and status at any time",
+      "Access quotes, invoices and documents",
+      "Track jobs and transports live",
+      "A direct line to your contact person",
+    ],
+    portal: "Customer portal",
+    claim: "All your jobs.",
+    claimAccent: "One login.",
+    security: "Encrypted transmission · Data is not passed on to third parties",
+    toWebsite: "Back to website",
+  },
+});
 
 interface AuthShellProps {
   title: string;
@@ -22,11 +47,12 @@ interface AuthShellProps {
  * Split-Layout aller Anmelde-Seiten: Markenbild mit Nutzenversprechen links
  * (ab lg), fokussiertes Formular rechts – ohne ablenkende Website-Navigation.
  */
-export function AuthShell({ title, description, children, footer }: AuthShellProps) {
+export async function AuthShell({ title, description, children, footer }: AuthShellProps) {
+  const t = messages[await getLocale()];
   return (
     <div className="grid min-h-dvh grid-cols-1 lg:grid-cols-2">
       <aside className="relative isolate hidden overflow-hidden bg-primary lg:block">
-        <Image src="/media/hero/poster.jpg" alt="" fill preload sizes="50vw" quality={60} className="-z-20 object-cover" />
+        <Image src="/media/stock/portal-transporter.jpg" alt="" fill preload sizes="50vw" quality={60} className="-z-20 object-cover" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-primary/80" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-primary via-primary/40 to-transparent" />
         <div
@@ -37,12 +63,12 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
         <div className="flex h-full flex-col justify-between p-12 xl:p-16">
           <Logo />
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Kundenportal</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">{t.portal}</p>
             <p className="mt-4 max-w-md font-display text-4xl font-extrabold leading-[1.1] tracking-[-0.02em] text-white">
-              Alle Aufträge. <span className="text-gradient-accent">Ein Login.</span>
+              {t.claim} <span className="text-gradient-accent">{t.claimAccent}</span>
             </p>
             <ul className="mt-8 space-y-4">
-              {benefits.map((benefit) => (
+              {t.benefits.map((benefit) => (
                 <li key={benefit} className="flex items-start gap-3 text-slate-200">
                   <span className="mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent ring-1 ring-accent/30">
                     <Icon name="check" className="size-3" strokeWidth={3} />
@@ -54,7 +80,7 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
           </div>
           <p className="flex items-center gap-2 text-sm text-slate-400">
             <Icon name="shield-check" className="size-4 text-accent" />
-            Verschlüsselte Übertragung · Daten werden nicht an Dritte weitergegeben
+            {t.security}
           </p>
         </div>
       </aside>
@@ -64,13 +90,13 @@ export function AuthShell({ title, description, children, footer }: AuthShellPro
           <span className="lg:hidden">
             <Logo tone="dark" />
           </span>
-          <Link
-            href="/"
-            className="ml-auto inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-primary"
-          >
-            <Icon name="arrow-right" className="size-4 rotate-180" />
-            Zur Website
-          </Link>
+          <div className="ml-auto flex items-center gap-4">
+            <LanguageSwitcher tone="light" />
+            <Link href="/" className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-primary">
+              <Icon name="arrow-right" className="size-4 rotate-180" />
+              {t.toWebsite}
+            </Link>
+          </div>
         </div>
 
         <div className="flex flex-1 items-center justify-center px-4 pt-4 pb-16 sm:px-10">

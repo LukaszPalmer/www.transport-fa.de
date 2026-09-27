@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
+import { useLocale } from "@/i18n/client";
 import { drawRouteMap, loadGoogleMaps } from "@/lib/google-maps";
 
 interface TrackingPhoneProps {
@@ -44,6 +45,7 @@ export function TrackingPhone({
   progress,
   googleMapsApiKey,
 }: TrackingPhoneProps) {
+  const en = useLocale() === "en";
   const mapRef = useRef<HTMLDivElement>(null);
   const storedConsent = useSyncExternalStore(noopSubscribe, readConsent, () => false);
   const [clickedConsent, setClickedConsent] = useState(false);
@@ -117,18 +119,18 @@ export function TrackingPhone({
 
       {googleMapsApiKey && !consent && (
         <p className="mx-auto mt-5 max-w-xs text-center text-xs leading-relaxed text-slate-500">
-          Beispielroute auf Google Maps ansehen? Dabei werden Daten an Google übertragen.{" "}
+          {en ? "View the sample route on Google Maps? This transfers data to Google." : "Beispielroute auf Google Maps ansehen? Dabei werden Daten an Google übertragen."}{" "}
           <button
             type="button"
             onClick={acceptGoogleMaps}
             className="font-semibold text-accent-ink underline underline-offset-4"
           >
-            Google Maps laden
+            {en ? "Load Google Maps" : "Google Maps laden"}
           </button>
         </p>
       )}
       {status === "error" && (
-        <p className="mt-5 text-center text-xs text-slate-500">Google Maps ist gerade nicht erreichbar.</p>
+        <p className="mt-5 text-center text-xs text-slate-500">{en ? "Google Maps is currently unavailable." : "Google Maps ist gerade nicht erreichbar."}</p>
       )}
     </div>
   );

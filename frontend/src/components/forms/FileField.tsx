@@ -2,6 +2,7 @@
 
 import { FileText, Upload, X } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { useLocale } from "@/i18n/client";
 import { cn } from "@/lib/cn";
 
 interface FileFieldProps {
@@ -20,6 +21,7 @@ interface FileFieldProps {
  */
 export function FileField({ name, label, accept, maxSizeMb, hint, error }: FileFieldProps) {
   const id = useId();
+  const en = useLocale() === "en";
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [localError, setLocalError] = useState<string>();
@@ -31,7 +33,7 @@ export function FileField({ name, label, accept, maxSizeMb, hint, error }: FileF
     setDismissedError(error);
     const selected = inputRef.current?.files?.[0] ?? null;
     if (selected && selected.size > maxSizeMb * 1024 * 1024) {
-      setLocalError(`Die Datei ist größer als ${maxSizeMb} MB.`);
+      setLocalError(en ? `The file is larger than ${maxSizeMb} MB.` : `Die Datei ist größer als ${maxSizeMb} MB.`);
       if (inputRef.current) inputRef.current.value = "";
       setFile(null);
       return;
@@ -97,7 +99,7 @@ export function FileField({ name, label, accept, maxSizeMb, hint, error }: FileF
               className="relative z-20 flex size-9 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-primary"
             >
               <X aria-hidden="true" className="size-4" />
-              <span className="sr-only">Datei entfernen</span>
+              <span className="sr-only">{en ? "Remove file" : "Datei entfernen"}</span>
             </button>
           </div>
         ) : (
@@ -106,7 +108,8 @@ export function FileField({ name, label, accept, maxSizeMb, hint, error }: FileF
               <Upload aria-hidden="true" className="size-5" />
             </span>
             <p className="mt-3 text-sm font-semibold text-primary">
-              Datei hierher ziehen oder <span className="text-accent-ink underline underline-offset-4">auswählen</span>
+              {en ? "Drag the file here or " : "Datei hierher ziehen oder "}
+              <span className="text-accent-ink underline underline-offset-4">{en ? "browse" : "auswählen"}</span>
             </p>
             <p id={`${id}-hint`} className="mt-1 text-xs text-slate-500">
               {hint}

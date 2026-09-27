@@ -2,7 +2,7 @@ import { ROLES, type Role } from "@fa/shared";
 import { Schema } from "mongoose";
 import { defineModel, ObjectId, type Id } from "../db/schema-kit";
 
-export const AUDIT_TARGET_TYPES = ["User", "CustomerProfile", "Shipment", "Invoice", "InvoiceDraft", "Document", "DriverProfile"] as const;
+export const AUDIT_TARGET_TYPES = ["User", "CustomerProfile", "Shipment", "Invoice", "InvoiceDraft", "Document", "DriverProfile", "Lead"] as const;
 
 /** Sicherheits- und Admin-Ereignisse (12 Monate). */
 export interface IAuditLog {

@@ -1,11 +1,15 @@
 import type { InvoiceListResponse } from "@fa/shared";
+import { Zip, ZipDeflate, ZipPassThrough } from "fflate";
 import { Router, type Request } from "express";
 import { Types } from "mongoose";
 import { AppError } from "../http/errors";
 import { CustomerProfile, DocumentModel, Invoice } from "../models";
+import { buildCiiXml } from "../invoicing/cii";
+import type { EInvoiceData } from "../invoicing/types";
+import { logger } from "../lib/logger";
 import { invoiceXml } from "../services/invoice-issuing";
 import { toInvoiceItems } from "../services/invoices";
-import { signedDownloadUrl } from "../storage/r2";
+import { getObjectBuffer, signedDownloadUrl } from "../storage/r2";
 
 /**
  * /api/v1/portal/invoices – Angebote, Auftragsbestätigungen, Rechnungen und Gutschriften
@@ -36,6 +40,56 @@ invoicesRouter.get("/", async (req, res) => {
     },
   };
   res.json(body);
+});
+
+const TYPE_FOLDER: Record<string, string> = { INVOICE: "Rechnungen", CREDIT_NOTE: "Gutschriften", OFFER: "Angebote", ORDER_CONFIRMATION: "Auftragsbestaetigungen" };
+
+/**
+ * Alle Belege als ZIP – z. B. bevor der Kunde sein Konto löscht. PDFs nacheinander aus R2,
+ * E-Rechnungen zusätzlich als XRechnung-XML.
+ */
+invoicesRouter.get("/archive.zip", async (req, res) => {
+  const customerId = await currentCustomerId(req);
+  const invoices = await Invoice.find({ customerId }).select("+einvoice type number documentId source").sort({ issueDate: -1 }).limit(500).lean();
+  if (invoices.length === 0) throw AppError.notFound("Es sind noch keine Belege vorhanden.");
+  const documents = await DocumentModel.find({ _id: { $in: invoices.map((invoice) => invoice.documentId) }, customerId, status: "READY" }).select("storage").lean();
+  const keyById = new Map(documents.map((document) => [String(document._id), document.storage.key]));
+
+  res.set({
+    "Content-Type": "application/zip",
+    "Content-Disposition": `attachment; filename="Belege_FA-Transport.zip"`,
+    "Cache-Control": "no-store",
+  });
+  const zip = new Zip((error, chunk, final) => {
+    if (error) {
+      logger.error({ err: error }, "Beleg-ZIP fehlgeschlagen");
+      res.destroy(error);
+      return;
+    }
+    res.write(chunk);
+    if (final) res.end();
+  });
+  const safe = (value: string) => value.replace(/[^A-Za-z0-9._-]+/g, "_");
+  for (const invoice of invoices) {
+    const key = keyById.get(String(invoice.documentId));
+    const folder = TYPE_FOLDER[invoice.type] ?? "Belege";
+    if (key) {
+      try {
+        const file = new ZipPassThrough(`${folder}/${safe(invoice.number)}.pdf`);
+        zip.add(file);
+        file.push(await getObjectBuffer(key), true);
+      } catch (error) {
+        logger.warn({ err: error, number: invoice.number }, "Beleg für das Kunden-ZIP nicht lesbar");
+      }
+    }
+    const data = (invoice as { einvoice?: EInvoiceData }).einvoice;
+    if (invoice.source === "GENERATED" && data) {
+      const xml = new ZipDeflate(`${folder}/${safe(invoice.number)}_XRechnung.xml`, { level: 6 });
+      zip.add(xml);
+      xml.push(Buffer.from(buildCiiXml(data, "XRECHNUNG"), "utf8"), true);
+    }
+  }
+  zip.end();
 });
 
 /** E-Rechnung als XRechnung-XML – für Buchhaltungsprogramme, die reine XML erwarten. */

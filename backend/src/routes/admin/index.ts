@@ -1,17 +1,20 @@
-import { ChangePasswordInput, type AdminOverview, type ShipmentStatus, type StaffMe } from "@fa/shared";
+import { ChangePasswordInput, type AdminActivityList, type StaffMe, type StaffOption } from "@fa/shared";
 import { Router } from "express";
 import { z } from "zod";
-import { requireStaff } from "../../auth/middleware";
+import { requireAdmin, requireStaff } from "../../auth/middleware";
 import { isPasswordPwned, verifyPassword } from "../../auth/password";
 import { consumeRateLimit } from "../../auth/rate-limit";
 import { AppError } from "../../http/errors";
 import { audit } from "../../lib/audit";
 import { changeCredentials } from "../../services/credentials";
-import { ChatSession, CustomerProfile, Shipment, StaffProfile, User } from "../../models";
-import { onlineUserIds } from "../../realtime/presence";
+import { AuditLog, StaffProfile, User } from "../../models";
+import { ACTIVITY_GROUPS, toActivityItems } from "../../services/activity";
+import { buildDashboard } from "../../services/dashboard";
+import { adminAccountingRouter } from "./accounting";
 import { adminCustomersRouter } from "./customers";
 import { adminDocumentsRouter } from "./documents";
 import { adminInvoicesRouter } from "./invoices";
+import { adminLeadsRouter } from "./leads";
 import { adminDriversRouter, adminShipmentsRouter } from "./shipments";
 import { adminUsersRouter } from "./users";
 
@@ -22,8 +25,6 @@ import { adminUsersRouter } from "./users";
 export const adminRouter = Router();
 
 adminRouter.use(requireStaff);
-
-const ACTIVE_STATUSES: ShipmentStatus[] = ["PLANNED", "ASSIGNED", "EN_ROUTE_TO_PICKUP", "IN_TRANSIT"];
 
 adminRouter.get("/me", async (req, res) => {
   const { user } = req.auth!;
@@ -66,17 +67,37 @@ adminRouter.post("/me/password", async (req, res) => {
   res.json({ ok: true, sessionsEnded: result.sessionsEnded });
 });
 
-adminRouter.get("/overview", async (_req, res) => {
-  const online = onlineUserIds();
-  const [customers, customersOnline, activeShipments, unassignedShipments, openChats, unreadChats] = await Promise.all([
-    CustomerProfile.countDocuments(),
-    online.length ? User.countDocuments({ _id: { $in: online }, role: "CUSTOMER" }) : 0,
-    Shipment.countDocuments({ status: { $in: ACTIVE_STATUSES } }),
-    Shipment.countDocuments({ status: "PLANNED", driverId: { $exists: false } }),
-    ChatSession.countDocuments({ status: { $ne: "RESOLVED" } }),
-    ChatSession.countDocuments({ status: { $ne: "RESOLVED" }, unreadByStaff: { $gt: 0 } }),
+/** Aktive Mitarbeiter für Auswahlfelder (Betreuer eines Kunden, Zuständigkeit einer Anfrage). */
+adminRouter.get("/staff-options", async (_req, res) => {
+  const users = await User.find({ role: { $in: ["ADMIN", "EMPLOYEE"] }, state: "ACTIVE" }).select("_id").lean();
+  const profiles = await StaffProfile.find({ userId: { $in: users.map((user) => user._id) } }).select("userId displayName").sort({ displayName: 1 }).lean();
+  const body: StaffOption[] = profiles.map((profile) => ({ id: String(profile.userId), name: profile.displayName }));
+  res.json(body);
+});
+
+/** Übersicht (Dashboard) – Inhalte je nach Rechten des Mitarbeiters. */
+adminRouter.get("/overview", async (req, res) => {
+  res.json(await buildDashboard(req.staff!.permissions, req.auth!.user.role === "ADMIN"));
+});
+
+const ActivityQuery = z.object({
+  group: z.string().regex(/^[a-z_]+$/).optional(),
+  actorId: z.string().regex(/^[a-f0-9]{24}$/).optional(),
+  page: z.coerce.number().int().min(1).max(1000).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+/** Aktivitätsprotokoll (12 Monate) – wer hat wann was getan. Nur Administratoren. */
+adminRouter.get("/activity", requireAdmin, async (req, res) => {
+  const query = ActivityQuery.parse(req.query);
+  const filter: Record<string, unknown> = {};
+  if (query.group) filter.action = { $regex: `^${query.group}[.]` };
+  if (query.actorId) filter.actorId = query.actorId;
+  const [entries, total] = await Promise.all([
+    AuditLog.find(filter).sort({ createdAt: -1 }).skip((query.page - 1) * query.limit).limit(query.limit).lean(),
+    AuditLog.countDocuments(filter),
   ]);
-  const body: AdminOverview = { stats: { customers, customersOnline, activeShipments, unassignedShipments, openChats, unreadChats } };
+  const body: AdminActivityList = { items: await toActivityItems(entries), total, groups: ACTIVITY_GROUPS };
   res.json(body);
 });
 
@@ -86,3 +107,5 @@ adminRouter.use("/shipments", adminShipmentsRouter);
 adminRouter.use("/drivers", adminDriversRouter);
 adminRouter.use("/documents", adminDocumentsRouter);
 adminRouter.use("/invoices", adminInvoicesRouter);
+adminRouter.use("/leads", adminLeadsRouter);
+adminRouter.use("/accounting", adminAccountingRouter);

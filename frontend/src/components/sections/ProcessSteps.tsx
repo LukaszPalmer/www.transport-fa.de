@@ -1,4 +1,5 @@
 import type { ProcessStep } from "@/types/content";
+import { getLocale } from "@/i18n/server";
 import { cn } from "@/lib/cn";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -13,8 +14,8 @@ interface ProcessStepsProps {
 }
 
 /** Ablauf in nummerierten Schritten – verbunden durch eine Linie ab lg. */
-export function ProcessSteps({
-  eyebrow = "Ablauf",
+export async function ProcessSteps({
+  eyebrow,
   title,
   description,
   steps,
@@ -22,6 +23,7 @@ export function ProcessSteps({
   id = "process-title",
 }: ProcessStepsProps) {
   const isDark = tone === "dark";
+  const eyebrowText = eyebrow ?? ((await getLocale()) === "en" ? "Process" : "Ablauf");
 
   return (
     <section
@@ -29,7 +31,7 @@ export function ProcessSteps({
       className={cn("defer-render py-24 lg:py-32", isDark ? "bg-primary" : "bg-white")}
     >
       <Container>
-        <SectionHeading id={id} eyebrow={eyebrow} title={title} description={description} tone={tone} />
+        <SectionHeading id={id} eyebrow={eyebrowText} title={title} description={description} tone={tone} />
 
         <ol className="relative mt-16 grid grid-cols-1 gap-10 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {/* Verbindungslinie zwischen den Schritt-Nummern */}

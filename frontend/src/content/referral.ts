@@ -1,4 +1,6 @@
 import type { IconName } from "@/components/ui/Icon";
+import type { Locale } from "@/i18n/config";
+import { referralProgram as referralEn } from "./en/referral";
 import { routes } from "./navigation";
 
 /**
@@ -43,3 +45,7 @@ export const referralProgram = {
   },
   cta: { label: "Partner werden", href: `${routes.contact}?leistung=empfehlung#anfrage` },
 };
+
+export function getReferralProgram(locale: Locale): typeof referralProgram {
+  return locale === "en" ? referralEn : referralProgram;
+}

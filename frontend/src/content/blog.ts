@@ -1,9 +1,11 @@
 import type { IconName } from "@/components/ui/Icon";
 import type { Faq, ServiceSlug } from "@/types/content";
+import type { Locale } from "@/i18n/config";
 import { entruempelungPosts } from "./blog-posts/entruempelung";
 import { haushaltsaufloesungPosts } from "./blog-posts/haushaltsaufloesung";
-import { transportPosts } from "./blog-posts/transport-logistik";
+import { transportPosts } from "./blog-posts/transport";
 import { umzugPosts } from "./blog-posts/umzug";
+import * as blogEn from "./en/blog";
 
 /**
  * Blog & Ratgeber – Kategorien und Beiträge.
@@ -66,13 +68,13 @@ export const blogPage = {
   seo: {
     title: "Blog & Ratgeber – Umzug, Entrümpelung, Transport",
     description:
-      "Praxiswissen von FA Transport: Tipps, Checklisten und Hintergründe rund um Umzug, Entrümpelung, Haushaltsauflösung sowie Transport & Logistik.",
+      "Praxiswissen von FA Transport: Tipps, Checklisten und Hintergründe rund um Umzug, Entrümpelung, Haushaltsauflösung und Transport.",
   },
   eyebrow: "Blog & Ratgeber",
   titleLead: "Lesen Sie,",
   titleAccent: "worauf es ankommt.",
   description:
-    "Praxiswissen aus zehn Jahren Umzug, Entrümpelung und Logistik – verständlich aufbereitet, damit Ihr Vorhaben in Düsseldorf und Umgebung von Anfang an gelingt.",
+    "Praxiswissen aus zehn Jahren Umzug, Entrümpelung und Transport – verständlich aufbereitet, damit Ihr Vorhaben in Düsseldorf und Umgebung von Anfang an gelingt.",
   promises: [
     { icon: "award", title: "Aus der Praxis", text: "Wissen direkt von unseren Teams aus Umzug, Entrümpelung und Disposition." },
     { icon: "check", title: "Zum Abhaken", text: "Kompakte Checklisten, die Sie sofort für Ihr Vorhaben nutzen können." },
@@ -93,6 +95,7 @@ export const blogPage = {
     text: "Schreiben Sie uns, was Sie rund um Umzug, Entrümpelung oder Transport wissen möchten – die häufigsten Fragen greifen wir im Blog auf.",
     cta: "Frage stellen",
   },
+  note: "",
 };
 
 export const blogCategories: BlogCategory[] = [
@@ -101,7 +104,7 @@ export const blogCategories: BlogCategory[] = [
     name: "Umzug",
     description: "Planung, Fristen und Checklisten für einen entspannten Umzug – privat wie gewerblich.",
     icon: "truck",
-    image: "/media/umzuege/poster.jpg",
+    image: "/media/stock/umzug-transporter-beladen.jpg",
     service: "umzuege",
   },
   {
@@ -109,7 +112,7 @@ export const blogCategories: BlogCategory[] = [
     name: "Entrümpelung",
     description: "Was bleibt, was geht – und wie Sie Keller, Dachboden oder Lager richtig freiräumen.",
     icon: "recycle",
-    image: "/media/entruempelungen/poster.jpg",
+    image: "/media/stock/entruempelung-sofa-tragen.jpg",
     service: "entruempelungen",
   },
   {
@@ -117,32 +120,40 @@ export const blogCategories: BlogCategory[] = [
     name: "Haushaltsauflösung",
     description: "Einfühlsam und strukturiert: Ablauf, Wertanrechnung und besenreine Übergabe.",
     icon: "house",
-    image: "/media/haushaltsaufloesungen/poster.jpg",
+    image: "/media/stock/haushaltsaufloesung-sessel.jpg",
     service: "haushaltsaufloesungen",
   },
   {
-    slug: "transport-logistik",
-    name: "Transport & Logistik",
+    slug: "transport",
+    name: "Transport",
     description: "Fracht, Dokumente und Abläufe verständlich erklärt – vom Einzelstück bis zur Teilladung.",
     icon: "package",
-    image: "/media/transport-logistik/poster.jpg",
-    service: "transport-logistik",
+    image: "/media/stock/transport-lkw-fahrer.jpg",
+    service: "transport",
   },
 ];
 
 /** Leere Liste → Übersicht und Startseite zeigen stattdessen die Themenvorschau. */
 export const blogPosts: BlogPost[] = [...umzugPosts, ...entruempelungPosts, ...haushaltsaufloesungPosts, ...transportPosts];
 
-// --- Hilfsfunktionen -------------------------------------------------------------------
+// --- Sprachfassungen -------------------------------------------------------------------
 
-export const blogHref = (slug: string) => `/blog/${slug}`;
+const blogDe = { blogPage, blogCategories, blogPosts };
+const blogByLocale: Record<Locale, typeof blogDe> = { de: blogDe, en: blogEn };
 
-export function getCategory(slug: string): BlogCategory | undefined {
-  return blogCategories.find((category) => category.slug === slug);
+/** Blog-Seite, Kategorien und Beiträge in der gewünschten Sprache (Slugs sind in beiden Sprachen gleich). */
+export function getBlog(locale: Locale = "de") {
+  return blogByLocale[locale];
 }
 
-export function getPost(slug: string): BlogPost | undefined {
-  return blogPosts.find((post) => post.slug === slug);
+// --- Hilfsfunktionen -------------------------------------------------------------------
+
+export function getCategory(slug: string, locale: Locale = "de"): BlogCategory | undefined {
+  return getBlog(locale).blogCategories.find((category) => category.slug === slug);
+}
+
+export function getPost(slug: string, locale: Locale = "de"): BlogPost | undefined {
+  return getBlog(locale).blogPosts.find((post) => post.slug === slug);
 }
 
 /** Neueste zuerst. */
@@ -150,44 +161,5 @@ export function sortedPosts(posts: BlogPost[] = blogPosts): BlogPost[] {
   return [...posts].sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
 
-const WORDS_PER_MINUTE = 200;
-
-/** Lesezeit in Minuten (mind. 1) – aus allen Textblöcken berechnet. */
-export function readingMinutes(post: BlogPost): number {
-  const text = post.body
-    .map((block) => {
-      switch (block.type) {
-        case "list":
-        case "checklist":
-          return [block.type === "checklist" ? block.title : "", ...block.items].join(" ");
-        case "table":
-          return [block.caption, ...block.head, ...block.rows.flat(), block.note ?? ""].join(" ");
-        case "tip":
-          return `${block.title} ${block.text}`;
-        case "image":
-          return block.caption ?? "";
-        case "link":
-          return `${block.label} ${block.text ?? ""}`;
-        default:
-          return block.text;
-      }
-    })
-    .concat((post.faqs ?? []).map((faq) => `${faq.question} ${faq.answer}`))
-    .join(" ");
-  return Math.max(1, Math.round(text.split(/\s+/).filter(Boolean).length / WORDS_PER_MINUTE));
-}
-
-/** Anker-ID für Zwischenüberschriften (Inhaltsverzeichnis). */
-export function headingId(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/ä/g, "ae")
-    .replace(/ö/g, "oe")
-    .replace(/ü/g, "ue")
-    .replace(/ß/g, "ss")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-const dateFormat = new Intl.DateTimeFormat("de-DE", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Berlin" });
-export const formatPostDate = (iso: string) => dateFormat.format(new Date(iso));
+// Reine Hilfsfunktionen – eigenes Modul, damit Client-Komponenten nicht alle Beiträge mitladen.
+export { blogHref, formatPostDate, headingId, readingMinutes } from "./blog-utils";

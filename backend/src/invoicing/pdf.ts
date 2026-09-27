@@ -227,7 +227,7 @@ class InvoiceLayout {
     this.logoMark(LEFT, top, 30);
     this.doc.font("displayHeavy").fontSize(17).fillColor(COLOR.ink).text("FA ", LEFT + 40, top + 4, { continued: true, lineBreak: false });
     this.doc.font("displayMedium").text("Transport", { lineBreak: false });
-    this.write("Umzüge · Entrümpelungen · Transport & Logistik", LEFT + 40, top + 24, { size: 7, color: COLOR.muted, lineBreak: false });
+    this.write("Umzüge · Entrümpelungen · Haushaltsauflösungen · Transporte", LEFT + 40, top + 24, { size: 7, color: COLOR.muted, lineBreak: false });
 
     const lines = [seller.street, `${seller.postalCode} ${seller.city}`, seller.phone, seller.email, seller.website.replace(/^https?:\/\//, "")];
     this.write(seller.name, RIGHT - 200, top, { font: "semibold", size: 8.5, color: COLOR.ink, width: 200, align: "right" });
@@ -500,7 +500,7 @@ class InvoiceLayout {
       [seller.name, seller.street, `${seller.postalCode} ${seller.city}`],
       [`Tel. ${seller.phone}`, seller.email, seller.website.replace(/^https?:\/\//, "")],
       [
-        seller.managingDirectors ? `Geschäftsführer: ${seller.managingDirectors}` : "",
+        seller.managingDirectors ? `${seller.ownerTitle ?? "Geschäftsführer"}: ${seller.managingDirectors}` : "",
         [seller.registerCourt, seller.registerNumber].filter(Boolean).join(", "),
         seller.vatId ? `USt-IdNr. ${seller.vatId}` : "",
         seller.taxNumber ? `Steuernummer ${seller.taxNumber}` : "",

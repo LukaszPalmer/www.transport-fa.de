@@ -1,5 +1,6 @@
 import { appMap } from "@/content/app-map.generated";
-import { trackingDemo } from "@/content/app";
+import { getTrackingApp } from "@/content/app";
+import { getLocale } from "@/i18n/server";
 
 const { route, labels, width, height } = appMap;
 
@@ -15,7 +16,8 @@ const visibleLabels = labels.filter(
  * Das Fahrzeug sitzt per animateMotion exakt bei `progress` auf dem Pfad –
  * ohne Koordinaten-Berechnung; der gefahrene Abschnitt nutzt pathLength.
  */
-export function RouteLayer() {
+export async function RouteLayer() {
+  const { trackingDemo } = getTrackingApp(await getLocale());
   const traveled = Math.round(trackingDemo.progress * 100);
 
   return (

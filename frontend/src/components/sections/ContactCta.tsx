@@ -1,6 +1,8 @@
 import type { CtaLink } from "@/types/content";
 import { company } from "@/content/company";
-import { contactCta } from "@/content/home";
+import { getHome } from "@/content/home";
+import { defineMessages } from "@/i18n/config";
+import { getLocale } from "@/i18n/server";
 import { routes, sectionIds } from "@/content/navigation";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -8,11 +10,10 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Icon, type IconName } from "@/components/ui/Icon";
 import { SmartLink } from "@/components/ui/SmartLink";
 
-const channels: Array<{ icon: IconName; label: string; value: string; href: string }> = [
-  { icon: "phone", label: "Telefon", value: company.contact.phone, href: company.contact.phoneHref },
-  { icon: "mail", label: "E-Mail", value: company.contact.email, href: `mailto:${company.contact.email}` },
-  { icon: "log-in", label: "Kundenportal", value: "Aufträge verfolgen & Dokumente abrufen", href: routes.portal },
-];
+const messages = defineMessages({
+  de: { phone: "Telefon", email: "E-Mail", portal: "Kundenportal", portalValue: "Aufträge verfolgen & Dokumente abrufen" },
+  en: { phone: "Phone", email: "Email", portal: "Customer portal", portalValue: "Track jobs & access documents" },
+});
 
 interface ContactCtaProps {
   title?: string;
@@ -21,11 +22,16 @@ interface ContactCtaProps {
 }
 
 /** Abschluss-CTA aller Hauptseiten – Texte pro Seite überschreibbar. */
-export function ContactCta({
-  title = contactCta.title,
-  description = contactCta.description,
-  primaryCta = contactCta.primaryCta,
-}: ContactCtaProps) {
+export async function ContactCta({ title, description, primaryCta }: ContactCtaProps) {
+  const locale = await getLocale();
+  const t = messages[locale];
+  const { contactCta } = getHome(locale);
+  const cta = primaryCta ?? contactCta.primaryCta;
+  const channels: Array<{ icon: IconName; label: string; value: string; href: string }> = [
+    { icon: "phone", label: t.phone, value: company.contact.phone, href: company.contact.phoneHref },
+    { icon: "mail", label: t.email, value: company.contact.email, href: `mailto:${company.contact.email}` },
+    { icon: "log-in", label: t.portal, value: t.portalValue, href: routes.portal },
+  ];
   return (
     <section id={sectionIds.contact} aria-labelledby="contact-title" className="defer-render bg-white pb-24 lg:pb-32">
       <Container>
@@ -44,12 +50,12 @@ export function ContactCta({
             <div className="lg:col-span-7">
               <Eyebrow tone="dark">{contactCta.eyebrow}</Eyebrow>
               <h2 id="contact-title" className="mt-4 text-4xl font-bold leading-[1.08] text-white sm:text-5xl">
-                {title}
+                {title ?? contactCta.title}
               </h2>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-300">{description}</p>
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-slate-300">{description ?? contactCta.description}</p>
               <div className="mt-10 flex flex-col items-start gap-5 sm:flex-row sm:items-center">
-                <ButtonLink href={primaryCta.href} size="lg" withArrow>
-                  {primaryCta.label}
+                <ButtonLink href={cta.href} size="lg" withArrow>
+                  {cta.label}
                 </ButtonLink>
                 <p className="inline-flex items-center gap-2 text-sm text-slate-400">
                   <Icon name="clock" className="size-4 text-accent" />

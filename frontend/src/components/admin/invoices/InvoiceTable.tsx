@@ -1,7 +1,7 @@
 "use client";
 
-import { hasPaymentStatus, type AdminInvoiceRow, type InvoiceMailResult } from "@fa/shared";
-import { Download, Eye, FileCode2, LoaderCircle, Mail, MailCheck, Trash2 } from "lucide-react";
+import { hasPaymentStatus, PAYMENT_REMINDER_LABEL, type AdminInvoiceRow, type InvoiceMailResult, type PaymentReminderResult } from "@fa/shared";
+import { BellRing, Download, Eye, FileCode2, LoaderCircle, Mail, MailCheck, Trash2, UserX } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -66,6 +66,22 @@ export function InvoiceTable({
     }
   };
 
+  const remind = async (row: AdminInvoiceRow) => {
+    const level = ((row.reminderLevel ?? 0) + 1) as 1 | 2 | 3;
+    const label = PAYMENT_REMINDER_LABEL[level];
+    if (!window.confirm(`${label} zu Rechnung ${row.number} per E-Mail senden? Die Rechnung hängt als PDF an, die neue Zahlungsfrist beträgt 7 Tage.`)) return;
+    setBusy(row.id);
+    try {
+      const result = await apiRequest<{ reminder: PaymentReminderResult; invoice: AdminInvoiceRow }>(`/admin/invoices/${row.id}/reminder`, { method: "POST", body: {} });
+      replace(result.invoice);
+      setMessage(row.id, "success", `${label} gesendet an ${result.reminder.sentTo}.`);
+    } catch (error) {
+      setMessage(row.id, "error", errorMessage(error));
+    } finally {
+      setBusy(undefined);
+    }
+  };
+
   const remove = async (row: AdminInvoiceRow) => {
     const question = `${invoiceTypeLabel[row.type]} ${row.number} zurückziehen?\n\nDer Kunde sieht den Beleg danach nicht mehr im Portal. Das Original in der Buchhaltung bleibt unberührt.`;
     if (!window.confirm(question)) return;
@@ -122,13 +138,30 @@ export function InvoiceTable({
                       <MailCheck aria-hidden="true" className="size-3.5" /> per E-Mail {formatRelative(row.emailedAt)}
                     </p>
                   )}
+                  {row.reminderLevel && row.lastReminderAt && (
+                    <p className="mt-0.5 flex items-center gap-1 text-xs font-medium text-amber-700">
+                      <BellRing aria-hidden="true" className="size-3.5" /> {PAYMENT_REMINDER_LABEL[row.reminderLevel]} {formatRelative(row.lastReminderAt)}
+                    </p>
+                  )}
                 </td>
                 {!hideCustomer && (
                   <td className={cn(tableClasses.td, "*:whitespace-nowrap")}>
-                    <Link href={`${routes.adminUsers}/${row.customer.id}`} className="block font-semibold text-primary hover:text-accent-ink">
-                      {row.customer.name}
-                    </Link>
+                    {row.customer.deleted ? (
+                      <p className="font-semibold text-primary">{row.customer.name}</p>
+                    ) : (
+                      <Link href={`${routes.adminUsers}/${row.customer.id}`} className="block font-semibold text-primary hover:text-accent-ink">
+                        {row.customer.name}
+                      </Link>
+                    )}
                     <p className="text-xs text-slate-500">{row.customer.customerNumber}</p>
+                    {row.customer.deleted && (
+                      <p
+                        className="mt-0.5 flex items-center gap-1 text-xs text-slate-500"
+                        title={row.retainUntil ? `Gesetzliche Aufbewahrung bis ${formatDate(row.retainUntil)} – danach automatische Löschung` : undefined}
+                      >
+                        <UserX aria-hidden="true" className="size-3.5" /> Konto gelöscht · aufbewahrt
+                      </p>
+                    )}
                   </td>
                 )}
                 <td className={cn(tableClasses.td, "text-slate-600 *:whitespace-nowrap")}>
@@ -142,6 +175,17 @@ export function InvoiceTable({
                 </td>
                 <td className={tableClasses.td}>
                   {hasPaymentStatus(row.type) ? <PaymentStatusSelect invoice={row} onChange={replace} /> : <span className="text-slate-400">–</span>}
+                  {row.paymentStatus === "OVERDUE" && (row.reminderLevel ?? 0) < 3 && (
+                    <button
+                      type="button"
+                      onClick={() => void remind(row)}
+                      disabled={busy === row.id}
+                      className="mt-1.5 inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-amber-800 ring-1 ring-amber-200 hover:bg-amber-50 disabled:opacity-60"
+                    >
+                      <BellRing aria-hidden="true" className="size-3.5" />
+                      {PAYMENT_REMINDER_LABEL[((row.reminderLevel ?? 0) + 1) as 1 | 2 | 3]} senden
+                    </button>
+                  )}
                   {message && <p className={cn("mt-1 max-w-56 text-xs font-medium", message.tone === "error" ? "text-red-600" : "text-emerald-700")}>{message.text}</p>}
                 </td>
                 <td className={cn(tableClasses.td, "text-right whitespace-nowrap")}>

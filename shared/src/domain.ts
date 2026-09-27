@@ -29,6 +29,8 @@ export const PERMISSIONS = [
   "can_view_documents",
   "can_manage_invoices",
   "can_edit_credentials",
+  "can_manage_leads",
+  "can_manage_accounting",
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -40,6 +42,8 @@ export const PERMISSION_INFO: Record<Permission, { label: string; description: s
   can_view_documents: { label: "Dokumente einsehen", description: "Alle Kundendokumente öffnen und herunterladen" },
   can_manage_invoices: { label: "Rechnungen & Belege", description: "Angebote, Auftragsbestätigungen und Rechnungen senden, Zahlungen verbuchen" },
   can_edit_credentials: { label: "Zugangsdaten ändern", description: "E-Mail und Passwort von Kunden neu setzen" },
+  can_manage_leads: { label: "Anfragen bearbeiten", description: "Anfragen aus dem Kontaktformular übernehmen, nachfassen und abschließen" },
+  can_manage_accounting: { label: "Buchhaltung & Export", description: "Umsätze auswerten, DATEV-Export und Belegpaket für den Steuerberater" },
 };
 
 /** Rechte einer Rolle – ADMIN immer alle. */
@@ -91,8 +95,11 @@ export const NOTIFICATION_INFO: Record<NotificationTopic, { label: string; descr
 // --- Aufträge & Sendungen ---------------------------------------------------
 
 /** Deckungsgleich mit den Leistungsseiten der Website (frontend/src/content/services.ts). */
-export const SERVICE_SLUGS = ["umzuege", "entruempelungen", "haushaltsaufloesungen", "transport-logistik"] as const;
+export const SERVICE_SLUGS = ["umzuege", "entruempelungen", "haushaltsaufloesungen", "transport"] as const;
 export type ServiceSlug = (typeof SERVICE_SLUGS)[number];
+
+/** Frühere Slugs – Aufträge werden beim Start umgeschrieben, alte URLs leiten weiter. */
+export const LEGACY_SERVICE_SLUGS: Record<string, ServiceSlug> = { "transport-logistik": "transport" };
 
 export const SHIPMENT_STATUSES = [
   "PLANNED",
@@ -149,6 +156,19 @@ export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
 export const INVOICE_SOURCES = ["GENERATED", "UPLOAD"] as const;
 export type InvoiceSource = (typeof INVOICE_SOURCES)[number];
 
+/**
+ * Gesetzliche Aufbewahrungsfristen (§ 147 AO, § 257 HGB): Rechnungen und Gutschriften sind
+ * Buchungsbelege (8 Jahre), Angebote und Auftragsbestätigungen Handelsbriefe (6 Jahre).
+ * Die Frist beginnt mit dem Ende des Kalenderjahres, in dem der Beleg ausgestellt wurde.
+ */
+export const RETENTION_YEARS: Record<InvoiceType, number> = { INVOICE: 8, CREDIT_NOTE: 8, OFFER: 6, ORDER_CONFIRMATION: 6 };
+
+/** Ende der Aufbewahrungsfrist: 31.12. des Ausstellungsjahres + Frist (Ende des Tages, deutsche Zeit). */
+export function retentionEnd(type: InvoiceType, issueDate: Date | string): Date {
+  const year = new Date(issueDate).getUTCFullYear() + RETENTION_YEARS[type];
+  return new Date(`${year}-12-31T23:59:59.999+01:00`);
+}
+
 /** Nur Rechnungen haben einen Zahlstatus – Angebote, Auftragsbestätigungen und Gutschriften nicht. */
 export function hasPaymentStatus(type: InvoiceType): boolean {
   return type === "INVOICE";
@@ -191,6 +211,8 @@ export const EMAIL_TYPES = [
   "INVOICE_ISSUED",
   "SHIPMENT_UPDATE",
   "CHAT_REPLY",
+  "PAYMENT_REMINDER",
+  "ACCOUNTING_EXPORT",
   "MANUAL",
 ] as const;
 export type EmailType = (typeof EMAIL_TYPES)[number];

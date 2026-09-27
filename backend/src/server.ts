@@ -6,6 +6,8 @@ import { logger } from "./lib/logger";
 import { attachRealtime, publishSessions } from "./realtime/server";
 import { resumePendingDeletions } from "./services/account-deletion";
 import { autoCloseInactiveChats } from "./services/chat";
+import { purgeExpiredInvoiceArchives } from "./services/invoice-archive";
+import { runStartupMigrations } from "./services/migrations";
 import "./models"; // alle Modelle registrieren (legt u. a. die Time-Series-Collection an)
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
@@ -13,6 +15,7 @@ const HOUR = 60 * 60 * 1000;
 
 async function main(): Promise<void> {
   await connectDatabase();
+  await runStartupMigrations();
 
   // Eigener HTTP-Server, damit Socket.io (Chat, Presence, Live-GPS) denselben Port nutzt.
   const server = createServer(createApp());
@@ -32,6 +35,8 @@ async function main(): Promise<void> {
   // Stündliche Hintergrundjobs – zusätzlich einmal direkt beim Start.
   const hourly = () => {
     void resumePendingDeletions(); // abgebrochene Kontolöschungen nachholen
+    purgeExpiredInvoiceArchives() // Belege gelöschter Kunden nach Ablauf der Aufbewahrungsfrist
+      .catch((error: unknown) => logger.error({ err: error }, "Aufräumjob Belegarchiv fehlgeschlagen"));
     autoCloseInactiveChats() // inaktive Chats beenden → 24-Stunden-Löschfrist beginnt
       .then(publishSessions)
       .catch((error: unknown) => logger.error({ err: error }, "Chat-Aufräumjob fehlgeschlagen"));

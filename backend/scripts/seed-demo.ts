@@ -91,7 +91,7 @@ await Shipment.create([
     shipmentNumber: await shipmentNumber(),
     customerId: customer._id,
     driverId: driver._id,
-    service: "transport-logistik",
+    service: "transport",
     status: "IN_TRANSIT",
     customerReference: "DEMO-DATEN",
     cargoDescription: "12 Europaletten Maschinenteile, 8,4 t",

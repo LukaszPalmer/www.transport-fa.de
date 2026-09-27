@@ -20,12 +20,18 @@ import {
   User,
 } from "../models";
 import { customerPrefix, deletePrefix } from "../storage/r2";
+import { archiveCustomerInvoices, farewellAttachments, type ArchivedInvoiceFile } from "./invoice-archive";
 
 /**
- * DSGVO-Löschung „als hätte es den Kunden nie gegeben":
+ * DSGVO-Löschung:
  * 1. Konto sperren (PENDING_DELETION) + alle Sitzungen beenden
- * 2. Alle Dateien in R2 löschen (Präfix customers/<id>/)
- * 3. Alle Datensätze in einer Transaktion löschen
+ * 2. Belege (Rechnungen, Gutschriften, Angebote, Auftragsbestätigungen) für die gesetzliche
+ *    Aufbewahrungsfrist sichern – PDF nach archive/, Kundennummer und Name als Schnappschuss
+ *    (Art. 17 Abs. 3 lit. b DSGVO, § 147 AO). Sie zählen weiter zu Umsatz und Buchhaltung.
+ * 3. Alle übrigen Dateien in R2 löschen (Präfix customers/<id>/)
+ * 4. Alle übrigen Datensätze in einer Transaktion löschen
+ * 5. Abschiedsmail mit den Rechnungen im Anhang – unabhängig von den Benachrichtigungs-
+ *    einstellungen, damit niemand ohne seine Rechnungen dasteht
  * Schlägt etwas fehl, bleibt der Nutzer gesperrt und resumePendingDeletions()
  * holt den Rest nach – es bleibt nie ein halb gelöschtes, aber aktives Konto.
  *
@@ -40,7 +46,9 @@ export async function deleteCustomerAccount(userId: Types.ObjectId): Promise<voi
   const profile = await CustomerProfile.findOne({ userId }).lean();
   const customerId = profile?._id;
 
-  if (customerId) {
+  let archived: ArchivedInvoiceFile[] = [];
+  if (profile && customerId) {
+    archived = await archiveCustomerInvoices(profile);
     const files = await deletePrefix(customerPrefix(String(customerId)));
     const shipmentIds = await Shipment.find({ customerId }).distinct("_id");
     if (shipmentIds.length > 0) {
@@ -54,8 +62,8 @@ export async function deleteCustomerAccount(userId: Types.ObjectId): Promise<voi
       const chatIds = await ChatSession.find({ customerId }).session(session).distinct("_id");
       await ChatMessage.deleteMany({ sessionId: { $in: chatIds } }, { session });
       await ChatSession.deleteMany({ customerId }, { session });
-      await DocumentModel.deleteMany({ customerId }, { session });
-      await Invoice.deleteMany({ customerId }, { session });
+      await DocumentModel.deleteMany({ customerId, archivedAt: { $exists: false } }, { session });
+      await Invoice.deleteMany({ customerId, archivedCustomer: { $exists: false } }, { session });
       await InvoiceDraft.deleteMany({ customerId }, { session });
       await Shipment.deleteMany({ customerId }, { session });
       await CustomerProfile.deleteOne({ _id: customerId }, { session });
@@ -80,7 +88,16 @@ export async function deleteCustomerAccount(userId: Types.ObjectId): Promise<voi
 
   // Abschiedsbestätigung – bewusst ohne Eintrag im E-Mail-Protokoll (keine Spuren).
   const firstName = profile?.firstName ?? user.name.split(" ")[0] ?? "";
-  await sendMail({ type: "ACCOUNT_DELETED", to: user.email, ...accountDeletedMail(firstName) }, { log: false });
+  const { attachments, omitted } = await farewellAttachments(archived);
+  await sendMail(
+    {
+      type: "ACCOUNT_DELETED",
+      to: user.email,
+      ...accountDeletedMail({ firstName, attached: attachments.length, omitted, retained: archived.length, locale: profile?.locale }),
+      attachments,
+    },
+    { log: false },
+  );
 }
 
 /** Holt abgebrochene Löschungen nach (beim Start und stündlich). */

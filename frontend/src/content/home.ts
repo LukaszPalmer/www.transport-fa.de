@@ -1,4 +1,6 @@
 import type { Commitment, CtaLink, Feature, Stat } from "@/types/content";
+import type { Locale } from "@/i18n/config";
+import * as homeEn from "./en/home";
 import { heroMedia } from "./media";
 import { routes, sectionIds } from "./navigation";
 
@@ -6,28 +8,28 @@ import { routes, sectionIds } from "./navigation";
    Hero
    -------------------------------------------------------------------------- */
 export const hero = {
-  eyebrow: "Transport & Logistik · aus Düsseldorf",
-  headline: ["Globale Logistik.", "Präzise. Zuverlässig."],
-  headlineAccent: "Zukunftssicher.",
+  eyebrow: "Umzug · Räumung · Transport · aus Düsseldorf",
+  headline: ["Umzüge & Transporte.", "Präzise. Zuverlässig."],
+  headlineAccent: "Zum Festpreis.",
   subheadline:
-    "Wir bewegen Ihre Güter termintreu durch Europa – mit moderner Flotte, transparenten Festpreisen und einem festen Ansprechpartner für jede Sendung.",
+    "Ob Umzug, Entrümpelung, Haushaltsauflösung oder Transport: Wir bewegen, was Ihnen wichtig ist – termintreu, sorgfältig und mit einem festen Ansprechpartner. In der Region, deutschlandweit und in Europa.",
   primaryCta: { label: "Angebot anfordern", href: routes.contactForm } satisfies CtaLink,
   secondaryCta: { label: "Unsere Flotte entdecken", href: `#${sectionIds.fleet}` } satisfies CtaLink,
-  proofPoints: ["Angebot in 2 Stunden", "Disposition 24/7", "Europaweites Netzwerk"],
+  proofPoints: ["Angebot innerhalb von 24 Stunden", "Disposition 24/7", "Festpreis ohne Überraschungen"],
   media: heroMedia("hero"),
 };
 
 /** Beispielhafte Live-Sendung für die Tracking-Karte im Hero (dekorativ). */
 export const heroShipment = {
   id: "FA-26-04817",
-  from: { city: "Hamburg", time: "06:15" },
-  to: { city: "Mailand", time: "14:30" },
+  from: { city: "Düsseldorf", time: "07:30" },
+  to: { city: "München", time: "15:45" },
   progress: 68,
   status: "Im Plan",
   details: [
-    { label: "Ladung", value: "24 t · 33 Pal." },
-    { label: "Temperatur", value: "+4 °C" },
-    { label: "Fahrzeug", value: "Sattelzug" },
+    { label: "Ladung", value: "38 m³ Hausrat" },
+    { label: "Team", value: "3 Umzugsprofis" },
+    { label: "Fahrzeug", value: "7,5-t-LKW" },
   ],
 };
 
@@ -82,7 +84,7 @@ export const fleetFeatures: Feature[] = [
     icon: "shield-check",
     title: "Modernste Fahrzeuge",
     description:
-      "Sattelzüge, Tautliner, Kühl- und Schwerlastequipment der neuesten Generation – mit Notbrems-, Abbiege- und Spurhalteassistent.",
+      "Transporter und LKW der neuesten Generation – mit Notbrems-, Abbiege- und Spurhalteassistent sowie professioneller Ladungssicherung.",
   },
   {
     icon: "satellite",
@@ -143,7 +145,7 @@ export const values: Feature[] = [
 export const commitments: Commitment[] = [
   { icon: "coins", value: "Festpreis", label: "Verbindliches Angebot" },
   { icon: "house", value: "Kostenlos", label: "Besichtigung vor Ort oder per Video" },
-  { icon: "clock", value: "< 2 Std.", label: "Antwort auf Ihre Anfrage" },
+  { icon: "clock", value: "< 24 Std.", label: "Antwort auf Ihre Anfrage" },
   { icon: "handshake", value: "1", label: "Fester Ansprechpartner" },
   { icon: "shield-check", value: "Versichert", label: "Haftung nach HGB" },
   { icon: "phone", value: "24/7", label: "Disposition erreichbar" },
@@ -171,5 +173,32 @@ export const contactCta = {
   description:
     "Sprechen Sie mit unseren Experten – ob Umzug, Räumung oder Transport. Sie erhalten schnell ein individuelles, transparentes Angebot.",
   primaryCta: { label: "Angebot anfordern", href: routes.contactForm } satisfies CtaLink,
-  responseTime: "Ø Antwortzeit unter 2 Stunden",
+  responseTime: "Antwort innerhalb von 24 Stunden",
 };
+
+/* --------------------------------------------------------------------------
+   Sprachfassungen
+   -------------------------------------------------------------------------- */
+const homeDe = {
+  hero,
+  heroShipment,
+  trustStats,
+  servicesSection,
+  fleetSection,
+  fleetStats,
+  fleetLiveKpis,
+  fleetFeatures,
+  aboutSection,
+  values,
+  commitments,
+  footerClaim,
+  careersTeaser,
+  contactCta,
+};
+
+const homeByLocale: Record<Locale, typeof homeDe> = { de: homeDe, en: homeEn };
+
+/** Inhalte der Startseite (und Footer-Claim) in der gewünschten Sprache. */
+export function getHome(locale: Locale) {
+  return homeByLocale[locale];
+}

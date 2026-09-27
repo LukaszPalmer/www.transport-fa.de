@@ -57,6 +57,9 @@ const EnvSchema = z.object({
   MAIL_PROVIDER: z.enum(["console", "resend"]).default("console"),
   RESEND_API_KEY: z.string().startsWith("re_", "RESEND_API_KEY muss mit re_ beginnen").optional(),
   MAIL_FROM: z.string().min(3).default("FA Transport <kontakt@transport-fa.de>"),
+
+  /** Gemeinsames Geheimnis mit dem Frontend: Das Kontaktformular liefert Anfragen damit ins CRM ein. */
+  LEAD_INGEST_TOKEN: z.string().min(24, "LEAD_INGEST_TOKEN muss mindestens 24 Zeichen lang sein").optional(),
 }).refine((values) => values.MAIL_PROVIDER !== "resend" || Boolean(values.RESEND_API_KEY), {
   path: ["RESEND_API_KEY"],
   message: "RESEND_API_KEY fehlt – für MAIL_PROVIDER=resend erforderlich.",

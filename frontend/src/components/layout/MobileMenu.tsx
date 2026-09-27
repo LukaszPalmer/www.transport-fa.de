@@ -4,6 +4,9 @@ import { ChevronDown, LogIn, Menu, Phone, X } from "lucide-react";
 import { useRef, type MouseEvent } from "react";
 import { company } from "@/content/company";
 import type { NavItem } from "@/types/content";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
+import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 import { buttonClasses } from "@/components/ui/button-styles";
 import { LogoMark } from "@/components/ui/Logo";
 import { SmartLink } from "@/components/ui/SmartLink";
@@ -13,7 +16,13 @@ import { SmartLink } from "@/components/ui/SmartLink";
  * Fokus-Falle, Esc-Taste, inerter Seitenhintergrund und Top-Layer gibt es
  * damit vom Browser – ohne zusätzliche Bibliothek.
  */
+const messages = defineMessages({
+  de: { open: "Menü öffnen", close: "Menü schließen", menu: "Hauptmenü", nav: "Mobile Navigation", allServices: "Alle Leistungen im Überblick", portal: "Kundenportal" },
+  en: { open: "Open menu", close: "Close menu", menu: "Main menu", nav: "Mobile navigation", allServices: "All services at a glance", portal: "Customer portal" },
+});
+
 export function MobileMenu({ items }: { items: NavItem[] }) {
+  const t = useMessages(messages);
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   const open = () => dialogRef.current?.showModal();
@@ -35,13 +44,13 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
         className="glass inline-flex size-10 items-center justify-center rounded-xl text-white lg:hidden"
       >
         <Menu aria-hidden="true" className="size-5" />
-        <span className="sr-only">Menü öffnen</span>
+        <span className="sr-only">{t.open}</span>
       </button>
 
       <dialog
         id="mobile-menu"
         ref={dialogRef}
-        aria-label="Hauptmenü"
+        aria-label={t.menu}
         onClick={handleClick}
         className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none border-0 bg-primary p-0 text-white opacity-0 transition-[opacity,translate,display,overlay] transition-discrete duration-300 ease-out-expo translate-x-6 open:translate-x-0 open:opacity-100 starting:open:translate-x-6 starting:open:opacity-0 backdrop:bg-primary/60 lg:hidden"
       >
@@ -59,11 +68,11 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
               className="glass inline-flex size-10 items-center justify-center rounded-xl"
             >
               <X aria-hidden="true" className="size-5" />
-              <span className="sr-only">Menü schließen</span>
+              <span className="sr-only">{t.close}</span>
             </button>
           </div>
 
-          <nav aria-label="Mobile Navigation" className="container-page flex-1 py-8">
+          <nav aria-label={t.nav} className="container-page flex-1 py-8">
             <ul className="divide-y divide-white/10 border-y border-white/10">
               {items.map((item, index) => {
                 const number = (
@@ -101,7 +110,7 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
                           ))}
                           <li>
                             <SmartLink href={item.href} className="block px-4 py-3 text-sm font-medium text-accent">
-                              Alle Leistungen im Überblick
+                              {t.allServices}
                             </SmartLink>
                           </li>
                         </ul>
@@ -122,13 +131,14 @@ export function MobileMenu({ items }: { items: NavItem[] }) {
           </nav>
 
           <div className="container-page space-y-3 pb-10">
+            <LanguageSwitcher className="mb-2" />
             <SmartLink
               href={company.portalUrl}
               prefetch={false}
               className={buttonClasses({ size: "lg", className: "w-full" })}
             >
               <LogIn aria-hidden="true" className="size-5" />
-              Kundenportal
+              {t.portal}
             </SmartLink>
             <a
               href={company.contact.phoneHref}

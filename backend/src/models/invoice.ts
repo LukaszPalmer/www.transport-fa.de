@@ -13,10 +13,31 @@ import { Schema } from "mongoose";
 import { centsField, defineModel, ObjectId, type Id } from "../db/schema-kit";
 import type { EInvoiceData } from "../invoicing/types";
 
+/** Kunde zum Zeitpunkt der Kontolöschung – der Beleg bleibt für die Aufbewahrungsfrist lesbar zugeordnet. */
+/** Gesendete Zahlungserinnerung bzw. Mahnung (1 = Erinnerung, 2 = 1. Mahnung, 3 = 2. Mahnung). */
+export interface InvoiceReminder {
+  level: 1 | 2 | 3;
+  sentAt: Date;
+  sentTo: string;
+}
+
+export interface ArchivedCustomer {
+  customerNumber: string;
+  name: string;
+  companyName?: string;
+  /** Kundennummer, Name, Firma – kleingeschrieben, für die Belegsuche im Admin. */
+  searchText: string;
+  deletedAt: Date;
+}
+
 /**
  * Belege: im Portal erstellte E-Rechnungen (GENERATED) und PDF-Uploads aus der
  * Buchhaltungssoftware (UPLOAD). Rechnungen, Angebote, Auftragsbestätigungen und
  * Gutschriften in einer Collection.
+ *
+ * Löscht ein Kunde sein Konto, bleiben seine Belege erhalten (§ 147 AO, Art. 17 Abs. 3 lit. b
+ * DSGVO): `archivedCustomer` ersetzt dann das gelöschte Kundenprofil, `retainUntil` markiert das
+ * Fristende – danach löscht der Aufräumjob Beleg und PDF endgültig.
  */
 export interface IInvoice {
   _id: Id;
@@ -41,7 +62,11 @@ export interface IInvoice {
   /** Zuletzt per E-Mail mit PDF im Anhang an den Kunden gesendet. */
   emailedAt?: Date;
   emailedTo?: string;
-  createdById: Id; // Mitarbeiter
+  /** Mitarbeiter – fehlt, wenn der Mitarbeiter-Zugang inzwischen gelöscht wurde. */
+  createdById?: Id;
+  archivedCustomer?: ArchivedCustomer;
+  retainUntil?: Date;
+  reminders?: InvoiceReminder[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -68,7 +93,31 @@ const InvoiceSchema = new Schema<IInvoice>(
     einvoice: { type: Schema.Types.Mixed, select: false },
     emailedAt: Date,
     emailedTo: { type: String, lowercase: true, trim: true, maxlength: 254 },
-    createdById: { type: ObjectId, ref: "User", required: true },
+    createdById: { type: ObjectId, ref: "User" },
+    archivedCustomer: new Schema<ArchivedCustomer>(
+      {
+        customerNumber: { type: String, required: true },
+        name: { type: String, required: true, maxlength: 200 },
+        companyName: { type: String, maxlength: 200 },
+        searchText: { type: String, default: "" },
+        deletedAt: { type: Date, required: true },
+      },
+      { _id: false },
+    ),
+    retainUntil: Date,
+    reminders: {
+      type: [
+        new Schema<InvoiceReminder>(
+          {
+            level: { type: Number, enum: [1, 2, 3], required: true },
+            sentAt: { type: Date, required: true },
+            sentTo: { type: String, required: true, maxlength: 254 },
+          },
+          { _id: false },
+        ),
+      ],
+      default: undefined,
+    },
   },
   { timestamps: true },
 );
@@ -93,5 +142,7 @@ InvoiceSchema.index({ customerId: 1, issueDate: -1 });
 InvoiceSchema.index({ issueDate: -1 }); // Belegliste im Admin
 InvoiceSchema.index({ shipmentId: 1, issueDate: -1 }, { partialFilterExpression: { shipmentId: { $exists: true } } }); // Rechnung je Auftrag
 InvoiceSchema.index({ paymentStatus: 1, dueDate: 1 }); // Überfällige: { paymentStatus: "PENDING", dueDate: { $lt: now } }
+InvoiceSchema.index({ paymentStatus: 1, paidAt: -1 }); // Einnahmen (Monat, Jahr, gesamt)
+InvoiceSchema.index({ retainUntil: 1 }, { partialFilterExpression: { retainUntil: { $exists: true } } }); // Aufräumjob nach Fristende
 
 export const Invoice = defineModel("Invoice", InvoiceSchema);

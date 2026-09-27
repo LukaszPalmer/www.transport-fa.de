@@ -62,7 +62,7 @@ export function buildCiiXml(data: EInvoiceData, profile: CiiProfile = "EN16931")
   const buyerName = buyer.companyName ?? buyer.name ?? "";
   const legalNote = [
     seller.name,
-    seller.managingDirectors && `Geschäftsführer: ${seller.managingDirectors}`,
+    seller.managingDirectors && `${seller.ownerTitle ?? "Geschäftsführer"}: ${seller.managingDirectors}`,
     seller.registerCourt && seller.registerNumber && `${seller.registerCourt}, ${seller.registerNumber}`,
   ]
     .filter(Boolean)

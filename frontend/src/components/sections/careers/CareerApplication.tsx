@@ -3,6 +3,8 @@
 import { ArrowRight, Briefcase, ChevronDown, Clock, MapPin } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import type { CareerArea, CareerAreaId, Job } from "@/types/content";
+import { useMessages } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { cn } from "@/lib/cn";
 import { buttonClasses } from "@/components/ui/button-styles";
 import { ApplicationForm, type ApplicationFormProps } from "@/components/forms/ApplicationForm";
@@ -18,6 +20,33 @@ interface CareerApplicationProps extends Pick<ApplicationFormProps, "initiative"
 
 type Filter = "alle" | CareerAreaId;
 
+const messages = defineMessages({
+  de: {
+    all: "Alle Bereiche",
+    filter: "Stellen nach Bereich filtern",
+    details: "Details",
+    close: "Schließen",
+    tasks: "Ihre Aufgaben",
+    profile: "Das bringen Sie mit",
+    apply: "Jetzt bewerben",
+    nothing: "Nichts Passendes dabei?",
+    nothingText: "Bewerben Sie sich initiativ – für jeden unserer Bereiche.",
+    initiative: "Initiativ bewerben",
+  },
+  en: {
+    all: "All areas",
+    filter: "Filter positions by area",
+    details: "Details",
+    close: "Close",
+    tasks: "Your tasks",
+    profile: "What you bring",
+    apply: "Apply now",
+    nothing: "Nothing suitable?",
+    nothingText: "Send a speculative application – for any of our areas.",
+    initiative: "Apply speculatively",
+  },
+});
+
 /**
  * Stellenmarkt + Bewerbung als Einheit: „Jetzt bewerben“ wählt die Stelle
  * im Formular vor und scrollt dorthin. Filter nach Unternehmensbereich.
@@ -32,6 +61,7 @@ export function CareerApplication({
   jobsHeading,
   formHeading,
 }: CareerApplicationProps) {
+  const t = useMessages(messages);
   const [filter, setFilter] = useState<Filter>("alle");
   const [position, setPosition] = useState("");
   const [formKey, setFormKey] = useState(0);
@@ -51,7 +81,7 @@ export function CareerApplication({
   };
 
   const filters: Array<{ id: Filter; label: string; count: number }> = [
-    { id: "alle", label: "Alle Bereiche", count: jobs.length },
+    { id: "alle", label: t.all, count: jobs.length },
     ...areas.map((area) => ({ id: area.id, label: area.label, count: jobs.filter((job) => job.area === area.id).length })),
   ];
 
@@ -61,7 +91,7 @@ export function CareerApplication({
         <div className="container-page">
           {jobsHeading}
 
-          <div role="group" aria-label="Stellen nach Bereich filtern" className="mt-10 flex flex-wrap gap-2">
+          <div role="group" aria-label={t.filter} className="mt-10 flex flex-wrap gap-2">
             {filters.map((entry) => (
               <button
                 key={entry.id}
@@ -110,8 +140,8 @@ export function CareerApplication({
                       </span>
                     </span>
                     <span className="inline-flex items-center gap-2 self-start text-sm font-semibold text-accent-ink sm:self-center">
-                      <span className="group-open:hidden">Details</span>
-                      <span className="hidden group-open:inline">Schließen</span>
+                      <span className="group-open:hidden">{t.details}</span>
+                      <span className="hidden group-open:inline">{t.close}</span>
                       <ChevronDown aria-hidden="true" className="size-4 transition-transform duration-300 group-open:rotate-180" />
                     </span>
                   </summary>
@@ -119,11 +149,11 @@ export function CareerApplication({
                   <div className="border-t border-slate-100 px-6 pt-6 pb-6">
                     <p className="max-w-3xl leading-relaxed text-slate-600">{job.summary}</p>
                     <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-2">
-                      <JobList title="Ihre Aufgaben" items={job.tasks} />
-                      <JobList title="Das bringen Sie mit" items={job.profile} />
+                      <JobList title={t.tasks} items={job.tasks} />
+                      <JobList title={t.profile} items={job.profile} />
                     </div>
                     <button type="button" onClick={() => applyFor(job.id)} className={buttonClasses({ className: "mt-8" })}>
-                      Jetzt bewerben
+                      {t.apply}
                       <ArrowRight aria-hidden="true" className="size-4" />
                     </button>
                   </div>
@@ -138,12 +168,12 @@ export function CareerApplication({
                 <Briefcase aria-hidden="true" className="size-5" />
               </span>
               <span>
-                <span className="block font-display font-bold text-primary">Nichts Passendes dabei?</span>
-                <span className="text-sm text-slate-600">Bewerben Sie sich initiativ – für jeden unserer Bereiche.</span>
+                <span className="block font-display font-bold text-primary">{t.nothing}</span>
+                <span className="text-sm text-slate-600">{t.nothingText}</span>
               </span>
             </span>
             <button type="button" onClick={() => applyFor(initiative.id)} className={buttonClasses({ variant: "outline" })}>
-              Initiativ bewerben
+              {t.initiative}
             </button>
           </div>
         </div>

@@ -11,10 +11,12 @@ import {
 import { CloudUpload, FileCheck2, LoaderCircle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useRef, useState, type DragEvent, type FormEvent } from "react";
+import { useLocale } from "@/i18n/client";
+import { defineMessages } from "@/i18n/config";
 import { API_URL } from "@/lib/api/client";
-import { NETWORK_ERROR } from "@/lib/api/errors";
+import { ApiError, NETWORK_ERROR, localizeMessage } from "@/lib/api/errors";
 import { cn } from "@/lib/cn";
-import { documentCategoryLabel, formatFileSize } from "@/lib/portal-format";
+import { formatFileSize, portalLabels } from "@/lib/portal-format";
 import { CheckboxField, FieldShell, inputClasses, selectClasses } from "@/components/forms/fields";
 import { AuthAlert } from "@/components/portal/auth-fields";
 import { buttonClasses } from "@/components/ui/button-styles";
@@ -24,9 +26,58 @@ const MAX_MB = MAX_UPLOAD_BYTES / 1024 / 1024;
 
 type Shipments = DocumentListResponse["shipments"];
 
+const messages = defineMessages({
+  de: {
+    wrongType: "Bitte wählen Sie eine PDF- oder Bilddatei (JPG, PNG, WEBP, HEIC).",
+    tooLarge: `Die Datei ist größer als ${MAX_MB} MB.`,
+    noFile: "Bitte wählen Sie eine Datei aus.",
+    uploaded: (title: string) => `„${title}“ wurde hochgeladen.`,
+    title: "Dokument hochladen",
+    intro: `Zoll- und Frachtpapiere, Lieferscheine oder Fotos – als PDF oder Bild, bis ${MAX_MB} MB.`,
+    clickToChange: "zum Ändern klicken",
+    dropHere: "Datei hierher ziehen oder auswählen",
+    formats: `PDF, JPG, PNG, WEBP, HEIC · max. ${MAX_MB} MB`,
+    name: "Bezeichnung",
+    namePlaceholder: "z. B. Ausfuhrbegleitdokument",
+    category: "Kategorie",
+    shipment: "Zu welchem Auftrag?",
+    shipmentHint: "Optional – hilft uns, das Dokument dem richtigen LKW mitzugeben.",
+    noShipment: "Kein bestimmter Auftrag",
+    handToDriver: "Dem Fahrer mitgeben",
+    handToDriverText: " – wir drucken das Dokument aus und geben es dem Fahrer mit in den LKW.",
+    uploading: "Wird hochgeladen …",
+    upload: "Hochladen",
+    resetLabel: "Auswahl zurücksetzen",
+  },
+  en: {
+    wrongType: "Please choose a PDF or image file (JPG, PNG, WEBP, HEIC).",
+    tooLarge: `The file is larger than ${MAX_MB} MB.`,
+    noFile: "Please choose a file.",
+    uploaded: (title: string) => `“${title}” has been uploaded.`,
+    title: "Upload a document",
+    intro: `Customs and freight papers, delivery notes or photos – as PDF or image, up to ${MAX_MB} MB.`,
+    clickToChange: "click to change",
+    dropHere: "Drag a file here or choose one",
+    formats: `PDF, JPG, PNG, WEBP, HEIC · max. ${MAX_MB} MB`,
+    name: "Title",
+    namePlaceholder: "e.g. export accompanying document",
+    category: "Category",
+    shipment: "Which job is it for?",
+    shipmentHint: "Optional – helps us give the document to the right truck.",
+    noShipment: "No specific job",
+    handToDriver: "Hand to the driver",
+    handToDriverText: " – we print the document and give it to the driver in the truck.",
+    uploading: "Uploading …",
+    upload: "Upload",
+    resetLabel: "Reset selection",
+  },
+});
+
 /** Dokument hochladen – per Drag & Drop oder Dateiauswahl (am Handy auch direkt per Kamera). */
 export function UploadCard({ shipments }: { shipments: Shipments }) {
   const router = useRouter();
+  const locale = useLocale();
+  const t = messages[locale];
   const inputId = useId();
   const formRef = useRef<HTMLFormElement>(null);
   const [file, setFile] = useState<File>();
@@ -43,8 +94,8 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
     setFieldErrors({});
     if (!candidate) return;
     const typeOk = candidate.type in UPLOAD_FILE_TYPES || ALLOWED_EXTENSIONS.test(candidate.name);
-    if (!typeOk) return setFieldErrors({ file: "Bitte wählen Sie eine PDF- oder Bilddatei (JPG, PNG, WEBP, HEIC)." });
-    if (candidate.size > MAX_UPLOAD_BYTES) return setFieldErrors({ file: `Die Datei ist größer als ${MAX_MB} MB.` });
+    if (!typeOk) return setFieldErrors({ file: t.wrongType });
+    if (candidate.size > MAX_UPLOAD_BYTES) return setFieldErrors({ file: t.tooLarge });
     setFile(candidate);
     if (!title) setTitle(candidate.name.replace(/\.[^.]+$/, "").replace(/[_-]+/g, " ").trim());
   };
@@ -64,7 +115,7 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!file) return setFieldErrors({ file: "Bitte wählen Sie eine Datei aus." });
+    if (!file) return setFieldErrors({ file: t.noFile });
     const data = new FormData(event.currentTarget);
     const body = new FormData();
     // Felder vor der Datei – die API prüft sie, bevor sie die Datei annimmt.
@@ -87,12 +138,12 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
     };
     request.onerror = () => {
       setProgress(undefined);
-      setError(NETWORK_ERROR);
+      setError(localizeMessage(NETWORK_ERROR));
     };
     request.onload = () => {
       setProgress(undefined);
       if (request.status === 201) {
-        setSuccess(`„${title}“ wurde hochgeladen.`);
+        setSuccess(t.uploaded(title));
         reset();
         router.refresh();
         return;
@@ -104,8 +155,11 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
           return undefined;
         }
       })();
-      if (response?.error.fields) setFieldErrors(response.error.fields);
-      else setError(response?.error.message ?? "Das Hochladen hat leider nicht geklappt. Bitte versuchen Sie es erneut.");
+      if (!response) return setError(localizeMessage("Das Hochladen hat leider nicht geklappt. Bitte versuchen Sie es erneut."));
+      // ApiError übersetzt Meldung und Feldfehler in die Sprache der Seite
+      const apiError = new ApiError(request.status, response.error.code, response.error.message, response.error.fields);
+      if (apiError.fields) setFieldErrors(apiError.fields);
+      else setError(apiError.message);
     };
     request.send(body);
   };
@@ -115,9 +169,9 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
   return (
     <section aria-labelledby="upload-title" className="rounded-3xl bg-white p-6 shadow-card ring-1 ring-primary/5 sm:p-8">
       <h2 id="upload-title" className="font-display text-lg font-bold text-primary">
-        Dokument hochladen
+        {t.title}
       </h2>
-      <p className="mt-1 text-sm text-slate-600">Zoll- und Frachtpapiere, Lieferscheine oder Fotos – als PDF oder Bild, bis {MAX_MB} MB.</p>
+      <p className="mt-1 text-sm text-slate-600">{t.intro}</p>
 
       <form ref={formRef} onSubmit={onSubmit} className="mt-6 space-y-5">
         {error && <AuthAlert tone="error">{error}</AuthAlert>}
@@ -142,13 +196,15 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
               <>
                 <FileCheck2 aria-hidden="true" className="size-8 text-emerald-600" />
                 <span className="max-w-full truncate font-semibold text-primary">{file.name}</span>
-                <span className="text-xs text-slate-500">{formatFileSize(file.size)} · zum Ändern klicken</span>
+                <span className="text-xs text-slate-500">
+                  {formatFileSize(file.size, locale)} · {t.clickToChange}
+                </span>
               </>
             ) : (
               <>
                 <CloudUpload aria-hidden="true" className="size-8 text-accent-ink" />
-                <span className="font-semibold text-primary">Datei hierher ziehen oder auswählen</span>
-                <span className="text-xs text-slate-500">PDF, JPG, PNG, WEBP, HEIC · max. {MAX_MB} MB</span>
+                <span className="font-semibold text-primary">{t.dropHere}</span>
+                <span className="text-xs text-slate-500">{t.formats}</span>
               </>
             )}
           </label>
@@ -167,32 +223,32 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
           )}
         </div>
 
-        <FieldShell id={`${inputId}-title`} label="Bezeichnung" required error={fieldErrors.title}>
+        <FieldShell id={`${inputId}-title`} label={t.name} required error={fieldErrors.title}>
           <input
             id={`${inputId}-title`}
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
             maxLength={200}
-            placeholder="z. B. Ausfuhrbegleitdokument"
+            placeholder={t.namePlaceholder}
             className={cn(inputClasses, "h-12")}
           />
         </FieldShell>
 
-        <FieldShell id={`${inputId}-category`} label="Kategorie" required error={fieldErrors.category}>
+        <FieldShell id={`${inputId}-category`} label={t.category} required error={fieldErrors.category}>
           <select id={`${inputId}-category`} name="category" defaultValue="CUSTOMS" className={selectClasses}>
             {CUSTOMER_UPLOAD_CATEGORIES.map((category) => (
               <option key={category} value={category}>
-                {documentCategoryLabel[category]}
+                {portalLabels(locale).documentCategoryLabel[category]}
               </option>
             ))}
           </select>
         </FieldShell>
 
         {shipments.length > 0 && (
-          <FieldShell id={`${inputId}-shipment`} label="Zu welchem Auftrag?" hint="Optional – hilft uns, das Dokument dem richtigen LKW mitzugeben." error={fieldErrors.shipmentId}>
+          <FieldShell id={`${inputId}-shipment`} label={t.shipment} hint={t.shipmentHint} error={fieldErrors.shipmentId}>
             <select id={`${inputId}-shipment`} name="shipmentId" defaultValue="" className={selectClasses}>
-              <option value="">Kein bestimmter Auftrag</option>
+              <option value="">{t.noShipment}</option>
               {shipments.map((shipment) => (
                 <option key={shipment.id} value={shipment.id}>
                   {shipment.label}
@@ -203,7 +259,8 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
         )}
 
         <CheckboxField name="handToDriver">
-          <strong className="text-primary">Dem Fahrer mitgeben</strong> – wir drucken das Dokument aus und geben es dem Fahrer mit in den LKW.
+          <strong className="text-primary">{t.handToDriver}</strong>
+          {t.handToDriverText}
         </CheckboxField>
 
         {uploading && (
@@ -211,17 +268,19 @@ export function UploadCard({ shipments }: { shipments: Shipments }) {
             <div className="h-2 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-accent transition-[width]" style={{ width: `${progress}%` }} />
             </div>
-            <p className="text-xs text-slate-500">Wird hochgeladen … {progress} %</p>
+            <p className="text-xs text-slate-500">
+              {t.uploading} {progress} %
+            </p>
           </div>
         )}
 
         <div className="flex gap-3">
           <button type="submit" disabled={uploading} className={buttonClasses({ className: "flex-1 disabled:cursor-wait disabled:opacity-80" })}>
             {uploading ? <LoaderCircle aria-hidden="true" className="size-5 animate-spin" /> : <CloudUpload aria-hidden="true" className="size-5" />}
-            {uploading ? "Wird hochgeladen …" : "Hochladen"}
+            {uploading ? t.uploading : t.upload}
           </button>
           {file && !uploading && (
-            <button type="button" onClick={reset} className={buttonClasses({ variant: "outline" })} aria-label="Auswahl zurücksetzen">
+            <button type="button" onClick={reset} className={buttonClasses({ variant: "outline" })} aria-label={t.resetLabel}>
               <X aria-hidden="true" className="size-5" />
             </button>
           )}

@@ -1,5 +1,6 @@
-import type { NavGroup, NavItem, NavLink } from "@/types/content";
-import { services, serviceHref } from "./services";
+import type { NavChild, NavGroup, NavItem, NavLink } from "@/types/content";
+import type { Locale } from "@/i18n/config";
+import { getServices, serviceHref } from "./services";
 
 /**
  * Anker-IDs der Startseiten-Sektionen. Links nutzen "/#id", damit sie auch
@@ -42,46 +43,89 @@ export const routes = {
   adminInvoiceDrafts: "/admin/invoices/drafts",
   adminChat: "/admin/chat",
   adminTeam: "/admin/team",
+  adminLeads: "/admin/leads",
+  adminAccounting: "/admin/accounting",
+  adminActivity: "/admin/activity",
 } as const;
 
-export const serviceNav = services.map((service) => ({
-  label: service.name,
-  href: serviceHref(service.slug),
-  description: service.teaser,
-  icon: service.icon,
-}));
-
-export const mainNav: NavItem[] = [
-  { label: "Leistungen", href: `/#${sectionIds.services}`, children: serviceNav },
-  { label: "Über uns", href: `/#${sectionIds.about}` },
-  { label: "Flotte", href: `/#${sectionIds.fleet}` },
-  { label: "Blog", href: routes.blog },
-  { label: "Karriere", href: routes.careers },
-  { label: "Kontakt", href: routes.contact },
-];
-
-export const legalNav: NavLink[] = [
-  { label: "Impressum", href: "/impressum" },
-  { label: "Datenschutz", href: "/datenschutz" },
-  { label: "Sitemap", href: "/sitemap.xml" },
-];
-
-export const footerNav: NavGroup[] = [
-  {
-    title: "Leistungen",
-    items: serviceNav.map(({ label, href }) => ({ label, href })),
+const labels = {
+  de: {
+    services: "Leistungen",
+    about: "Über uns",
+    fleet: "Flotte",
+    blog: "Blog",
+    careers: "Karriere",
+    contact: "Kontakt",
+    imprint: "Impressum",
+    privacy: "Datenschutz",
+    sitemap: "Sitemap",
+    company: "Unternehmen",
+    fleetTech: "Flotte & Technologie",
+    blogGuides: "Blog & Ratgeber",
+    referral: "Empfehlungsprogramm",
+    portal: "Kundenportal",
+    review: "Bewertung abgeben",
   },
-  {
-    title: "Unternehmen",
-    items: [
-      { label: "Über uns", href: `/#${sectionIds.about}` },
-      { label: "Flotte & Technologie", href: `/#${sectionIds.fleet}` },
-      { label: "Blog & Ratgeber", href: routes.blog },
-      { label: "Empfehlungsprogramm", href: `/#${sectionIds.referral}` },
-      { label: "Karriere", href: routes.careers },
-      { label: "Kontakt", href: routes.contact },
-      { label: "Kundenportal", href: routes.portal },
-      { label: "Bewertung abgeben", href: routes.review },
-    ],
+  en: {
+    services: "Services",
+    about: "About us",
+    fleet: "Fleet",
+    blog: "Blog",
+    careers: "Careers",
+    contact: "Contact",
+    imprint: "Legal notice",
+    privacy: "Privacy policy",
+    sitemap: "Sitemap",
+    company: "Company",
+    fleetTech: "Fleet & technology",
+    blogGuides: "Blog & guides",
+    referral: "Referral programme",
+    portal: "Customer portal",
+    review: "Leave a review",
   },
-];
+} satisfies Record<Locale, Record<string, string>>;
+
+/** Menüs der Website in der gewünschten Sprache (URLs sind in beiden Sprachen gleich). */
+export function getNavigation(locale: Locale) {
+  const t = labels[locale];
+  const serviceNav: NavChild[] = getServices(locale).map((service) => ({
+    label: service.name,
+    href: serviceHref(service.slug),
+    description: service.teaser,
+    icon: service.icon,
+  }));
+
+  const mainNav: NavItem[] = [
+    { label: t.services, href: `/#${sectionIds.services}`, children: serviceNav },
+    { label: t.about, href: `/#${sectionIds.about}` },
+    { label: t.fleet, href: `/#${sectionIds.fleet}` },
+    { label: t.blog, href: routes.blog },
+    { label: t.careers, href: routes.careers },
+    { label: t.contact, href: routes.contact },
+  ];
+
+  const legalNav: NavLink[] = [
+    { label: t.imprint, href: "/impressum" },
+    { label: t.privacy, href: "/datenschutz" },
+    { label: t.sitemap, href: "/sitemap.xml" },
+  ];
+
+  const footerNav: NavGroup[] = [
+    { title: t.services, items: serviceNav.map(({ label, href }) => ({ label, href })) },
+    {
+      title: t.company,
+      items: [
+        { label: t.about, href: `/#${sectionIds.about}` },
+        { label: t.fleetTech, href: `/#${sectionIds.fleet}` },
+        { label: t.blogGuides, href: routes.blog },
+        { label: t.referral, href: `/#${sectionIds.referral}` },
+        { label: t.careers, href: routes.careers },
+        { label: t.contact, href: routes.contact },
+        { label: t.portal, href: routes.portal },
+        { label: t.review, href: routes.review },
+      ],
+    },
+  ];
+
+  return { serviceNav, mainNav, legalNav, footerNav };
+}

@@ -16,7 +16,7 @@ export default async function AdminTeamPage() {
   return (
     <AdminPage
       title={isAdmin ? "Team & Zugang" : "Mein Zugang"}
-      description={isAdmin ? "Mitarbeiter anlegen, Rechte vergeben, Zugänge sperren oder 2FA zurücksetzen." : "Ihre Rechte und Ihr Passwort."}
+      description={isAdmin ? "Mitarbeiter anlegen, Rechte vergeben, Zugänge sperren, 2FA zurücksetzen oder Mitarbeiter endgültig löschen." : "Ihre Rechte und Ihr Passwort."}
     >
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
         {staff && (

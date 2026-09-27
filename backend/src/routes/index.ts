@@ -2,6 +2,7 @@ import { Router } from "express";
 import { accountRouter } from "./account";
 import { adminRouter } from "./admin";
 import { authRouter } from "./auth";
+import { leadsRouter } from "./leads";
 import { mfaRouter } from "./auth-mfa";
 import { portalRouter } from "./portal";
 
@@ -20,3 +21,4 @@ apiRouter.use("/auth", authRouter);
 apiRouter.use("/account", accountRouter);
 apiRouter.use("/portal", portalRouter);
 apiRouter.use("/admin", adminRouter);
+apiRouter.use("/leads", leadsRouter);

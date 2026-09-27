@@ -4,6 +4,7 @@ import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   DeleteAccountInput,
   NotificationPreferencesInput,
+  UpdateLocaleInput,
   UpdateProfileInput,
   type AccountSettings,
 } from "@fa/shared";
@@ -47,6 +48,7 @@ async function buildSettings(userId: Types.ObjectId): Promise<AccountSettings> {
       customerNumber: profile.customerNumber,
     },
     notifications: { ...DEFAULT_NOTIFICATION_PREFERENCES, ...profile.notifications },
+    locale: profile.locale ?? "de",
     hasPassword: Boolean(user.passwordHash),
     googleLinked: Boolean(user.googleSub),
     emailVerified: Boolean(user.emailVerifiedAt),
@@ -103,6 +105,15 @@ accountRouter.patch("/notifications", async (req, res) => {
   const notifications = NotificationPreferencesInput.parse(req.body);
   await CustomerProfile.updateOne({ userId: user.id }, { notifications });
   res.json(await buildSettings(user.id));
+});
+
+/** Sprache für E-Mails – der Sprachumschalter im Portal ruft das bei jedem Wechsel auf. */
+accountRouter.patch("/locale", async (req, res) => {
+  const { user } = req.auth!;
+  await consumeRateLimit(`profile:user:${user.id}`, 30, 15 * 60);
+  const { locale } = UpdateLocaleInput.parse(req.body);
+  await CustomerProfile.updateOne({ userId: user.id }, { locale });
+  res.status(204).end();
 });
 
 // --- Zugangsdaten ------------------------------------------------------------------

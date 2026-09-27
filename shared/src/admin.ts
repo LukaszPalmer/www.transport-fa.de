@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { EmailSchema, NewPasswordSchema, PhoneSchema } from "./auth";
+import type { LeadStatus, LeadTopic } from "./crm";
 import {
   INVOICE_TYPES,
   PAYMENT_METHODS,
@@ -13,6 +14,7 @@ import {
   type EffectivePaymentStatus,
   type InvoiceSource,
   type InvoiceType,
+  type Locale,
   type PaymentMethod,
   type Permission,
   type PresenceState,
@@ -55,19 +57,6 @@ export interface MfaEnableResponse {
 export interface StaffMe {
   user: { id: string; name: string; email: string; role: StaffRole };
   staff: { displayName: string; jobTitle?: string; permissions: Permission[]; presence: PresenceState; soundEnabled: boolean };
-}
-
-// --- Übersicht ---------------------------------------------------------------------------
-
-export interface AdminOverview {
-  stats: {
-    customers: number;
-    customersOnline: number;
-    activeShipments: number;
-    unassignedShipments: number;
-    openChats: number;
-    unreadChats: number;
-  };
 }
 
 // --- Kunden ------------------------------------------------------------------------------
@@ -143,6 +132,8 @@ export interface AdminCustomerDetail {
     companyName?: string;
     phone?: string;
     type: string;
+    /** Sprache für E-Mails und Portal (vom Kunden gewählt). */
+    locale: Locale;
     createdAt: string;
   };
   user: {
@@ -162,6 +153,18 @@ export interface AdminCustomerDetail {
   /** Leer, wenn das Recht „Rechnungen & Belege“ fehlt. */
   invoices: AdminInvoiceRow[];
   chats: Array<{ id: string; status: string; lastMessageAt: string; preview: string; unreadByStaff: number }>;
+  /** CRM: interne Notizen, zuständiger Betreuer, verknüpfte Anfragen. */
+  crm: {
+    internalNotes: string;
+    accountManagerId?: string;
+    leads: Array<{ id: string; number: string; status: LeadStatus; topic: LeadTopic; createdAt: string }>;
+  };
+}
+
+/** Aktive Mitarbeiter für Auswahlfelder (Betreuer, Zuständigkeit). */
+export interface StaffOption {
+  id: string;
+  name: string;
 }
 
 // --- Benutzer & Zugangsdaten --------------------------------------------------------------
@@ -313,7 +316,9 @@ export interface AdminInvoiceRow {
   id: string;
   type: InvoiceType;
   number: string;
-  customer: { id: string; customerNumber: string; name: string };
+  /** `deleted`: Kunde hat sein Konto gelöscht – der Beleg wird bis `retainUntil` aufbewahrt. */
+  customer: { id: string; customerNumber: string; name: string; deleted?: boolean };
+  retainUntil?: string;
   shipment?: { id: string; shipmentNumber: string };
   netCents: number;
   vatCents: number;
@@ -330,17 +335,30 @@ export interface AdminInvoiceRow {
   /** Zuletzt per E-Mail (mit PDF im Anhang) an den Kunden gesendet. */
   emailedAt?: string;
   emailedTo?: string;
+  /** Höchste gesendete Mahnstufe (1 = Zahlungserinnerung, 2 = 1. Mahnung, 3 = 2. Mahnung). */
+  reminderLevel?: 1 | 2 | 3;
+  lastReminderAt?: string;
   createdAt: string;
+}
+
+/** Kennzahlen der Rechnungsliste – Belege gelöschter Kunden zählen mit (sie bleiben aufbewahrt). */
+export interface AdminInvoiceStats {
+  openCount: number;
+  openGrossCents: number;
+  overdueCount: number;
+  overdueGrossCents: number;
+  /** Einnahmen = bezahlte Rechnungen nach Zahlungsdatum (deutsche Zeit), brutto und netto. */
+  paidThisMonthGrossCents: number;
+  paidThisMonthNetCents: number;
+  paidThisMonthCount: number;
+  paidThisYearGrossCents: number;
+  paidThisYearNetCents: number;
+  paidTotalGrossCents: number;
+  paidTotalNetCents: number;
 }
 
 export interface AdminInvoiceList {
   invoices: AdminInvoiceRow[];
   total: number;
-  stats: {
-    openCount: number;
-    openGrossCents: number;
-    overdueCount: number;
-    overdueGrossCents: number;
-    paidThisMonthGrossCents: number;
-  };
+  stats: AdminInvoiceStats;
 }

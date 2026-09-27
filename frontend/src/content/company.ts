@@ -20,8 +20,16 @@ const socialLinks: SocialLink[] = [
 export const company = {
   name: COMPANY.name,
   legalName: COMPANY.legalName,
+  legalForm: COMPANY.legalForm,
+  /** Inhaber bzw. Geschäftsführer. */
+  owner: COMPANY.owner,
   description:
-    "Umzüge, Entrümpelungen, Haushaltsauflösungen sowie Transport & Logistik – termintreu, transparent und zum Festpreis. Ihr Partner aus einer Hand.",
+    "Umzüge, Entrümpelungen, Haushaltsauflösungen und Transporte – termintreu, transparent und zum Festpreis. Ihr Partner aus einer Hand.",
+  descriptions: {
+    de: "Umzüge, Entrümpelungen, Haushaltsauflösungen und Transporte – termintreu, transparent und zum Festpreis. Ihr Partner aus einer Hand.",
+    en: "Removals, clearances, house clearances and transport – on schedule, transparent and at a fixed price. One partner for everything.",
+  },
+  hoursEn: COMPANY.contact.hoursEn,
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? COMPANY.websiteUrl,
   portalUrl: "/kundenportal",
   contact: {

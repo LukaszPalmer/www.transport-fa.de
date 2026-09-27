@@ -1,16 +1,17 @@
-import type { AdminCustomerDetail } from "@fa/shared";
+import { LEAD_STATUS_INFO, type AdminCustomerDetail, type StaffOption } from "@fa/shared";
 import { ArrowLeft, Download, Eye, FilePlus2, Lock, MessagesSquare } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { routes } from "@/content/navigation";
 import { can, requireStaff } from "@/lib/admin-session";
-import { formatRelative } from "@/lib/admin-format";
+import { formatRelative, leadStatusTone, leadTopicLabel } from "@/lib/admin-format";
 import { adminDocumentUrl } from "@/lib/api/client";
 import { ApiError } from "@/lib/api/errors";
 import { apiServer } from "@/lib/api/server";
 import { documentCategoryLabel, formatDate, formatDateTime, formatFileSize } from "@/lib/portal-format";
 import { CredentialsForm } from "@/components/admin/CredentialsForm";
+import { CustomerCrmForm } from "@/components/admin/customers/CustomerCrmCard";
 import { LiveOnlineStatus } from "@/components/admin/customers/CustomerTable";
 import { InvoiceTable } from "@/components/admin/invoices/InvoiceTable";
 import { SendInvoiceButton } from "@/components/admin/invoices/SendInvoiceDialog";
@@ -31,8 +32,9 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
   const { id } = await params;
 
   let detail: AdminCustomerDetail;
+  let staff: StaffOption[];
   try {
-    detail = await apiServer<AdminCustomerDetail>(`/admin/customers/${id}`);
+    [detail, staff] = await Promise.all([apiServer<AdminCustomerDetail>(`/admin/customers/${id}`), apiServer<StaffOption[]>("/admin/staff-options")]);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) notFound();
     throw error;
@@ -65,6 +67,7 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
             <Row label="E-Mail" value={user.email} note={user.emailVerified ? "bestätigt" : "nicht bestätigt"} warn={!user.emailVerified} />
             <Row label="Telefon" value={customer.phone ?? "–"} href={customer.phone ? `tel:${customer.phone}` : undefined} />
             <Row label="Anmeldung" value={[user.hasPassword && "Passwort", user.googleLinked && "Google"].filter(Boolean).join(" + ") || "–"} />
+            <Row label="Sprache" value={customer.locale === "en" ? "Englisch" : "Deutsch"} note={customer.locale === "en" ? "E-Mails auf Englisch" : undefined} />
             <Row label="Letzte Anmeldung" value={user.lastLoginAt ? formatRelative(user.lastLoginAt) : "–"} />
             <Row label="Konto" value={user.state === "ACTIVE" ? "Aktiv" : "Gesperrt"} warn={user.state !== "ACTIVE"} />
           </dl>
@@ -77,6 +80,32 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
             <p className="flex items-center gap-2 text-sm text-slate-500">
               <Lock aria-hidden="true" className="size-4" /> Dafür fehlt Ihnen das Recht „Zugangsdaten ändern“.
             </p>
+          )}
+        </Card>
+
+        <Card title="Betreuung & Notizen" description="Intern – der Kunde sieht diese Angaben nicht." className="xl:col-span-2">
+          <CustomerCrmForm customerId={customer.id} crm={detail.crm} staff={staff} />
+        </Card>
+
+        <Card title={`Anfragen (${detail.crm.leads.length})`} description="Verknüpfte Anfragen aus dem CRM.">
+          {detail.crm.leads.length === 0 ? (
+            <p className="text-sm text-slate-500">Keine verknüpften Anfragen.</p>
+          ) : (
+            <ul className="space-y-2">
+              {detail.crm.leads.map((lead) => (
+                <li key={lead.id}>
+                  <Link href={`${routes.adminLeads}/${lead.id}`} className="flex items-center justify-between gap-3 rounded-xl p-3 ring-1 ring-slate-100 hover:bg-surface">
+                    <span className="text-sm">
+                      <span className="block font-semibold text-primary">{lead.number}</span>
+                      <span className="text-xs text-slate-500">
+                        {leadTopicLabel(lead.topic)} · {formatDate(lead.createdAt)}
+                      </span>
+                    </span>
+                    <StatusBadge tone={leadStatusTone[lead.status]}>{LEAD_STATUS_INFO[lead.status].label}</StatusBadge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
           )}
         </Card>
 

@@ -1,18 +1,20 @@
 import type { ServiceSlug } from "@/types/content";
-import { serviceHref, services } from "@/content/services";
+import { getServices, serviceHref } from "@/content/services";
+import { getLocale } from "@/i18n/server";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
 import { SmartLink } from "@/components/ui/SmartLink";
 
 /** Querverweise auf die übrigen Leistungsbereiche (interne Verlinkung, SEO). */
-export function RelatedServices({ current }: { current: ServiceSlug }) {
-  const others = services.filter((service) => service.slug !== current);
+export async function RelatedServices({ current }: { current: ServiceSlug }) {
+  const locale = await getLocale();
+  const others = getServices(locale).filter((service) => service.slug !== current);
 
   return (
     <section aria-labelledby="related-title" className="defer-render bg-white py-24 lg:py-32">
       <Container>
         <h2 id="related-title" className="text-2xl font-bold text-primary sm:text-3xl">
-          Weitere Leistungen aus einer Hand
+          {locale === "en" ? "More services from one source" : "Weitere Leistungen aus einer Hand"}
         </h2>
         <ul className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
           {others.map((service) => (

@@ -3,6 +3,7 @@
 import { CircleAlert, CircleCheck, LoaderCircle, Send } from "lucide-react";
 import { startTransition, useEffect, useRef, type FormEvent, type ReactNode, type RefObject } from "react";
 import { useFormStatus } from "react-dom";
+import { useLocale } from "@/i18n/client";
 import { cn } from "@/lib/cn";
 import { buttonClasses } from "@/components/ui/button-styles";
 
@@ -23,6 +24,7 @@ export function useSubmitWithoutReset(formAction: (formData: FormData) => void) 
 /** Absende-Button mit Ladezustand – `pending` explizit oder aus dem umgebenden <form>. */
 export function SubmitButton({ children, className, pending: pendingProp }: { children: ReactNode; className?: string; pending?: boolean }) {
   const status = useFormStatus();
+  const en = useLocale() === "en";
   const pending = pendingProp ?? status.pending;
   return (
     <button
@@ -36,7 +38,7 @@ export function SubmitButton({ children, className, pending: pendingProp }: { ch
       ) : (
         <Send aria-hidden="true" className="size-5" />
       )}
-      <span>{pending ? "Wird gesendet …" : children}</span>
+      <span>{pending ? (en ? "Sending …" : "Wird gesendet …") : children}</span>
     </button>
   );
 }

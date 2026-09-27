@@ -10,6 +10,7 @@ import { receiveUpload } from "../../services/documents";
 import { invoiceXml, resendInvoiceMail } from "../../services/invoice-issuing";
 import { invoiceStats, prepareInvoiceUpload, toAdminInvoiceRows } from "../../services/invoices";
 import { notifyInvoiceIssued } from "../../services/notifications";
+import { sendPaymentReminder } from "../../services/payment-reminders";
 import { deleteObject, signedDownloadUrl } from "../../storage/r2";
 import { adminInvoiceDraftsRouter } from "./invoice-drafts";
 
@@ -78,7 +79,11 @@ adminInvoicesRouter.get("/", async (req, res) => {
     const customerIds = await CustomerProfile.find({ searchText: { $regex: escapeRegex(query.q.toLowerCase()) } })
       .limit(200)
       .distinct("_id");
-    filter.$or = [{ number: { $regex: pattern, $options: "i" } }, { customerId: { $in: customerIds } }];
+    filter.$or = [
+      { number: { $regex: pattern, $options: "i" } },
+      { customerId: { $in: customerIds } },
+      { "archivedCustomer.searchText": { $regex: escapeRegex(query.q.toLowerCase()) } }, // Belege gelöschter Kunden
+    ];
   }
 
   const [invoices, total, stats] = await Promise.all([
@@ -189,4 +194,17 @@ adminInvoicesRouter.post("/:id/email", async (req, res) => {
   const mail = await resendInvoiceMail(invoice, req.auth!.user.id);
   audit(req, "invoice.emailed", { targetType: "Invoice", targetId: invoice._id, customerId: invoice.customerId, meta: { status: mail.status } });
   res.json({ mail, invoice: await rowFor((await Invoice.findById(invoice._id)) ?? invoice) });
+});
+
+/** Zahlungserinnerung bzw. nächste Mahnstufe für eine überfällige Rechnung senden (PDF im Anhang). */
+adminInvoicesRouter.post("/:id/reminder", async (req, res) => {
+  const invoice = await findInvoice(req);
+  const { result } = await sendPaymentReminder(invoice._id, req.auth!.user.id);
+  audit(req, "invoice.reminder_sent", {
+    targetType: "Invoice",
+    targetId: invoice._id,
+    customerId: invoice.customerId,
+    meta: { number: invoice.number, level: result.level },
+  });
+  res.json({ reminder: result, invoice: await rowFor((await Invoice.findById(invoice._id)) ?? invoice) });
 });

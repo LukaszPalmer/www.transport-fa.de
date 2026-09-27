@@ -1,5 +1,6 @@
 "use client";
 
+import { useLocale } from "@/i18n/client";
 import { Pause, Play } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { VideoSource } from "@/types/content";
@@ -33,6 +34,7 @@ function shouldAutoplay(): boolean {
  * 5. Pause-Button erfüllt WCAG 2.2.2 (bewegte Inhalte > 5 s stoppbar).
  */
 export function HeroMedia({ poster, overlay, desktopSources, mobileSources }: HeroMediaProps) {
+  const en = useLocale() === "en";
   const videoRef = useRef<HTMLVideoElement>(null);
   const [sources, setSources] = useState<VideoSource[] | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
@@ -87,7 +89,7 @@ export function HeroMedia({ poster, overlay, desktopSources, mobileSources }: He
     }
   };
 
-  const label = isPlaying ? "Hintergrundvideo pausieren" : "Hintergrundvideo abspielen";
+  const label = en ? (isPlaying ? "Pause background video" : "Play background video") : isPlaying ? "Hintergrundvideo pausieren" : "Hintergrundvideo abspielen";
 
   return (
     <>

@@ -20,6 +20,8 @@ export interface SellerSnapshot {
   registerCourt?: string;
   registerNumber?: string;
   managingDirectors?: string;
+  /** „Geschäftsführer" bzw. „Inhaber" – fehlt bei Rechnungen von vor der Umstellung (dann Geschäftsführer). */
+  ownerTitle?: string;
   bank: { name: string; iban: string; bic?: string };
 }
 

@@ -1,5 +1,5 @@
 import type { AdminInvoiceDraftRow, AdminInvoiceList } from "@fa/shared";
-import { AlertTriangle, CircleCheck, Clock, FilePlus2, FileText } from "lucide-react";
+import { AlertTriangle, CircleCheck, Clock, FilePlus2, TrendingUp } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { routes } from "@/content/navigation";
@@ -63,8 +63,20 @@ export default async function AdminInvoicesPage({ searchParams }: PageProps<"/ad
       filter: "OVERDUE",
       warn: stats.overdueCount > 0,
     },
-    { label: "Bezahlt diesen Monat", value: formatEuro(stats.paidThisMonthGrossCents), detail: "Überweisung und bar", icon: CircleCheck, filter: "PAID" },
-    { label: "Belege gesamt", value: String(data.total), detail: filter === "ALL" ? "Angebote bis Gutschriften" : "in dieser Ansicht", icon: FileText, filter: "ALL" },
+    {
+      label: "Bezahlt diesen Monat",
+      value: formatEuro(stats.paidThisMonthGrossCents),
+      detail: `${stats.paidThisMonthCount} ${stats.paidThisMonthCount === 1 ? "Rechnung" : "Rechnungen"} · netto ${formatEuro(stats.paidThisMonthNetCents)}`,
+      icon: CircleCheck,
+      filter: "PAID",
+    },
+    {
+      label: "Einnahmen dieses Jahr",
+      value: formatEuro(stats.paidThisYearGrossCents),
+      detail: `insgesamt ${formatEuro(stats.paidTotalGrossCents)}`,
+      icon: TrendingUp,
+      filter: "PAID",
+    },
   ];
 
   return (
@@ -80,6 +92,10 @@ export default async function AdminInvoicesPage({ searchParams }: PageProps<"/ad
         </>
       }
     >
+      <p className="mb-3 text-xs text-slate-500">
+        Einnahmen = bezahlte Rechnungen nach Zahlungsdatum (brutto). Rechnungen von Kunden, die ihr Konto gelöscht haben,
+        bleiben für die gesetzliche Aufbewahrungsfrist erhalten und zählen weiter mit.
+      </p>
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map((tile) => (
           <Link

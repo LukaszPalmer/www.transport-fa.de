@@ -1,5 +1,6 @@
 import type { Faq } from "@/types/content";
 import { routes } from "@/content/navigation";
+import { getLocale } from "@/i18n/server";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -14,7 +15,8 @@ interface FaqSectionProps {
  * Häufige Fragen als natives Akkordeon (<details name> = exklusiv öffnend,
  * ohne JavaScript). Die strukturierten Daten (FAQPage) liefert die Seite.
  */
-export function FaqSection({ faqs, title = "Häufige Fragen", contactHref = routes.contactForm }: FaqSectionProps) {
+export async function FaqSection({ faqs, title, contactHref = routes.contactForm }: FaqSectionProps) {
+  const en = (await getLocale()) === "en";
   return (
     <section aria-labelledby="faq-title" className="defer-render bg-surface py-24 lg:py-32">
       <Container className="grid grid-cols-1 gap-12 lg:grid-cols-12">
@@ -22,11 +24,11 @@ export function FaqSection({ faqs, title = "Häufige Fragen", contactHref = rout
           <SectionHeading
             id="faq-title"
             eyebrow="FAQ"
-            title={title}
-            description="Ihre Frage ist nicht dabei? Wir beraten Sie gern persönlich und unverbindlich."
+            title={title ?? (en ? "Frequently asked questions" : "Häufige Fragen")}
+            description={en ? "Can't find your question? We are happy to advise you personally and without obligation." : "Ihre Frage ist nicht dabei? Wir beraten Sie gern persönlich und unverbindlich."}
           />
           <ButtonLink href={contactHref} variant="dark" withArrow className="mt-8">
-            Frage stellen
+            {en ? "Ask a question" : "Frage stellen"}
           </ButtonLink>
         </div>
 

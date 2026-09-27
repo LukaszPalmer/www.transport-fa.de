@@ -1,4 +1,5 @@
-import { fleetLiveKpis } from "@/content/home";
+import { getHome } from "@/content/home";
+import { getLocale } from "@/i18n/server";
 import { LiveDot } from "@/components/ui/LiveDot";
 import { StatList } from "@/components/ui/StatList";
 
@@ -38,23 +39,29 @@ const trucks = [
   { route: "route-north", dur: "10s", begin: "-2s", fallback: { x: 330, y: 92 } },
 ];
 
+/** Englische Städtenamen für die Kartenbeschriftung. */
+const CITY_EN: Record<string, string> = { Köln: "Cologne", München: "Munich", Wien: "Vienna", Mailand: "Milan" };
+
 const labelOffset = {
   right: { dx: 12, dy: 4, anchor: "start" },
   left: { dx: -12, dy: 4, anchor: "end" },
   top: { dx: 0, dy: -12, anchor: "middle" },
 } as const;
 
-export function FleetMap() {
+export async function FleetMap() {
+  const locale = await getLocale();
+  const en = locale === "en";
+  const { fleetLiveKpis } = getHome(locale);
   return (
     <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-secondary/70 p-2 shadow-elevated">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
         <p className="inline-flex items-center gap-2.5 text-sm font-semibold text-white">
           <LiveDot className="text-success" />
-          Live-Flottenübersicht
+          {en ? "Live fleet overview" : "Live-Flottenübersicht"}
         </p>
         <p className="flex gap-4 text-xs text-slate-400" aria-hidden="true">
           <span className="inline-flex items-center gap-1.5">
-            <span className="size-2 rounded-full bg-accent-bright" /> Fahrzeug
+            <span className="size-2 rounded-full bg-accent-bright" /> {en ? "Vehicle" : "Fahrzeug"}
           </span>
           <span className="inline-flex items-center gap-1.5">
             <span className="size-2 rounded-full bg-accent" /> Hub
@@ -71,10 +78,11 @@ export function FleetMap() {
           className="block aspect-[112/69] size-full"
           preserveAspectRatio="xMidYMid meet"
         >
-          <title id="fleet-map-title">Schematische Karte des FA-Transport-Streckennetzes</title>
+          <title id="fleet-map-title">{en ? "Schematic map of the FA Transport route network" : "Schematische Karte des FA-Transport-Streckennetzes"}</title>
           <desc id="fleet-map-desc">
-            Hauptrouten zwischen Rotterdam, Hamburg, Berlin, Köln, Leipzig, Frankfurt, München, Wien und
-            Mailand mit Fahrzeugen in Echtzeit.
+            {en
+              ? "Main routes between Rotterdam, Hamburg, Berlin, Cologne, Leipzig, Frankfurt, Munich, Vienna and Milan with vehicles in real time."
+              : "Hauptrouten zwischen Rotterdam, Hamburg, Berlin, Köln, Leipzig, Frankfurt, München, Wien und Mailand mit Fahrzeugen in Echtzeit."}
           </desc>
 
           <defs>
@@ -134,7 +142,7 @@ export function FleetMap() {
                   textAnchor={offset.anchor}
                   className="fill-slate-300 font-sans text-[12px] font-medium"
                 >
-                  {hub.name}
+                  {en ? (CITY_EN[hub.name] ?? hub.name) : hub.name}
                 </text>
               </g>
             );
@@ -180,10 +188,10 @@ export function FleetMap() {
           <g transform="translate(372 318)" className="max-sm:hidden">
             <rect width="168" height="54" rx="10" fill="rgb(28 37 65 / 0.92)" stroke="rgb(255 255 255 / 0.12)" />
             <text x="14" y="22" className="fill-white font-sans text-[11px] font-semibold">
-              Tour 042 · München → Wien
+              {en ? "Tour 042 · Munich → Vienna" : "Tour 042 · München → Wien"}
             </text>
             <text x="14" y="40" className="fill-slate-400 font-sans text-[10px]">
-              86 km/h · ETA 16:05 · Im Plan
+              {en ? "86 km/h · ETA 4:05 pm · On schedule" : "86 km/h · ETA 16:05 · Im Plan"}
             </text>
           </g>
         </svg>

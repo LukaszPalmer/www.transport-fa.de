@@ -1,5 +1,6 @@
-import { careerAreas } from "@/content/careers";
-import { careersTeaser } from "@/content/home";
+import { getCareers } from "@/content/careers";
+import { getHome } from "@/content/home";
+import { getLocale } from "@/i18n/server";
 import { routes, sectionIds } from "@/content/navigation";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -7,7 +8,10 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Icon } from "@/components/ui/Icon";
 
 /** Recruiting-Teaser für alle Unternehmensbereiche – verlinkt auf /karriere. */
-export function CareersTeaser() {
+export async function CareersTeaser() {
+  const locale = await getLocale();
+  const { careersTeaser } = getHome(locale);
+  const { careerAreas } = getCareers(locale);
   return (
     <section id={sectionIds.careers} aria-labelledby="careers-title" className="defer-render bg-white pb-24 lg:pb-32">
       <Container>
@@ -35,7 +39,7 @@ export function CareersTeaser() {
               {careersTeaser.cta.label}
             </ButtonLink>
             <ButtonLink href={routes.application} variant="outline" size="lg">
-              Initiativ bewerben
+              {locale === "en" ? "Apply speculatively" : "Initiativ bewerben"}
             </ButtonLink>
           </div>
         </div>

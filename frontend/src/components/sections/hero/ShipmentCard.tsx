@@ -1,4 +1,5 @@
-import { heroShipment } from "@/content/home";
+import { getHome } from "@/content/home";
+import { getLocale } from "@/i18n/server";
 import { Icon } from "@/components/ui/Icon";
 import { LiveDot } from "@/components/ui/LiveDot";
 
@@ -6,8 +7,10 @@ import { LiveDot } from "@/components/ui/LiveDot";
  * Glassmorphism-Karte mit beispielhafter Live-Sendung. Rein illustrativ
  * (aria-hidden) – visualisiert das Tracking-Versprechen direkt im Hero.
  */
-export function ShipmentCard() {
-  const { id, from, to, progress, status, details } = heroShipment;
+export async function ShipmentCard() {
+  const locale = await getLocale();
+  const { id, from, to, progress, status, details } = getHome(locale).heroShipment;
+  const en = locale === "en";
 
   return (
     <div
@@ -24,7 +27,7 @@ export function ShipmentCard() {
 
       <div className="mt-6 flex items-end justify-between gap-4">
         <div>
-          <p className="text-xs text-slate-400">Abholung · {from.time}</p>
+          <p className="text-xs text-slate-400">{en ? "Pickup" : "Abholung"} · {from.time}</p>
           <p className="mt-1 font-display text-xl font-semibold">{from.city}</p>
         </div>
         <Icon name="truck" className="mb-1 size-5 text-accent" />
@@ -46,7 +49,7 @@ export function ShipmentCard() {
       </div>
 
       <div className="mt-2.5 flex items-center justify-between text-xs">
-        <span className="text-slate-400">{progress} % der Strecke</span>
+        <span className="text-slate-400">{en ? `${progress} % of the route` : `${progress} % der Strecke`}</span>
         <span className="inline-flex items-center gap-1.5 font-medium text-success">
           <span className="size-1.5 rounded-full bg-success" />
           {status}

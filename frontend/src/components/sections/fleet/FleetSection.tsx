@@ -1,5 +1,6 @@
 import { sectionIds } from "@/content/navigation";
-import { fleetFeatures, fleetSection, fleetStats } from "@/content/home";
+import { getHome } from "@/content/home";
+import { getLocale } from "@/i18n/server";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
 import { InViewAnimations } from "@/components/ui/InViewAnimations";
@@ -7,7 +8,8 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 import { StatList } from "@/components/ui/StatList";
 import { FleetMap } from "./FleetMap";
 
-export function FleetSection() {
+export async function FleetSection() {
+  const { fleetFeatures, fleetSection, fleetStats } = getHome(await getLocale());
   return (
     <section
       id={sectionIds.fleet}

@@ -1,4 +1,4 @@
-import type { ServiceSlug } from "@fa/shared";
+import type { LeadTopic, ServiceSlug } from "@fa/shared";
 import { services } from "@/content/services";
 
 /** Formatierungen für den Admin-Bereich. */
@@ -25,6 +25,13 @@ export const formatTime = (iso: string) => timeFormat.format(new Date(iso));
 const serviceNames = Object.fromEntries(services.map((service) => [service.slug, service.name])) as Record<ServiceSlug, string>;
 export const serviceLabel = (slug: ServiceSlug) => serviceNames[slug] ?? slug;
 
+/** Thema einer Anfrage: Leistung, Empfehlung oder „Sonstiges". */
+export function leadTopicLabel(topic: LeadTopic): string {
+  if (topic === "sonstiges") return "Sonstiges";
+  if (topic === "empfehlung") return "Empfehlung & Provision";
+  return serviceLabel(topic);
+}
+
 /** Sicheres Zufallspasswort zum Weitergeben (ohne verwechselbare Zeichen). */
 export function generatePassword(): string {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
@@ -32,3 +39,6 @@ export function generatePassword(): string {
   const raw = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
   return `${raw.slice(0, 5)}-${raw.slice(5, 10)}-${raw.slice(10, 15)}-${raw.slice(15)}`;
 }
+
+/** Farbe der Pipeline-Status (Badges). */
+export const leadStatusTone = { NEW: "info", CONTACTED: "progress", OFFER_SENT: "warning", WON: "success", LOST: "neutral" } as const;
