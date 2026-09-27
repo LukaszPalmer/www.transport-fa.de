@@ -83,7 +83,7 @@ function ImpressumDe() {
       <p>
         Texte, Videos, Grafiken und das Layout dieser Website unterliegen dem deutschen Urheberrecht. Vervielfältigung,
         Bearbeitung und Verbreitung außerhalb der Grenzen des Urheberrechts bedürfen unserer schriftlichen Zustimmung.
-        Kundenbewertungen stammen von MyHammer und sind dort mit Quelle verlinkt.
+        Kundenbewertungen stammen von der jeweils genannten Plattform und sind dort mit Quelle verlinkt.
       </p>
 
       <h2>Bildnachweise</h2>
@@ -176,8 +176,8 @@ function ImpressumEn() {
       <h2>Copyright</h2>
       <p>
         Texts, videos, graphics and the layout of this website are subject to German copyright law. Reproduction, editing and
-        distribution beyond the limits of copyright law require our written consent. Customer reviews are taken from MyHammer
-        and linked to their source.
+        distribution beyond the limits of copyright law require our written consent. Customer reviews are taken from the platform
+        stated and linked to their source.
       </p>
 
       <h2>Image credits</h2>

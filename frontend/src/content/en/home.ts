@@ -50,6 +50,12 @@ export const fleetSection = {
   title: "A modern fleet. Full transparency. Fewer emissions.",
   description:
     "Our vehicles are on average less than three years old, connected via telematics and all meet the Euro 6 standard – for maximum safety, efficiency and planning reliability.",
+  image: {
+    src: "/media/stock/flotte-fahrzeuge.jpg",
+    alt: "Van, lorry and articulated truck with a car transporter at a rest area at sunset",
+    caption: "From vans to 40-tonne trucks",
+    note: "Illustrative image",
+  },
 };
 
 export const fleetStats: Stat[] = [

@@ -151,10 +151,10 @@ export function DatenschutzEn() {
 
       <h2>11. Reviews</h2>
       <p>
-        On our website we show customer reviews that are publicly published on our profile at MyHammer (MyHammer GmbH, Berlin) –
-        unchanged, with shortened name, town and date (Art. 6(1)(f) GDPR). If you don’t want your review shown here, just let us
-        know and we will remove it immediately. A Google profile is in preparation. Data is only transferred to the platform
-        operators when you click the links to the platforms; their privacy policies then apply.
+        On our website we show customer reviews that are publicly published on our profiles at review platforms (such as
+        Google) – unchanged, with shortened name, town and date (Art. 6(1)(f) GDPR). If you don’t want your review shown here,
+        just let us know and we will remove it immediately. Data is only transferred to the platform operators when you click
+        the links to the platforms; their privacy policies then apply.
       </p>
 
       <h2>12. Google Maps</h2>

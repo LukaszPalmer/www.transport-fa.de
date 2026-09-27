@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { sectionIds } from "@/content/navigation";
 import { getHome } from "@/content/home";
 import { getLocale } from "@/i18n/server";
@@ -38,7 +39,23 @@ export async function FleetSection() {
           <p className="text-lg leading-relaxed text-slate-300 lg:pb-2">{fleetSection.description}</p>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 gap-6 lg:grid-cols-12">
+        <figure data-reveal className="relative mt-16 aspect-[3/2] overflow-hidden rounded-2xl ring-1 ring-white/10 sm:aspect-[21/9]">
+          <Image
+            src={fleetSection.image.src}
+            alt={fleetSection.image.alt}
+            fill
+            sizes="(min-width: 1280px) 1216px, 100vw"
+            quality={75}
+            className="object-cover object-[center_30%]"
+          />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/10 to-transparent" />
+          <figcaption className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-4 p-5 sm:p-8">
+            <span className="font-display text-xl font-bold text-white sm:text-2xl">{fleetSection.image.caption}</span>
+            <span className="shrink-0 text-xs text-slate-300">{fleetSection.image.note}</span>
+          </figcaption>
+        </figure>
+
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div data-reveal className="lg:col-span-8">
             <InViewAnimations className="h-full">
               <FleetMap />

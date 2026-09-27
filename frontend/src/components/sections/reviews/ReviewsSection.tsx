@@ -18,14 +18,14 @@ const messages = defineMessages({
     eyebrow: "Bewertungen",
     title: "Das sagen unsere Kunden",
     titleFor: (service: string) => `Das sagen unsere Kunden zu ${service}`,
-    of: (count: number) => `aus ${count} Bewertungen auf MyHammer`,
+    of: (count: number, platform: string) => `aus ${count} Bewertungen auf ${platform}`,
     asOf: "Stand",
     original: "Original ansehen",
     anonymous: "Anonym",
     note: reviewAuthenticityNote,
     emptyTitle: "Ihre Erfahrung zählt.",
     emptyText:
-      "Wir haben unsere Profile bei Google und MyHammer neu eingerichtet. Sobald die ersten Kundenstimmen vorliegen, zeigen wir sie hier – unverändert und mit Quelle. Sie waren bereits Kunde? Wir freuen uns über Ihre ehrliche Bewertung.",
+      "Wir richten gerade unser Google-Unternehmensprofil ein. Sobald die ersten Kundenstimmen vorliegen, zeigen wir sie hier – unverändert und mit Quelle. Sie waren bereits Kunde? Wir freuen uns über Ihre ehrliche Bewertung.",
     write: "Bewertung schreiben",
     profile: "Profil ansehen",
     soon: "Folgt in Kürze",
@@ -35,14 +35,14 @@ const messages = defineMessages({
     eyebrow: "Reviews",
     title: "What our customers say",
     titleFor: (service: string) => `What our customers say about ${service}`,
-    of: (count: number) => `from ${count} reviews on MyHammer`,
+    of: (count: number, platform: string) => `from ${count} reviews on ${platform}`,
     asOf: "As of",
     original: "View original",
     anonymous: "Anonymous",
     note: reviewAuthenticityNoteEn,
     emptyTitle: "Your experience counts.",
     emptyText:
-      "We have just set up our profiles on Google and MyHammer. As soon as the first reviews come in, we will show them here – unchanged and with their source. Already a customer? We would appreciate your honest review.",
+      "We are setting up our Google business profile. As soon as the first reviews come in, we will show them here – unchanged and with their source. Already a customer? We would appreciate your honest review.",
     write: "Write a review",
     profile: "View profile",
     soon: "Coming soon",
@@ -51,7 +51,8 @@ const messages = defineMessages({
 });
 
 /** Die Gesamtnote kommt von der Plattform (alle Bewertungen) – nie aus der Auswahl auf dieser Seite. */
-const platformRating = reviewPlatforms.myhammer.rating;
+const ratedPlatform = Object.values(reviewPlatforms).find((platform) => platform.available && platform.rating);
+const platformRating = ratedPlatform?.rating;
 
 /**
  * Welche Bewertungen erscheinen? Auf Leistungsseiten zuerst die passenden;
@@ -98,9 +99,9 @@ function ReviewList({ items, title, locale }: { items: Review[]; title: string; 
     <>
       <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <SectionHeading id="reviews-title" eyebrow={t.eyebrow} title={title} />
-        {platformRating && (
+        {ratedPlatform && platformRating && (
           <SmartLink
-            href={reviewPlatforms.myhammer.profileUrl}
+            href={ratedPlatform.profileUrl}
             className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-surface px-6 py-4 transition-shadow hover:shadow-card"
           >
             <span className="font-display text-4xl font-extrabold text-primary tabular-nums">
@@ -109,7 +110,7 @@ function ReviewList({ items, title, locale }: { items: Review[]; title: string; 
             <span>
               <Stars rating={Math.round(platformRating.value)} />
               <span className="mt-1 block text-sm text-slate-500">
-                {t.of(platformRating.count)}
+                {t.of(platformRating.count, ratedPlatform.name)}
                 <span className="block text-xs">
                   {t.asOf} {asOfFormat.format(new Date(platformRating.asOf))}
                 </span>
@@ -206,7 +207,6 @@ export async function ReviewPlatformLinks({ stacked, className }: { stacked?: bo
             className={cn("flex flex-col gap-5 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card", !stacked && "sm:flex-row sm:items-center sm:justify-between")}
           >
             <div>
-              {/* Optisch angeglichene Höhen: Googles Schriftzug füllt seine Box, MyHammer hat Bildmarke + Text */}
               <PlatformLogo source={key} height={key === "google" ? 28 : 24} />
               <p className="mt-2 text-sm text-slate-500">{note}</p>
             </div>

@@ -37,6 +37,7 @@ Quelle: <https://www.pexels.com/license/> (abgerufen am 27.09.2026)
 | `transport-verladung.jpg` | Palettenverladung | Caleb Oquendo | [Pexels 34585120](https://www.pexels.com/photo/forklift-operators-loading-pallets-on-truck-34585120/) | Blog: Spedition beauftragen |
 | `transport-lkw-fahrer.jpg` | Lkw-Fahrer im Führerhaus | Alex Surd | [Pexels 10963747](https://www.pexels.com/photo/a-white-truck-on-the-road-10963747/) | Blog-Kategorie Transport |
 | `portal-transporter.jpg` | Transporter vor Wohnhaus | Artem Podrez | [Pexels 5025669](https://www.pexels.com/photo/man-carrying-boxes-beside-a-van-5025669/) | Kundenportal: Anmeldeseite |
+| `flotte-fahrzeuge.jpg` | Transporter, Lkw und Autotransporter auf einem Rastplatz (ohne Personen) | Malte Luk | [Pexels 1606957](https://www.pexels.com/photo/motor-vehicles-parked-on-the-road-1606957/) | Startseite: Flotte & Technologie (als „Symbolbild" gekennzeichnet) |
 
 Die Dateien sind auf 1920 px Breite (3:2) zugeschnitten und komprimiert; Next.js liefert sie zusätzlich als AVIF/WebP aus.
 

@@ -9,7 +9,7 @@ import { getLocale } from "@/i18n/server";
 const messages = defineMessages({
   de: {
     title: "Bewertung abgeben",
-    description: "Wie zufrieden waren Sie mit FA Transport? Teilen Sie Ihre Erfahrung auf Google oder MyHammer.",
+    description: "Wie zufrieden waren Sie mit FA Transport? Teilen Sie Ihre Erfahrung auf Google.",
     eyebrow: "Ihre Meinung zählt",
     heading: "Wie zufrieden waren Sie mit uns?",
     text: "Ihre ehrliche Bewertung hilft anderen Kunden bei der Entscheidung – und uns, noch besser zu werden. Es dauert weniger als eine Minute.",
@@ -17,7 +17,7 @@ const messages = defineMessages({
   },
   en: {
     title: "Leave a review",
-    description: "How satisfied were you with FA Transport? Share your experience on Google or MyHammer.",
+    description: "How satisfied were you with FA Transport? Share your experience on Google.",
     eyebrow: "Your opinion counts",
     heading: "How satisfied were you with us?",
     text: "Your honest review helps other customers decide – and helps us get even better. It takes less than a minute.",

@@ -63,6 +63,12 @@ export const fleetSection = {
   title: "Modernste Flotte. Volle Transparenz. Weniger Emissionen.",
   description:
     "Unsere Fahrzeuge sind im Schnitt jünger als drei Jahre, telematisch vernetzt und erfüllen ausnahmslos die Euro-6-Norm – für maximale Sicherheit, Effizienz und Planbarkeit.",
+  image: {
+    src: "/media/stock/flotte-fahrzeuge.jpg",
+    alt: "Transporter, Lkw und Sattelzug mit Autotransporter auf einem Rastplatz bei Sonnenuntergang",
+    caption: "Vom Transporter bis zum 40-Tonner",
+    note: "Symbolbild",
+  },
 };
 
 export const fleetStats: Stat[] = [
@@ -89,7 +95,7 @@ export const fleetFeatures: Feature[] = [
   {
     icon: "satellite",
     title: "GPS-Tracking & ERP-Anbindung",
-    badge: "In Kürze",
+    badge: "Demnächst verfügbar",
     description:
       "Bald verfolgen Sie Position, voraussichtliche Ankunft und Abliefernachweis Ihrer Sendung live im Kundenportal. Im nächsten Schritt folgt die direkte Anbindung an Ihr ERP per API.",
   },

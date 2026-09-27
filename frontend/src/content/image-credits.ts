@@ -145,6 +145,15 @@ export const imageCredits: ImageCredit[] = [
     license: PEXELS,
     retrieved: RETRIEVED,
   },
+  {
+    src: "/media/stock/flotte-fahrzeuge.jpg",
+    subject: "Transporter, Lkw und Autotransporter auf einem Rastplatz",
+    subjectEn: "Van, lorries and car transporter at a rest area",
+    photographer: "Malte Luk",
+    sourceUrl: "https://www.pexels.com/photo/motor-vehicles-parked-on-the-road-1606957/",
+    license: PEXELS,
+    retrieved: "2026-09-28",
+  },
 ];
 
 export function creditFor(src: string): ImageCredit | undefined {

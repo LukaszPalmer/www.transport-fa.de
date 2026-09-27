@@ -168,11 +168,11 @@ function DatenschutzDe() {
 
       <h2>11. Bewertungen</h2>
       <p>
-        Auf unserer Website zeigen wir Kundenbewertungen, die auf unserem Profil bei MyHammer (MyHammer GmbH, Berlin)
-        öffentlich veröffentlicht sind – unverändert, mit gekürztem Namen, Ort und Datum (Art. 6 Abs. 1 lit. f DSGVO).
-        Wer seine Bewertung hier nicht sehen möchte, schreibt uns kurz; wir entfernen sie dann umgehend. Ein Profil bei
-        Google ist in Vorbereitung. Erst beim Anklicken der Links zu den Plattformen werden Daten an deren Betreiber
-        übertragen; es gelten dann deren Datenschutzbestimmungen.
+        Auf unserer Website zeigen wir Kundenbewertungen, die auf unseren Profilen bei Bewertungsplattformen (etwa
+        Google) öffentlich veröffentlicht sind – unverändert, mit gekürztem Namen, Ort und Datum (Art. 6 Abs. 1 lit. f
+        DSGVO). Wer seine Bewertung hier nicht sehen möchte, schreibt uns kurz; wir entfernen sie dann umgehend. Erst beim
+        Anklicken der Links zu den Plattformen werden Daten an deren Betreiber übertragen; es gelten dann deren
+        Datenschutzbestimmungen.
       </p>
 
       <h2>12. Google Maps</h2>

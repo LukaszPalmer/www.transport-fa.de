@@ -123,7 +123,7 @@ export interface ServiceArea {
 /* --------------------------------------------------------------------------
    Bewertungen
    -------------------------------------------------------------------------- */
-export type ReviewSource = "google" | "myhammer";
+export type ReviewSource = "google";
 
 export interface Review {
   id: string;
