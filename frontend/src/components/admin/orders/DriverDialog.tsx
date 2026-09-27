@@ -8,7 +8,7 @@ import { ApiError, errorMessage } from "@/lib/api/errors";
 import { inputClasses, selectClasses } from "@/components/forms/fields";
 import { AuthAlert } from "@/components/portal/auth-fields";
 import { buttonClasses } from "@/components/ui/button-styles";
-import { Dialog } from "../Dialog";
+import { Dialog, DialogSuccess, useCloseAfterSuccess } from "../Dialog";
 
 interface DriverForm {
   driverId?: string;
@@ -31,6 +31,7 @@ export function DriverDialog({ shipment, open, onClose, onSaved }: { shipment: A
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [success, setSuccess, close] = useCloseAfterSuccess(onClose);
 
   useEffect(() => {
     if (!open) return;
@@ -65,7 +66,7 @@ export function DriverDialog({ shipment, open, onClose, onSaved }: { shipment: A
     try {
       const row = await apiRequest<AdminShipmentRow>(`/admin/shipments/${shipment.id}/driver`, { method: "PUT", body: form });
       onSaved(row);
-      onClose();
+      setSuccess(`${form.firstName} ${form.lastName} ist zugewiesen`);
     } catch (saveError) {
       if (saveError instanceof ApiError && saveError.fields) setFieldErrors(saveError.fields);
       else setError(errorMessage(saveError));
@@ -79,13 +80,21 @@ export function DriverDialog({ shipment, open, onClose, onSaved }: { shipment: A
     setError(undefined);
     try {
       onSaved(await apiRequest<AdminShipmentRow>(`/admin/shipments/${shipment.id}/driver`, { method: "DELETE" }));
-      onClose();
+      setSuccess("Fahrer entfernt");
     } catch (removeError) {
       setError(errorMessage(removeError));
     } finally {
       setPending(false);
     }
   };
+
+  if (success) {
+    return (
+      <Dialog open={open} onClose={close} title={`Fahrer für ${shipment.shipmentNumber}`}>
+        <DialogSuccess message={success} detail="Der Kunde sieht den Fahrer jetzt im Tracking." onClose={close} />
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onClose={onClose} title={`Fahrer für ${shipment.shipmentNumber}`} description={`${shipment.pickupCity} → ${shipment.deliveryCity} · ${shipment.customer.name}`}>

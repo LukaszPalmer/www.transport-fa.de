@@ -11,7 +11,7 @@ import { inputClasses, selectClasses } from "@/components/forms/fields";
 import { AuthAlert } from "@/components/portal/auth-fields";
 import { buttonClasses } from "@/components/ui/button-styles";
 import { CustomerPicker, type PickedCustomer } from "../customers/CustomerPicker";
-import { Dialog } from "../Dialog";
+import { Dialog, DialogSuccess, useCloseAfterSuccess } from "../Dialog";
 
 /** Neuen Auftrag anlegen – Kunde suchen, Leistung, Abhol- und Lieferadresse, Termine. */
 export function CreateShipmentButton({ presetCustomer }: { presetCustomer?: PickedCustomer }) {
@@ -32,6 +32,7 @@ function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: Pi
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string>();
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [success, setSuccess] = useCloseAfterSuccess(onClose);
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,7 +49,7 @@ function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: Pi
     setError(undefined);
     setFieldErrors({});
     try {
-      await apiRequest<AdminShipmentRow>("/admin/shipments", {
+      const row = await apiRequest<AdminShipmentRow>("/admin/shipments", {
         body: {
           customerId: customer.id,
           service: text("service"),
@@ -60,7 +61,7 @@ function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: Pi
           plannedDeliveryAt: isoOrEmpty("plannedDeliveryAt"),
         },
       });
-      onClose();
+      setSuccess(`Auftrag ${row.shipmentNumber} angelegt`);
       router.refresh();
     } catch (createError) {
       if (createError instanceof ApiError && createError.fields) setFieldErrors(createError.fields);
@@ -68,6 +69,14 @@ function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: Pi
       setPending(false);
     }
   };
+
+  if (success) {
+    return (
+      <Dialog open onClose={onClose} title="Neuer Auftrag">
+        <DialogSuccess message={success} detail="Der Kunde sieht ihn jetzt im Kundenportal. Den Fahrer weisen Sie in der Auftragsliste zu." onClose={onClose} />
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open onClose={onClose} title="Neuer Auftrag" description="Der Kunde sieht den Auftrag sofort im Kundenportal. Den Fahrer weisen Sie danach zu.">
