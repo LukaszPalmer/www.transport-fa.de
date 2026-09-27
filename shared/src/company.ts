@@ -10,8 +10,8 @@
  * 02.02.2026. Registereintrag laut öffentlichem Handelsregister-Auszug (northdata.de) –
  * mit dem aktuellen Registerauszug abgleichen (Sitzverlegung Neuss → Düsseldorf).
  *
- * TODO(Inhalt): Bankverbindung fehlt noch – bis sie eingetragen ist, gehen in Produktion
- * keine Rechnungen raus (sellerWarnings im Backend).
+ * TODO(Inhalt): Bankverbindung fehlt noch („xxxx“) – bis eine gültige IBAN eingetragen ist,
+ * gehen in Produktion keine Rechnungen raus (sellerWarnings im Backend).
  */
 export const COMPANY = {
   name: "FA Transport",
@@ -45,9 +45,9 @@ export const COMPANY = {
   },
   /** Bankverbindung für Rechnungen (Überweisung und GiroCode). */
   bank: {
-    name: "Musterbank",
-    iban: "DE00 0000 0000 0000 0000 00",
-    bic: "MUSTDEXXXXX",
+    name: "xxxx",
+    iban: "xxxx",
+    bic: "xxxx",
   },
 } as const;
 

@@ -23,6 +23,12 @@ export function sellerSnapshot(): SellerSnapshot {
   };
 }
 
+/** IBAN mit Länderkennung, Prüfziffern und Kontokennung – „xxxx“ oder Nullen gelten als Platzhalter. */
+function isPlaceholderIban(iban: string): boolean {
+  const compact = iban.replace(/\s/g, "").toUpperCase();
+  return !/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(compact) || /^[A-Z]{2}0+$/.test(compact);
+}
+
 /** Stammdaten, die noch Platzhalter sind. Mit Platzhaltern gehen in Produktion keine Rechnungen raus. */
 export function sellerWarnings(): string[] {
   const checks: Array<[label: string, placeholder: boolean]> = [
@@ -31,7 +37,7 @@ export function sellerWarnings(): string[] {
     ["Steuernummer", /^[0/\s]+$/.test(COMPANY.register.taxNumber)],
     ["Handelsregister", hasRegisterEntry() && /^HRB 0+$/.test(COMPANY.register.number)],
     ["Geschäftsführer", /^Vorname Nachname$/.test(COMPANY.register.managingDirectors)],
-    ["Bankverbindung", /^DE0+$/.test(COMPANY.bank.iban.replace(/\s/g, "")) || /^Musterbank$/.test(COMPANY.bank.name)],
+    ["Bankverbindung", isPlaceholderIban(COMPANY.bank.iban) || /^(Musterbank|x+)$/i.test(COMPANY.bank.name)],
     ["Telefonnummer", /123 456/.test(COMPANY.contact.phone)],
   ];
   return checks.filter(([, placeholder]) => placeholder).map(([label]) => label);
