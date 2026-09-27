@@ -33,6 +33,8 @@ export const COMPANY = {
     city: "Düsseldorf",
     country: "Deutschland",
     countryCode: "DE",
+    /** Koordinaten der Anschrift (OpenStreetMap) – für Google, Karten und KI-Suchen (JSON-LD). */
+    geo: { latitude: 51.23532, longitude: 6.84248 },
   },
   register: {
     court: "Amtsgericht Neuss",

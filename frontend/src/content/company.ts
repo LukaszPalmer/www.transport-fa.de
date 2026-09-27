@@ -38,6 +38,10 @@ export const company = {
     careersEmail: COMPANY.contact.email,
   },
   address: COMPANY.address,
+  /** Einzugsgebiet für Suchmaschinen und KI-Suchen – dieselben Orte wie in den Ratgebern. */
+  serviceArea: ["Düsseldorf", "Neuss", "Meerbusch", "Ratingen", "Hilden", "Erkrath"],
+  /** Strukturierte Fassung von `contact.hours` (Mo–Fr 7–19 Uhr) – bei Änderungen beide anpassen. */
+  openingHours: { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "07:00", closes: "19:00" },
   register: COMPANY.register,
   social: socialLinks,
 };

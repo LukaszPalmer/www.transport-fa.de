@@ -16,6 +16,14 @@ import { getService, getServices, serviceHref } from "@/content/services";
  */
 const organizationId = `${company.siteUrl}/#organization`;
 
+/** Düsseldorf und Umgebung, dazu deutschlandweite Transporte. */
+function areaServed(locale: Locale) {
+  return [
+    ...company.serviceArea.map((city) => ({ "@type": "City", name: city })),
+    { "@type": "Country", name: locale === "en" ? "Germany" : company.address.country },
+  ];
+}
+
 export function organizationJsonLd(locale: Locale = "de") {
   const { address, contact } = company;
 
@@ -27,6 +35,7 @@ export function organizationJsonLd(locale: Locale = "de") {
     alternateName: company.name,
     url: company.siteUrl,
     logo: `${company.siteUrl}/icon.svg`,
+    image: `${company.siteUrl}/opengraph-image`,
     description: company.descriptions[locale],
     email: contact.email,
     telephone: contact.phoneHref.replace("tel:", ""),
@@ -37,6 +46,14 @@ export function organizationJsonLd(locale: Locale = "de") {
       postalCode: address.postalCode,
       addressLocality: address.city,
       addressCountry: address.countryCode,
+    },
+    geo: { "@type": "GeoCoordinates", latitude: address.geo.latitude, longitude: address.geo.longitude },
+    areaServed: areaServed(locale),
+    openingHoursSpecification: {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: company.openingHours.days,
+      opens: company.openingHours.opens,
+      closes: company.openingHours.closes,
     },
     contactPoint: {
       "@type": "ContactPoint",
@@ -75,7 +92,7 @@ export function serviceJsonLd(service: ServiceArea, locale: Locale = "de") {
     description: service.seo.description,
     url: `${company.siteUrl}${serviceHref(service.slug)}`,
     provider: { "@id": organizationId, "@type": "MovingCompany", name: company.legalName },
-    areaServed: { "@type": "Country", name: locale === "en" ? "Germany" : company.address.country },
+    areaServed: areaServed(locale),
     inLanguage: intlLocale(locale),
   };
 }
