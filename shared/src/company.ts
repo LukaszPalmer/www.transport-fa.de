@@ -2,16 +2,16 @@
  * Stammdaten des Unternehmens – eine Quelle für Website (Impressum, Footer, JSON-LD),
  * Backend (E-Mail-Fußzeilen, Rechnungen, DATEV-Export) und Kundenportal.
  *
- * TODO(Inhalt): Straße, PLZ/Ort, USt-IdNr., Steuernummer, Handelsregister und Bank sind noch
- * Platzhalter. Die Werte stehen im Schreiben des Bundeszentralamts für Steuern bzw. im
- * Handelsregisterauszug. Sobald sie hier eingetragen sind, erscheinen sie überall: Impressum,
- * Datenschutz, Footer, Kontaktseite, alle E-Mails, Rechnungen (PDF + XML) und DATEV-Export.
- * Bereits gesendete Rechnungen ändern sich dadurch nicht (GoBD).
+ * Werte erscheinen überall: Impressum, Datenschutz, Footer, Kontaktseite, alle E-Mails,
+ * Rechnungen (PDF + XML) und DATEV-Export. Bereits gesendete Rechnungen ändern sich dadurch
+ * nicht (GoBD).
  *
- * TODO(Recht): Rechtsform klären. Auf MyHammer firmiert der Betrieb als
- * „FA Transporte & Dienstleistungen" (Neuss). Ist es ein Einzelunternehmen, `legalForm` auf
- * "EINZELUNTERNEHMEN" setzen, `legalName` anpassen und `register.court/number` leeren –
- * Impressum und Rechnungen zeigen dann „Inhaber" statt „Geschäftsführer" und keinen Registereintrag.
+ * Anschrift, USt-IdNr. und Steuernummer: Mitteilung des Bundeszentralamts für Steuern vom
+ * 02.02.2026. Registereintrag laut öffentlichem Handelsregister-Auszug (northdata.de) –
+ * mit dem aktuellen Registerauszug abgleichen (Sitzverlegung Neuss → Düsseldorf).
+ *
+ * TODO(Inhalt): Bankverbindung fehlt noch – bis sie eingetragen ist, gehen in Produktion
+ * keine Rechnungen raus (sellerWarnings im Backend).
  */
 export const COMPANY = {
   name: "FA Transport",
@@ -28,19 +28,19 @@ export const COMPANY = {
     hoursEn: "Mon–Fri 7 am–7 pm · Dispatch 24/7",
   },
   address: {
-    street: "Musterstraße 1",
-    postalCode: "12345",
-    city: "Musterstadt",
+    street: "Torfbruchstr. 46",
+    postalCode: "40625",
+    city: "Düsseldorf",
     country: "Deutschland",
     countryCode: "DE",
   },
   register: {
-    court: "Amtsgericht Musterstadt",
-    number: "HRB 000000",
-    /** Umsatzsteuer-Identifikationsnummer (§ 27a UStG) – Format DE + 9 Ziffern. */
-    vatId: "DE000000000",
-    /** Steuernummer vom Finanzamt – optional neben der USt-IdNr. */
-    taxNumber: "000/000/00000",
+    court: "Amtsgericht Neuss",
+    number: "HRB 23714",
+    /** Umsatzsteuer-Identifikationsnummer (§ 27a UStG), zugleich Wirtschafts-Identifikationsnummer (§ 139c AO). */
+    vatId: "DE453977991",
+    /** Steuernummer vom Finanzamt – steht auf Rechnungen und im DATEV-Export, nicht im Impressum. */
+    taxNumber: "122/5723/2183",
     managingDirectors: "Ali Ftouni",
   },
   /** Bankverbindung für Rechnungen (Überweisung und GiroCode). */
