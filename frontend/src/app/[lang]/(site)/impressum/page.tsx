@@ -12,8 +12,7 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-// TODO(Recht): Anschrift, USt-IdNr. und Registerdaten kommen aus shared/src/company.ts –
-// vor dem Livegang dort die echten Werte eintragen und die Seite rechtlich prüfen lassen.
+// Anschrift, USt-IdNr. und Registerdaten kommen aus shared/src/company.ts.
 export default async function ImpressumPage() {
   return (await getLocale()) === "en" ? <ImpressumEn /> : <ImpressumDe />;
 }

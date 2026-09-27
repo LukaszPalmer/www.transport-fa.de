@@ -1,4 +1,4 @@
-import { formattedVatId, ownerTitle } from "@fa/shared";
+import { formattedVatId, hasRegisterEntry, ownerTitle } from "@fa/shared";
 import { company } from "@/content/company";
 import { getHome } from "@/content/home";
 import { getNavigation } from "@/content/navigation";
@@ -139,7 +139,8 @@ export async function SiteFooter() {
               © {year} {company.legalName}. {t.rights}
             </p>
             <p className="text-xs text-slate-500">
-              {ownerTitle(locale)}: {company.owner} · {t.vat} {formattedVatId()}
+              {ownerTitle(locale)}: {company.owner}
+              {hasRegisterEntry() && ` · ${company.register.court}, ${company.register.number}`} · {t.vat} {formattedVatId()}
             </p>
           </div>
           <nav aria-label={t.legal}>
