@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { apiRequest } from "@/lib/api/client";
 import { inputClasses } from "@/components/forms/fields";
 
-export type PickedCustomer = Pick<AdminCustomerRow, "id" | "name" | "customerNumber">;
+/** Mit Rechnungsadresse – Aufträge übernehmen sie auf Knopfdruck als Abhol- oder Lieferadresse. */
+export type PickedCustomer = Pick<AdminCustomerRow, "id" | "name" | "customerNumber" | "billingAddress">;
 
 /** Kunde per Name, Kundennummer oder E-Mail suchen und auswählen (Dialoge im Admin-Bereich). */
 export function CustomerPicker({
@@ -56,7 +57,7 @@ export function CustomerPicker({
       <input
         value={query}
         onChange={(event) => setQuery(event.target.value)}
-        placeholder="Name, Kundennummer oder E-Mail"
+        placeholder="Name, Kundennummer, E-Mail oder Ort"
         autoComplete="off"
         className={`${inputClasses} h-12`}
       />
@@ -67,12 +68,16 @@ export function CustomerPicker({
               <button
                 type="button"
                 onClick={() => {
-                  onChange({ id: row.id, name: row.companyName || row.name, customerNumber: row.customerNumber });
+                  onChange({ id: row.id, name: row.companyName || row.name, customerNumber: row.customerNumber, billingAddress: row.billingAddress });
                   setResults([]);
                 }}
                 className="block w-full px-4 py-2 text-left text-sm hover:bg-surface"
               >
-                <strong className="text-primary">{row.companyName || row.name}</strong> <span className="text-slate-500">· {row.customerNumber} · {row.email}</span>
+                <strong className="text-primary">{row.companyName || row.name}</strong>{" "}
+                <span className="text-slate-500">
+                  · {row.customerNumber}
+                  {row.billingAddress && ` · ${row.billingAddress.postalCode} ${row.billingAddress.city}`} · {row.email}
+                </span>
               </button>
             </li>
           ))}

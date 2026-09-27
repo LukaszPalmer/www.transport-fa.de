@@ -20,7 +20,7 @@ import { logger } from "../lib/logger";
 import { CustomerProfile, User } from "../models";
 import { deleteCustomerAccount } from "../services/account-deletion";
 import { changeCredentials } from "../services/credentials";
-import { buildSearchText } from "../services/customers";
+import { buildSearchText, toPostalAddress } from "../services/customers";
 
 /** /api/v1/account – Selbstverwaltung des Kundenkontos (Einstellungen, Zugangsdaten, Löschung). */
 export const accountRouter = Router();
@@ -44,6 +44,7 @@ async function buildSettings(userId: Types.ObjectId): Promise<AccountSettings> {
       lastName: profile.lastName,
       companyName: profile.companyName,
       phone: profile.phone,
+      billingAddress: profile.billingAddress ? toPostalAddress(profile.billingAddress) : undefined,
       email: user.email,
       customerNumber: profile.customerNumber,
     },
@@ -81,8 +82,13 @@ accountRouter.patch("/profile", async (req, res) => {
   const profile = await CustomerProfile.findOne({ userId: user.id }).lean();
   if (!profile) throw AppError.unauthenticated();
 
-  const next = { ...profile, firstName: input.firstName, lastName: input.lastName, companyName: input.companyName };
-  const set: Record<string, string> = { firstName: input.firstName, lastName: input.lastName, searchText: buildSearchText(next, user.email) };
+  const next = { ...profile, firstName: input.firstName, lastName: input.lastName, companyName: input.companyName, billingAddress: input.billingAddress };
+  const set: Record<string, unknown> = {
+    firstName: input.firstName,
+    lastName: input.lastName,
+    billingAddress: input.billingAddress,
+    searchText: buildSearchText(next, user.email),
+  };
   const unset: Record<string, 1> = {};
   if (input.companyName) set.companyName = input.companyName;
   else unset.companyName = 1;

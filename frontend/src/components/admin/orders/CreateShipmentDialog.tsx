@@ -1,7 +1,7 @@
 "use client";
 
-import { SERVICE_SLUGS, type AdminShipmentRow } from "@fa/shared";
-import { LoaderCircle, Plus } from "lucide-react";
+import { SERVICE_SLUGS, type AdminShipmentRow, type PostalAddress } from "@fa/shared";
+import { LoaderCircle, MapPin, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent, type ReactNode } from "react";
 import { serviceLabel } from "@/lib/admin-format";
@@ -96,8 +96,8 @@ function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: Pi
           </Field>
         </div>
 
-        <StopFields prefix="pickup" title="Abholung" errors={fieldErrors} />
-        <StopFields prefix="delivery" title="Lieferung" errors={fieldErrors} />
+        <StopFields prefix="pickup" title="Abholung" errors={fieldErrors} customerAddress={customer?.billingAddress} />
+        <StopFields prefix="delivery" title="Lieferung" errors={fieldErrors} customerAddress={customer?.billingAddress} />
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Abholung geplant" optional error={fieldErrors.plannedPickupAt}>
@@ -120,22 +120,44 @@ function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: Pi
   );
 }
 
-function StopFields({ prefix, title, errors }: { prefix: "pickup" | "delivery"; title: string; errors: Record<string, string> }) {
+function StopFields({
+  prefix,
+  title,
+  errors,
+  customerAddress,
+}: {
+  prefix: "pickup" | "delivery";
+  title: string;
+  errors: Record<string, string>;
+  customerAddress?: PostalAddress;
+}) {
+  // Übernehmen = Felder mit der Kundenadresse neu aufbauen (key), danach frei änderbar.
+  const [filled, setFilled] = useState<{ address: PostalAddress; version: number }>();
+  const value = filled?.address;
   return (
     <fieldset className="rounded-2xl border border-slate-200 p-4">
       <legend className="px-1 text-sm font-semibold text-primary">{title}</legend>
-      <div className="grid grid-cols-6 gap-3">
+      {customerAddress && (
+        <button
+          type="button"
+          onClick={() => setFilled((current) => ({ address: customerAddress, version: (current?.version ?? 0) + 1 }))}
+          className="mb-3 inline-flex items-center gap-1.5 text-sm font-semibold text-accent-ink hover:underline"
+        >
+          <MapPin aria-hidden="true" className="size-4" /> Kundenadresse übernehmen
+        </button>
+      )}
+      <div key={filled?.version ?? 0} className="grid grid-cols-6 gap-3">
         <Field label="Straße und Hausnummer" className="col-span-6" error={errors[`${prefix}.line1`]}>
-          <input name={`${prefix}.line1`} required autoComplete="off" className={`${inputClasses} h-11`} />
+          <input name={`${prefix}.line1`} required autoComplete="off" defaultValue={value?.line1} className={`${inputClasses} h-11`} />
         </Field>
         <Field label="PLZ" className="col-span-2" error={errors[`${prefix}.postalCode`]}>
-          <input name={`${prefix}.postalCode`} required inputMode="numeric" className={`${inputClasses} h-11`} />
+          <input name={`${prefix}.postalCode`} required inputMode="numeric" defaultValue={value?.postalCode} className={`${inputClasses} h-11`} />
         </Field>
         <Field label="Ort" className="col-span-3" error={errors[`${prefix}.city`]}>
-          <input name={`${prefix}.city`} required className={`${inputClasses} h-11`} />
+          <input name={`${prefix}.city`} required defaultValue={value?.city} className={`${inputClasses} h-11`} />
         </Field>
         <Field label="Land" className="col-span-1" error={errors[`${prefix}.countryCode`]}>
-          <input name={`${prefix}.countryCode`} defaultValue="DE" maxLength={2} className={`${inputClasses} h-11 uppercase`} />
+          <input name={`${prefix}.countryCode`} defaultValue={value?.countryCode ?? "DE"} maxLength={2} className={`${inputClasses} h-11 uppercase`} />
         </Field>
       </div>
     </fieldset>

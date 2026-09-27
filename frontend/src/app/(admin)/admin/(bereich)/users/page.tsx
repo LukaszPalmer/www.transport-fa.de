@@ -65,7 +65,7 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
           <input
             name="q"
             defaultValue={q}
-            placeholder="Name, Kundennummer, E-Mail"
+            placeholder="Name, Kundennr., E-Mail, PLZ oder Ort"
             aria-label="Kunden suchen"
             className="h-10 w-72 rounded-xl border border-slate-200 bg-white pr-3 pl-9 text-sm focus:border-accent-ink focus:outline-none"
           />

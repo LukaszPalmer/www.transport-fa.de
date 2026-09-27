@@ -2,7 +2,7 @@ import type { MeResponse } from "@fa/shared";
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { company } from "@/content/company";
-import { getNavigation } from "@/content/navigation";
+import { getNavigation, routes } from "@/content/navigation";
 import { defineMessages } from "@/i18n/config";
 import { LanguageSwitcher } from "@/i18n/LanguageSwitcher";
 import { getLocale } from "@/i18n/server";
@@ -17,8 +17,18 @@ import { PortalNav } from "./PortalNav";
  * schlanker Fuß. Die Auth-Prüfung selbst passiert in den Seiten (DAL).
  */
 const messages = defineMessages({
-  de: { customerNo: "Kundennr.", legal: "Rechtliches" },
-  en: { customerNo: "Customer no.", legal: "Legal" },
+  de: {
+    customerNo: "Kundennr.",
+    legal: "Rechtliches",
+    addressMissing: "Bitte ergänzen Sie Ihre Rechnungsadresse – ohne Anschrift können wir keine Rechnung ausstellen.",
+    addAddress: "Adresse ergänzen",
+  },
+  en: {
+    customerNo: "Customer no.",
+    legal: "Legal",
+    addressMissing: "Please add your billing address – we cannot issue an invoice without it.",
+    addAddress: "Add address",
+  },
 });
 
 export async function PortalShell({ me, children }: { me: MeResponse | null; children: ReactNode }) {
@@ -51,6 +61,18 @@ export async function PortalShell({ me, children }: { me: MeResponse | null; chi
           </Container>
         )}
       </header>
+
+      {/* Google-Konten bringen keine Anschrift mit – ohne sie kann das Büro keine Rechnung stellen. */}
+      {me?.customer && !me.customer.hasBillingAddress && (
+        <div role="status" className="border-b border-amber-200 bg-amber-50">
+          <Container className="flex flex-col gap-2 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between">
+            <p>{t.addressMissing}</p>
+            <Link href={`${routes.portalSettings}#adresse`} className="shrink-0 font-semibold underline underline-offset-4 hover:text-amber-950">
+              {t.addAddress}
+            </Link>
+          </Container>
+        </div>
+      )}
 
       <div className="flex-1">{children}</div>
 

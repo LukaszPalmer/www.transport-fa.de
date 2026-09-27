@@ -104,8 +104,9 @@ function DatenschutzDe() {
 
       <h2>7. Kundenportal</h2>
       <p>
-        Für die Registrierung verarbeiten wir Name, E-Mail-Adresse und ein verschlüsselt gespeichertes Passwort
-        (Argon2id). Im Portal verarbeiten wir Ihre Aufträge, Dokumente, Angebote, Rechnungen und Nachrichten
+        Für die Registrierung verarbeiten wir Name, Anschrift (Rechnungsadresse), E-Mail-Adresse, auf Wunsch Ihre Firma
+        und ein verschlüsselt gespeichertes Passwort (Argon2id). Die Anschrift brauchen wir für Aufträge und Rechnungen;
+        eine Telefonnummer können Sie freiwillig im Profil ergänzen. Im Portal verarbeiten wir Ihre Aufträge, Dokumente, Angebote, Rechnungen und Nachrichten
         (Art. 6 Abs. 1 lit. b DSGVO). Zur Absicherung speichern wir Sitzungsdaten (Zeitpunkt, IP-Adresse, Browser) und
         ein Sicherheitsprotokoll mit Anmeldeereignissen (12 Monate, Art. 6 Abs. 1 lit. f DSGVO).
       </p>

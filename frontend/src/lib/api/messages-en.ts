@@ -48,6 +48,14 @@ const exact: Record<string, string> = {
   "Bitte stimmen Sie der Datenschutzerklärung zu.": "Please accept the privacy policy.",
   "Bitte geben Sie Ihr Passwort ein.": "Please enter your password.",
 
+  // Anschrift (shared/auth.ts AddressInput – Registrierung und Profil)
+  "Bitte geben Sie Ihre Anschrift ein.": "Please enter your address.",
+  "Bitte geben Sie Straße und Hausnummer ein.": "Please enter your street and house number.",
+  "Bitte geben Sie die PLZ ein.": "Please enter your postcode.",
+  "Bitte geben Sie eine gültige PLZ ein (5 Ziffern).": "Please enter a valid German postcode (5 digits).",
+  "Bitte geben Sie den Ort ein.": "Please enter your city.",
+  "Bitte wählen Sie ein Land.": "Please choose a country.",
+
   // Konto (routes/account.ts, shared/account.ts)
   "Das Passwort ist nicht korrekt.": "The password is incorrect.",
   "Bitte melden Sie sich zur Bestätigung erneut mit Google an.": "Please sign in with Google again to confirm.",

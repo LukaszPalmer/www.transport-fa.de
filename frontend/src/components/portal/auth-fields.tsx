@@ -122,7 +122,7 @@ export function PendingButton({ pending, children }: { pending: boolean; childre
 }
 
 /** Einfaches Status-Banner für Portal-Formulare. */
-export function AuthAlert({ tone, children }: { tone: "error" | "success" | "info"; children: ReactNode }) {
+export function AuthAlert({ tone, children }: { tone: "error" | "success" | "info" | "warning"; children: ReactNode }) {
   return (
     <div
       role={tone === "error" ? "alert" : "status"}
@@ -131,6 +131,7 @@ export function AuthAlert({ tone, children }: { tone: "error" | "success" | "inf
         tone === "error" && "border-red-200 bg-red-50 text-red-800",
         tone === "success" && "border-emerald-200 bg-emerald-50 text-emerald-800",
         tone === "info" && "border-sky-200 bg-sky-50 text-sky-900",
+        tone === "warning" && "border-amber-200 bg-amber-50 text-amber-900",
       )}
     >
       {children}

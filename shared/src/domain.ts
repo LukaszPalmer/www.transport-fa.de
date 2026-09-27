@@ -23,6 +23,7 @@ export function isStaffRole(role: Role): role is StaffRole {
  */
 export const PERMISSIONS = [
   "can_view_customers",
+  "can_edit_customers",
   "can_manage_orders",
   "can_manage_drivers",
   "can_chat",
@@ -36,6 +37,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 
 export const PERMISSION_INFO: Record<Permission, { label: string; description: string }> = {
   can_view_customers: { label: "Kunden einsehen", description: "Kundenliste und 360°-Akte öffnen" },
+  can_edit_customers: { label: "Kundendaten bearbeiten", description: "Name, Firma, Anschrift, Telefon und USt-IdNr. von Kunden ändern" },
   can_manage_orders: { label: "Aufträge verwalten", description: "Aufträge anlegen, Status ändern" },
   can_manage_drivers: { label: "Fahrer zuweisen", description: "Fahrer & LKW anlegen und Aufträgen zuweisen" },
   can_chat: { label: "Live-Chat", description: "Kundenanfragen im Chat beantworten" },

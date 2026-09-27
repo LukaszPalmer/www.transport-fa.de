@@ -9,6 +9,7 @@ import { useLocale } from "@/i18n/client";
 import { defineMessages } from "@/i18n/config";
 import { apiRequest } from "@/lib/api/client";
 import { ApiError, errorMessage, localizeMessage } from "@/lib/api/errors";
+import { AddressFields, readAddress } from "@/components/forms/AddressFields";
 import { CheckboxField, TextField } from "@/components/forms/fields";
 import { AuthAlert, PasswordField, PendingButton } from "./auth-fields";
 import { AuthDivider, GoogleButton } from "./GoogleButton";
@@ -24,6 +25,10 @@ const messages = defineMessages({
     google: "Mit Google registrieren",
     firstName: "Vorname",
     lastName: "Nachname",
+    company: "Firma",
+    companyHint: "Nur bei Geschäftskunden – erscheint auf Ihren Rechnungen.",
+    address: "Anschrift",
+    addressHint: "Ihre Rechnungsadresse – wir brauchen sie für Aufträge und Rechnungen.",
     email: "E-Mail-Adresse",
     haveAccount: "Sie haben bereits ein Konto?",
     signIn: "Jetzt anmelden",
@@ -44,6 +49,10 @@ const messages = defineMessages({
     google: "Sign up with Google",
     firstName: "First name",
     lastName: "Last name",
+    company: "Company",
+    companyHint: "Business customers only – shown on your invoices.",
+    address: "Address",
+    addressHint: "Your billing address – we need it for jobs and invoices.",
     email: "Email address",
     haveAccount: "Already have an account?",
     signIn: "Sign in now",
@@ -87,6 +96,8 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
         body: {
           firstName: String(data.get("firstName") ?? ""),
           lastName: String(data.get("lastName") ?? ""),
+          companyName: String(data.get("companyName") ?? ""),
+          billingAddress: readAddress(data),
           email: String(data.get("email") ?? ""),
           password,
           acceptPrivacy: true,
@@ -120,6 +131,12 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
           <TextField name="firstName" label={t.firstName} required autoComplete="given-name" error={fieldErrors.firstName} />
           <TextField name="lastName" label={t.lastName} required autoComplete="family-name" error={fieldErrors.lastName} />
         </div>
+        <TextField name="companyName" label={t.company} autoComplete="organization" hint={t.companyHint} error={fieldErrors.companyName} />
+        <fieldset>
+          <legend className="text-sm font-semibold text-primary">{t.address}</legend>
+          <p className="mt-1 mb-4 text-xs text-slate-500">{t.addressHint}</p>
+          <AddressFields errors={fieldErrors} />
+        </fieldset>
         <TextField
           name="email"
           type="email"

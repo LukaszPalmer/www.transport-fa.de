@@ -1,4 +1,12 @@
-import { UpdateCustomerCrmInput, type AdminCustomerDetail, type AdminCustomerList, type AdminCustomerRow, type AdminDocumentItem, type ShipmentStatus } from "@fa/shared";
+import {
+  UpdateCustomerCrmInput,
+  UpdateCustomerProfileInput,
+  type AdminCustomerDetail,
+  type AdminCustomerList,
+  type AdminCustomerRow,
+  type AdminDocumentItem,
+  type ShipmentStatus,
+} from "@fa/shared";
 import { Router } from "express";
 import { Types } from "mongoose";
 import { z } from "zod";
@@ -8,6 +16,7 @@ import { audit } from "../../lib/audit";
 import { ChatSession, CustomerProfile, DocumentModel, Invoice, Lead, Shipment, StaffProfile, User } from "../../models";
 import { isOnline, onlineUserIds } from "../../realtime/presence";
 import { toAdminShipmentRows } from "../../services/admin-shipments";
+import { buildSearchText, toPostalAddress } from "../../services/customers";
 import { toAdminInvoiceRows } from "../../services/invoices";
 
 /** /api/v1/admin/customers – Kundenliste mit Online-Status und 360°-Akte. */
@@ -39,7 +48,7 @@ adminCustomersRouter.get("/", async (req, res) => {
       .sort({ createdAt: -1 })
       .skip((query.page - 1) * query.limit)
       .limit(query.limit)
-      .select("userId customerNumber firstName lastName companyName createdAt")
+      .select("userId customerNumber firstName lastName companyName billingAddress createdAt")
       .lean(),
     CustomerProfile.countDocuments(filter),
   ]);
@@ -70,6 +79,7 @@ adminCustomersRouter.get("/", async (req, res) => {
       customerNumber: profile.customerNumber,
       name: `${profile.firstName} ${profile.lastName}`,
       companyName: profile.companyName,
+      billingAddress: profile.billingAddress ? toPostalAddress(profile.billingAddress) : undefined,
       email: user?.email ?? "",
       emailVerified: Boolean(user?.emailVerifiedAt),
       online: isOnline(profile.userId),
@@ -127,6 +137,8 @@ adminCustomersRouter.get("/:id", async (req, res) => {
       companyName: profile.companyName,
       phone: profile.phone,
       type: profile.type,
+      vatId: profile.vatId,
+      billingAddress: profile.billingAddress ? toPostalAddress(profile.billingAddress) : undefined,
       locale: profile.locale ?? "de",
       createdAt: profile.createdAt.toISOString(),
     },
@@ -181,5 +193,31 @@ adminCustomersRouter.patch("/:id/crm", async (req, res) => {
   const result = await CustomerProfile.updateOne({ _id: req.params.id }, { ...(Object.keys(set).length ? { $set: set } : {}), ...(Object.keys(unset).length ? { $unset: unset } : {}) });
   if (result.matchedCount === 0) throw AppError.notFound("Kunde nicht gefunden.");
   audit(req, "admin.customer_updated", { targetType: "CustomerProfile", targetId: new Types.ObjectId(String(req.params.id)), customerId: new Types.ObjectId(String(req.params.id)), meta: { fields: Object.keys({ ...set, ...unset }) } });
+  res.status(204).end();
+});
+
+/** Stammdaten durch das Büro: Name, Firma, Kundentyp, USt-IdNr., Telefon und Rechnungsadresse. */
+adminCustomersRouter.patch("/:id/profile", requirePermission("can_edit_customers"), async (req, res) => {
+  if (!Types.ObjectId.isValid(String(req.params.id))) throw AppError.notFound("Kunde nicht gefunden.");
+  const input = UpdateCustomerProfileInput.parse(req.body);
+  const profile = await CustomerProfile.findById(req.params.id).lean();
+  if (!profile) throw AppError.notFound("Kunde nicht gefunden.");
+  const user = await User.findById(profile.userId).select("email").lean();
+
+  const set: Record<string, unknown> = {
+    type: input.type,
+    firstName: input.firstName,
+    lastName: input.lastName,
+    billingAddress: input.billingAddress,
+    searchText: buildSearchText({ ...profile, ...input }, user?.email ?? ""),
+  };
+  const unset: Record<string, 1> = {};
+  for (const field of ["companyName", "vatId", "phone"] as const) {
+    if (input[field]) set[field] = input[field];
+    else unset[field] = 1;
+  }
+  await CustomerProfile.updateOne({ _id: profile._id }, { $set: set, ...(Object.keys(unset).length ? { $unset: unset } : {}) }, { runValidators: true });
+  await User.updateOne({ _id: profile.userId }, { name: `${input.firstName} ${input.lastName}` });
+  audit(req, "admin.customer_updated", { targetType: "CustomerProfile", targetId: profile._id, customerId: profile._id, meta: { fields: ["stammdaten"] } });
   res.status(204).end();
 });

@@ -54,6 +54,13 @@ export function CustomerTable({ customers }: { customers: AdminCustomerRow[] }) 
                     {customer.companyName || customer.name}
                   </Link>
                   {customer.companyName && <p className="text-xs text-slate-500">{customer.name}</p>}
+                  {customer.billingAddress ? (
+                    <p className="text-xs text-slate-500">
+                      {customer.billingAddress.postalCode} {customer.billingAddress.city}
+                    </p>
+                  ) : (
+                    <p className="text-xs font-semibold text-amber-700">Adresse fehlt</p>
+                  )}
                 </td>
                 <td className={`${tableClasses.td} font-mono text-xs text-slate-700`}>{customer.customerNumber}</td>
                 <td className={tableClasses.td}>

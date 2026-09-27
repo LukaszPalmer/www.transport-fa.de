@@ -48,11 +48,42 @@ export const PhoneSchema = z
   .transform(normalizePhone)
   .pipe(z.string().regex(/^\+[1-9]\d{6,14}$/, "Bitte mit internationaler Vorwahl angeben, z. B. +49 170 1234567."));
 
+/** Länder der Adressauswahl (ISO 3166-1 alpha-2) – Namen liefert Intl.DisplayNames in der Sprache der Seite. */
+export const COUNTRY_CODES = [
+  "DE", "AT", "BE", "BG", "CH", "CY", "CZ", "DK", "EE", "ES", "FI", "FR", "GB", "GR", "HR", "HU", "IE", "IS",
+  "IT", "LI", "LT", "LU", "LV", "MT", "NL", "NO", "PL", "PT", "RO", "SE", "SI", "SK",
+] as const;
+
+/**
+ * Anschrift des Kunden (Rechnungsadresse) – Pflicht bei Registrierung und im Profil,
+ * damit das Büro jederzeit Rechnungen, Aufträge und Belege ausstellen kann.
+ */
+export const AddressInput = z
+  .object({
+    line1: z
+      .string({ error: "Bitte geben Sie Straße und Hausnummer ein." })
+      .trim()
+      .min(3, "Bitte geben Sie Straße und Hausnummer ein.")
+      .max(200, "Höchstens 200 Zeichen."),
+    line2: z.string().trim().max(200, "Höchstens 200 Zeichen.").optional().transform((value) => value || undefined),
+    postalCode: z.string({ error: "Bitte geben Sie die PLZ ein." }).trim().min(3, "Bitte geben Sie die PLZ ein.").max(12, "Höchstens 12 Zeichen."),
+    city: z.string({ error: "Bitte geben Sie den Ort ein." }).trim().min(2, "Bitte geben Sie den Ort ein.").max(100, "Höchstens 100 Zeichen."),
+    countryCode: z.string().trim().toUpperCase().regex(/^[A-Z]{2}$/, "Bitte wählen Sie ein Land.").default("DE"),
+  }, { error: "Bitte geben Sie Ihre Anschrift ein." })
+  .refine((address) => address.countryCode !== "DE" || /^\d{5}$/.test(address.postalCode), {
+    path: ["postalCode"],
+    message: "Bitte geben Sie eine gültige PLZ ein (5 Ziffern).",
+  });
+export type AddressInput = z.input<typeof AddressInput>;
+export type PostalAddress = z.output<typeof AddressInput>;
+
 const token = z.string().min(20, "Der Link ist unvollständig.").max(200);
 
 export const RegisterInput = z.object({
   firstName: personName("Vornamen"),
   lastName: personName("Nachnamen"),
+  companyName: z.string().trim().max(200, "Höchstens 200 Zeichen.").optional().transform((value) => value || undefined),
+  billingAddress: AddressInput,
   email,
   password: newPassword,
   acceptPrivacy: z.literal(true, { error: "Bitte stimmen Sie der Datenschutzerklärung zu." }),
@@ -98,6 +129,8 @@ export interface CustomerSummary {
   firstName: string;
   lastName: string;
   companyName?: string;
+  /** false bei Google-Konten ohne Adresse – das Portal fordert sie dann an. */
+  hasBillingAddress: boolean;
 }
 
 export interface MeResponse {

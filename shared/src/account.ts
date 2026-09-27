@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { EmailSchema, NewPasswordSchema, PhoneSchema, personName } from "./auth";
+import { AddressInput, EmailSchema, NewPasswordSchema, PhoneSchema, personName, type PostalAddress } from "./auth";
 import { LOCALES, NOTIFICATION_TOPICS, type Locale, type NotificationPreferences } from "./domain";
 
 /** Kunden-Einstellungen: Profil, Zugangsdaten, Benachrichtigungen. */
@@ -14,6 +14,7 @@ export const UpdateProfileInput = z.object({
     .optional()
     .transform((value) => value || undefined)
     .pipe(PhoneSchema.optional()),
+  billingAddress: AddressInput,
 });
 export type UpdateProfileInput = z.input<typeof UpdateProfileInput>;
 
@@ -48,6 +49,7 @@ export interface AccountSettings {
     lastName: string;
     companyName?: string;
     phone?: string;
+    billingAddress?: PostalAddress;
     email: string;
     customerNumber: string;
   };

@@ -117,7 +117,15 @@ authRouter.post("/register", async (req, res) => {
     );
     if (!created) throw new Error("Nutzer konnte nicht angelegt werden");
     const customer = await createCustomerProfile(
-      { userId: created._id, email: input.email, firstName: input.firstName, lastName: input.lastName, locale: input.locale ?? requestLocale(req) },
+      {
+        userId: created._id,
+        email: input.email,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        companyName: input.companyName,
+        billingAddress: input.billingAddress,
+        locale: input.locale ?? requestLocale(req),
+      },
       session,
     );
     return { user: created, profile: customer };

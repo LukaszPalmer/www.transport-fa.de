@@ -89,7 +89,9 @@ export function DatenschutzEn() {
 
       <h2>7. Customer portal</h2>
       <p>
-        For registration we process your name, email address and an encrypted password (Argon2id). In the portal we process your
+        For registration we process your name, address (billing address), email address, optionally your company, and an
+        encrypted password (Argon2id). We need the address for jobs and invoices; you can add a phone number in your profile if
+        you wish. In the portal we process your
         jobs, documents, quotes, invoices and messages (Art. 6(1)(b) GDPR). For security we store session data (time, IP address,
         browser) and a security log of sign-in events (12 months, Art. 6(1)(f) GDPR).
       </p>

@@ -7,6 +7,7 @@ import { useMessages } from "@/i18n/client";
 import { defineMessages } from "@/i18n/config";
 import { apiRequest } from "@/lib/api/client";
 import { ApiError, errorMessage } from "@/lib/api/errors";
+import { AddressFields, readAddress } from "@/components/forms/AddressFields";
 import { TextField } from "@/components/forms/fields";
 import { AuthAlert } from "../auth-fields";
 import { mapFieldErrors, SavedNote, SaveButton } from "./form-parts";
@@ -18,6 +19,9 @@ const messages = defineMessages({
     company: "Firma",
     phone: "Telefon",
     phoneHint: "Mit internationaler Vorwahl – so erreicht Sie auch unser Fahrer.",
+    address: "Rechnungsadresse",
+    addressHint: "Diese Anschrift steht auf Ihren Rechnungen und dient als Vorschlag für neue Aufträge.",
+    addressMissing: "Bitte ergänzen Sie Ihre Anschrift – ohne sie können wir keine Rechnung ausstellen.",
   },
   en: {
     firstName: "First name",
@@ -25,10 +29,13 @@ const messages = defineMessages({
     company: "Company",
     phone: "Phone",
     phoneHint: "With international code – so our driver can reach you too.",
+    address: "Billing address",
+    addressHint: "This address appears on your invoices and is suggested for new jobs.",
+    addressMissing: "Please add your address – we cannot issue an invoice without it.",
   },
 });
 
-/** Stammdaten: Name, Firma, Telefon (international). */
+/** Stammdaten: Name, Firma, Telefon (international) und Rechnungsadresse (Pflicht). */
 export function ProfileForm({ profile }: { profile: AccountSettings["profile"] }) {
   const t = useMessages(messages);
   const router = useRouter();
@@ -52,6 +59,7 @@ export function ProfileForm({ profile }: { profile: AccountSettings["profile"] }
           lastName: String(data.get("lastName") ?? ""),
           companyName: String(data.get("companyName") ?? ""),
           phone: String(data.get("phone") ?? ""),
+          billingAddress: readAddress(data),
         },
       });
       setSaved(true);
@@ -83,6 +91,17 @@ export function ProfileForm({ profile }: { profile: AccountSettings["profile"] }
         defaultValue={profile.phone}
         error={fieldErrors.phone}
       />
+      <fieldset id="adresse" className="scroll-mt-24 space-y-4 border-t border-slate-100 pt-5">
+        <legend className="sr-only">{t.address}</legend>
+        <div>
+          <p aria-hidden="true" className="text-sm font-semibold text-primary">
+            {t.address}
+          </p>
+          <p className="mt-1 text-xs text-slate-500">{t.addressHint}</p>
+        </div>
+        {!profile.billingAddress && <AuthAlert tone="warning">{t.addressMissing}</AuthAlert>}
+        <AddressFields defaultValue={profile.billingAddress} errors={fieldErrors} />
+      </fieldset>
       <div className="flex flex-wrap items-center gap-4">
         <SaveButton pending={pending} />
         {saved && <SavedNote />}

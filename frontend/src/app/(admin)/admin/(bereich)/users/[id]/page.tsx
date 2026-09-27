@@ -12,12 +12,14 @@ import { apiServer } from "@/lib/api/server";
 import { documentCategoryLabel, formatDate, formatDateTime, formatFileSize } from "@/lib/portal-format";
 import { CredentialsForm } from "@/components/admin/CredentialsForm";
 import { CustomerCrmForm } from "@/components/admin/customers/CustomerCrmCard";
+import { EditCustomerProfileButton } from "@/components/admin/customers/CustomerProfileDialog";
 import { LiveOnlineStatus } from "@/components/admin/customers/CustomerTable";
 import { InvoiceTable } from "@/components/admin/invoices/InvoiceTable";
 import { SendInvoiceButton } from "@/components/admin/invoices/SendInvoiceDialog";
 import { CreateShipmentButton } from "@/components/admin/orders/CreateShipmentDialog";
 import { ShipmentTable } from "@/components/admin/orders/ShipmentTable";
 import { AdminPage, Card, NoAccess, tableClasses } from "@/components/admin/ui";
+import { formatAddress } from "@/lib/address";
 import { buttonClasses } from "@/components/ui/button-styles";
 import { StatusBadge } from "@/components/portal/dashboard/ui";
 
@@ -41,7 +43,7 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
   }
   const { customer, user, shipments, documents, invoices, chats } = detail;
   const displayName = customer.companyName || `${customer.firstName} ${customer.lastName}`;
-  const presetCustomer = { id: customer.id, name: displayName, customerNumber: customer.customerNumber };
+  const presetCustomer = { id: customer.id, name: displayName, customerNumber: customer.customerNumber, billingAddress: customer.billingAddress };
 
   return (
     <AdminPage
@@ -57,13 +59,20 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
       }
     >
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
-        <Card title="Kontakt & Konto">
+        <Card title="Kontakt & Konto" action={can(me, "can_edit_customers") ? <EditCustomerProfileButton customer={customer} /> : undefined}>
           <div className="mb-5">
             <LiveOnlineStatus userId={user.id} online={detail.online} lastSeenAt={user.lastSeenAt} />
           </div>
           <dl className="space-y-3 text-sm">
             <Row label="Name" value={`${customer.firstName} ${customer.lastName}`} />
             {customer.companyName && <Row label="Firma" value={customer.companyName} />}
+            <Row label="Kundentyp" value={customer.type === "BUSINESS" ? "Geschäftskunde" : "Privatkunde"} />
+            {customer.billingAddress ? (
+              <Row label="Anschrift" value={formatAddress(customer.billingAddress)} />
+            ) : (
+              <Row label="Anschrift" value="fehlt" note="für Rechnungen nötig – bitte ergänzen" warn />
+            )}
+            {customer.vatId && <Row label="USt-IdNr." value={customer.vatId} />}
             <Row label="E-Mail" value={user.email} note={user.emailVerified ? "bestätigt" : "nicht bestätigt"} warn={!user.emailVerified} />
             <Row label="Telefon" value={customer.phone ?? "–"} href={customer.phone ? `tel:${customer.phone}` : undefined} />
             <Row label="Anmeldung" value={[user.hasPassword && "Passwort", user.googleLinked && "Google"].filter(Boolean).join(" + ") || "–"} />

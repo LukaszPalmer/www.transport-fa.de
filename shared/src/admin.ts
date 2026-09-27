@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { EmailSchema, NewPasswordSchema, PhoneSchema } from "./auth";
+import { AddressInput, EmailSchema, NewPasswordSchema, PhoneSchema, personName, type PostalAddress } from "./auth";
 import type { LeadStatus, LeadTopic } from "./crm";
 import {
+  CUSTOMER_TYPES,
   INVOICE_TYPES,
   PAYMENT_METHODS,
   PAYMENT_STATUSES,
@@ -9,6 +10,7 @@ import {
   SERVICE_SLUGS,
   SHIPMENT_STATUSES,
   STAFF_ROLES,
+  type CustomerType,
   type DocumentCategory,
   type DocumentVisibility,
   type EffectivePaymentStatus,
@@ -67,6 +69,8 @@ export interface AdminCustomerRow {
   customerNumber: string;
   name: string;
   companyName?: string;
+  /** Rechnungsadresse – Vorschlag für Aufträge und Rechnungen; fehlt bei Google-Konten ohne Angabe. */
+  billingAddress?: PostalAddress;
   email: string;
   emailVerified: boolean;
   online: boolean;
@@ -131,7 +135,9 @@ export interface AdminCustomerDetail {
     lastName: string;
     companyName?: string;
     phone?: string;
-    type: string;
+    type: CustomerType;
+    vatId?: string;
+    billingAddress?: PostalAddress;
     /** Sprache für E-Mails und Portal (vom Kunden gewählt). */
     locale: Locale;
     createdAt: string;
@@ -160,6 +166,30 @@ export interface AdminCustomerDetail {
     leads: Array<{ id: string; number: string; status: LeadStatus; topic: LeadTopic; createdAt: string }>;
   };
 }
+
+/** Stammdaten eines Kunden durch das Büro ändern – dieselben Pflichtfelder wie im Kundenportal. */
+export const UpdateCustomerProfileInput = z.object({
+  type: z.enum(CUSTOMER_TYPES),
+  firstName: personName("Vornamen"),
+  lastName: personName("Nachnamen"),
+  companyName: z.string().trim().max(200, "Höchstens 200 Zeichen.").optional().transform((value) => value || undefined),
+  vatId: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .transform((value) => value.replace(/[\s.-]/g, ""))
+    .pipe(z.string().max(20, "Die USt-IdNr. ist zu lang.").regex(/^([A-Z]{2}[A-Z0-9]{2,13})?$/, "USt-IdNr. mit Ländercode, z. B. DE123456789"))
+    .optional()
+    .transform((value) => value || undefined),
+  phone: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => value || undefined)
+    .pipe(PhoneSchema.optional()),
+  billingAddress: AddressInput,
+});
+export type UpdateCustomerProfileInput = z.input<typeof UpdateCustomerProfileInput>;
 
 /** Aktive Mitarbeiter für Auswahlfelder (Betreuer, Zuständigkeit). */
 export interface StaffOption {
