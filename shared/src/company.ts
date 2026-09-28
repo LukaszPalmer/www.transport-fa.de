@@ -9,9 +9,7 @@
  * Anschrift, USt-IdNr. und Steuernummer: Mitteilung des Bundeszentralamts für Steuern vom
  * 02.02.2026. Registereintrag laut öffentlichem Handelsregister-Auszug (northdata.de) –
  * mit dem aktuellen Registerauszug abgleichen (Sitzverlegung Neuss → Düsseldorf).
- *
- * TODO(Inhalt): Bankverbindung fehlt noch („xxxx“) – bis eine gültige IBAN eingetragen ist,
- * gehen in Produktion keine Rechnungen raus (sellerWarnings im Backend).
+ * Bankverbindung: Commerzbank-Konto, vom Auftraggeber übermittelt am 28.09.2026.
  */
 export const COMPANY = {
   name: "FA Transport",
@@ -19,7 +17,7 @@ export const COMPANY = {
   legalForm: "GMBH" as "GMBH" | "EINZELUNTERNEHMEN",
   websiteUrl: "https://www.transport-fa.de",
   /** Inhaber bzw. Geschäftsführer – Impressum, Rechnungen, E-Mail-Fußzeile. */
-  owner: "Ali Ftouni",
+  owner: "Reda Fakih",
   contact: {
     phone: "+49 163 3788887",
     phoneHref: "tel:+491633788887",
@@ -43,13 +41,13 @@ export const COMPANY = {
     vatId: "DE453977991",
     /** Steuernummer vom Finanzamt – steht auf Rechnungen und im DATEV-Export, nicht im Impressum. */
     taxNumber: "122/5723/2183",
-    managingDirectors: "Ali Ftouni",
+    managingDirectors: "Reda Fakih",
   },
   /** Bankverbindung für Rechnungen (Überweisung und GiroCode). */
   bank: {
-    name: "xxxx",
-    iban: "xxxx",
-    bic: "xxxx",
+    name: "Commerzbank",
+    iban: "DE59 3004 0000 0301 2929 00",
+    bic: "COBADEFFXXX",
   },
 } as const;
 
