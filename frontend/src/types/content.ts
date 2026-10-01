@@ -129,12 +129,16 @@ export interface Review {
   id: string;
   source: ReviewSource;
   author: string;
+  /** Profil des Verfassers auf der Plattform (Pflicht-Attribution bei Google). */
+  authorUrl?: string;
   /** Ort laut Plattform (ohne Adresse). */
   location?: string;
   rating: 1 | 2 | 3 | 4 | 5;
   /** ISO-Datum der Bewertung auf der Plattform. */
   date: string;
   text: string;
+  /** Sprache des Originaltexts (BCP 47), Standard: de. */
+  lang?: string;
   /** Leistungsbereich – steuert, auf welcher Unterseite die Bewertung erscheint. */
   service?: ServiceSlug;
   /** Direktlink zur Originalbewertung. */

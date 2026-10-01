@@ -1,12 +1,12 @@
 import type { Review, ServiceSlug } from "@/types/content";
 import { sectionIds } from "@/content/navigation";
-import { reviewAuthenticityNote, reviewAuthenticityNoteEn, reviewPlatforms, reviews } from "@/content/reviews";
+import { reviewAuthenticityNote, reviewAuthenticityNoteEn, reviewPlatforms, reviews, type ReviewPlatform } from "@/content/reviews";
 import { getService } from "@/content/services";
+import { getGoogleReviews } from "@/lib/google-reviews";
 import { defineMessages, intlLocale, type Locale } from "@/i18n/config";
 import { getLocale } from "@/i18n/server";
 import { cn } from "@/lib/cn";
 import { buttonClasses } from "@/components/ui/button-styles";
-import { ComingSoon } from "@/components/ui/ComingSoon";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { SmartLink } from "@/components/ui/SmartLink";
@@ -25,11 +25,9 @@ const messages = defineMessages({
     note: reviewAuthenticityNote,
     emptyTitle: "Ihre Erfahrung zählt.",
     emptyText:
-      "Wir richten gerade unser Google-Unternehmensprofil ein. Sobald die ersten Kundenstimmen vorliegen, zeigen wir sie hier – unverändert und mit Quelle. Sie waren bereits Kunde? Wir freuen uns über Ihre ehrliche Bewertung.",
+      "Ihre Bewertung auf Google hilft anderen bei der Entscheidung – und uns, noch besser zu werden. Kundenstimmen zeigen wir hier unverändert und mit Quelle. Sie waren bereits Kunde? Wir freuen uns über Ihre ehrliche Bewertung.",
     write: "Bewertung schreiben",
     profile: "Profil ansehen",
-    soon: "Folgt in Kürze",
-    soonTooltip: "Bewertungen auf Google folgen in Kürze",
   },
   en: {
     eyebrow: "Reviews",
@@ -42,25 +40,36 @@ const messages = defineMessages({
     note: reviewAuthenticityNoteEn,
     emptyTitle: "Your experience counts.",
     emptyText:
-      "We are setting up our Google business profile. As soon as the first reviews come in, we will show them here – unchanged and with their source. Already a customer? We would appreciate your honest review.",
+      "Your review on Google helps others decide – and helps us get even better. We show customer reviews here unchanged and with their source. Already a customer? We would appreciate your honest review.",
     write: "Write a review",
     profile: "View profile",
-    soon: "Coming soon",
-    soonTooltip: "Google reviews coming soon",
   },
 });
 
-/** Die Gesamtnote kommt von der Plattform (alle Bewertungen) – nie aus der Auswahl auf dieser Seite. */
-const ratedPlatform = Object.values(reviewPlatforms).find((platform) => platform.available && platform.rating);
-const platformRating = ratedPlatform?.rating;
+/**
+ * Plattformen inkl. live geladener Google-Daten. Die Gesamtnote kommt von der Plattform
+ * (alle Bewertungen) – nie aus der Auswahl auf dieser Seite.
+ */
+async function loadReviews() {
+  const google = await getGoogleReviews();
+  const platforms = {
+    ...reviewPlatforms,
+    google: {
+      ...reviewPlatforms.google,
+      profileUrl: google?.profileUrl ?? reviewPlatforms.google.profileUrl,
+      rating: google?.rating ?? reviewPlatforms.google.rating,
+    },
+  };
+  return { platforms, all: [...reviews, ...(google?.reviews ?? [])] };
+}
 
 /**
  * Welche Bewertungen erscheinen? Auf Leistungsseiten zuerst die passenden;
  * gibt es dafür (noch) keine, allgemeine – nie Bewertungen anderer Leistungen
  * ohne Kennzeichnung. Neueste zuerst.
  */
-function selectReviews(service?: ServiceSlug): { items: Review[]; scoped: boolean } {
-  const sorted = [...reviews].sort((a, b) => b.date.localeCompare(a.date));
+function selectReviews(all: Review[], service?: ServiceSlug): { items: Review[]; scoped: boolean } {
+  const sorted = [...all].sort((a, b) => b.date.localeCompare(a.date));
   if (!service) return { items: sorted, scoped: false };
   const matching = sorted.filter((review) => review.service === service);
   return matching.length > 0 ? { items: matching, scoped: true } : { items: sorted, scoped: false };
@@ -69,7 +78,9 @@ function selectReviews(service?: ServiceSlug): { items: Review[]; scoped: boolea
 export async function ReviewsSection({ service }: { service?: ServiceSlug }) {
   const locale = await getLocale();
   const t = messages[locale];
-  const { items, scoped } = selectReviews(service);
+  const { platforms, all } = await loadReviews();
+  const { items, scoped } = selectReviews(all, service);
+  const ratedPlatform = Object.values(platforms).find((platform) => platform.available && platform.rating);
   const serviceName = service ? getService(service, locale)?.name : undefined;
   const title = scoped && serviceName ? t.titleFor(serviceName) : t.title;
 
@@ -80,7 +91,7 @@ export async function ReviewsSection({ service }: { service?: ServiceSlug }) {
           <EmptyState locale={locale} />
         ) : (
           <>
-            <ReviewList items={items.slice(0, 6)} title={title} locale={locale} />
+            <ReviewList items={items.slice(0, 6)} title={title} locale={locale} ratedPlatform={ratedPlatform} />
             <p className="mt-10 max-w-4xl text-xs leading-relaxed text-slate-500">{t.note}</p>
           </>
         )}
@@ -89,8 +100,19 @@ export async function ReviewsSection({ service }: { service?: ServiceSlug }) {
   );
 }
 
-function ReviewList({ items, title, locale }: { items: Review[]; title: string; locale: Locale }) {
+function ReviewList({
+  items,
+  title,
+  locale,
+  ratedPlatform,
+}: {
+  items: Review[];
+  title: string;
+  locale: Locale;
+  ratedPlatform?: ReviewPlatform;
+}) {
   const t = messages[locale];
+  const platformRating = ratedPlatform?.rating;
   const dateFormat = new Intl.DateTimeFormat(intlLocale(locale), { day: "numeric", month: "long", year: "numeric" });
   const asOfFormat = new Intl.DateTimeFormat(intlLocale(locale), { day: "2-digit", month: "2-digit", year: "numeric" });
   const [open, close] = locale === "en" ? ["“", "”"] : ["„", "“"];
@@ -130,14 +152,20 @@ function ReviewList({ items, title, locale }: { items: Review[]; title: string; 
                   <PlatformLogo source={review.source} height={review.source === "google" ? 16 : 14} />
                 </span>
               </div>
-              <blockquote lang="de" className="mt-4 flex-1 text-[0.9375rem] leading-relaxed whitespace-pre-line text-slate-700">
+              <blockquote lang={review.lang ?? "de"} className="mt-4 flex-1 text-[0.9375rem] leading-relaxed whitespace-pre-line text-slate-700">
                 {open}
                 {review.text}
                 {close}
               </blockquote>
               <figcaption className="mt-5 flex items-center justify-between gap-4 border-t border-slate-200 pt-4 text-sm">
                 <span>
-                  <span className="font-semibold text-primary">{review.author === "Anonym" ? t.anonymous : review.author}</span>
+                  {review.authorUrl ? (
+                    <SmartLink href={review.authorUrl} className="font-semibold text-primary underline-offset-4 hover:underline">
+                      {review.author}
+                    </SmartLink>
+                  ) : (
+                    <span className="font-semibold text-primary">{review.author === "Anonym" ? t.anonymous : review.author}</span>
+                  )}
                   <span className="block text-slate-500">
                     {dateFormat.format(new Date(review.date))}
                     {review.location && ` · ${review.location}`}
@@ -182,25 +210,7 @@ export async function ReviewPlatformLinks({ stacked, className }: { stacked?: bo
       {(Object.keys(reviewPlatforms) as Array<keyof typeof reviewPlatforms>).map((key) => {
         const platform = reviewPlatforms[key];
         const note = locale === "en" ? platform.noteEn : platform.note;
-        if (!platform.available) {
-          return (
-            <li
-              key={key}
-              className={cn(
-                "flex flex-col gap-5 rounded-2xl border border-dashed border-slate-300 bg-white p-6",
-                !stacked && "sm:flex-row sm:items-center sm:justify-between",
-              )}
-            >
-              <div>
-                <PlatformLogo source={key} height={key === "google" ? 28 : 24} />
-                <p className="mt-2 text-sm text-slate-500">{note}</p>
-              </div>
-              <ComingSoon id={`review-${key}`} label={`${platform.name} – ${t.soon}`} tooltip={t.soonTooltip} className="rounded-full">
-                <span className="rounded-full bg-accent/15 px-3 py-1.5 text-xs font-bold tracking-wide text-accent-ink uppercase">{t.soon}</span>
-              </ComingSoon>
-            </li>
-          );
-        }
+        if (!platform.available) return null;
         return (
           <li
             key={key}

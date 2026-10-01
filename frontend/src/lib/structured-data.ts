@@ -3,7 +3,7 @@ import { blogHref, getCategory, type BlogPost } from "@/content/blog";
 import { COMPANY } from "@fa/shared";
 import { company } from "@/content/company";
 import { intlLocale, type Locale } from "@/i18n/config";
-import { reviewPlatforms } from "@/content/reviews";
+import { googlePlaceId, reviewPlatforms } from "@/content/reviews";
 import { routes } from "@/content/navigation";
 import { getService, getServices, serviceHref } from "@/content/services";
 
@@ -65,7 +65,7 @@ export function organizationJsonLd(locale: Locale = "de") {
     // Nur echte Profile – Platzhalter („folgt demnächst") gehören nicht in die Suchmaschinen-Daten.
     sameAs: [
       ...company.social.flatMap((social) => (social.href ? [social.href] : [])),
-      ...Object.values(reviewPlatforms).flatMap((platform) => (platform.available ? [platform.profileUrl.split("?")[0]!] : [])),
+      ...Object.values(reviewPlatforms).flatMap((platform) => (platform.available && googlePlaceId ? [platform.profileUrl] : [])),
     ],
     hasOfferCatalog: {
       "@type": "OfferCatalog",
