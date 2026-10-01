@@ -19,8 +19,8 @@ export const COMPANY = {
   /** Inhaber bzw. Geschäftsführer – Impressum, Rechnungen, E-Mail-Fußzeile. */
   owner: "Reda Fakih",
   contact: {
-    phone: "+49 163 3788887",
-    phoneHref: "tel:+491633788887",
+    phone: "015679 678637",
+    phoneHref: "tel:+4915679678637",
     email: "kontakt@transport-fa.de",
     hours: "Mo–Fr 7–19 Uhr · Disposition 24/7",
     hoursEn: "Mon–Fri 7 am–7 pm · Dispatch 24/7",
