@@ -55,7 +55,8 @@ export const reviewPlatforms: Record<ReviewSource, ReviewPlatform> = {
     name: "Google",
     available: true,
     profileUrl: googleProfileUrl,
-    writeReviewUrl: googlePlaceId ? `https://search.google.com/local/writereview?placeid=${googlePlaceId}` : googleProfileUrl,
+    // Offizieller Rezensionslink aus dem Unternehmensprofil („Mehr Rezensionen erhalten").
+    writeReviewUrl: "https://g.page/r/CYcGWKQG3d84EAE/review",
     note: "Bewertungen auf unserem Google-Unternehmensprofil",
     noteEn: "Reviews on our Google business profile",
     logo: { src: "/brands/google-logo.svg", width: 272, height: 92 },
