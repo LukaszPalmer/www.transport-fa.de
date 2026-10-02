@@ -1,20 +1,57 @@
-import { createHash } from "node:crypto";
-import { hash, verify } from "@node-rs/argon2";
+import { argon2, createHash, randomBytes, timingSafeEqual, type Argon2Algorithm } from "node:crypto";
+import { promisify } from "node:util";
 import { logger } from "../lib/logger";
 
 /**
  * Passwörter mit Argon2id (Empfehlung von OWASP), Parameter nach OWASP-Mindestwerten:
  * 19 MiB Speicher, 2 Iterationen, 1 Thread.
+ *
+ * Gerechnet wird mit dem Argon2 aus node:crypto (OpenSSL, ab Node 24.7) statt mit einem nativen
+ * npm-Addon: unsignierte .node-Dateien blockiert die Windows-Funktion „Smart App Control“.
+ * Gespeichert wird im PHC-Format wie zuvor mit @node-rs/argon2, bestehende Hashes bleiben gültig:
+ * $argon2id$v=19$m=19456,t=2,p=1$<Salz>$<Hash> (Base64 ohne Padding; v=19 ist Argon2 1.3,
+ * die einzige Version, die node:crypto rechnet).
  */
-const ARGON2_OPTIONS = { memoryCost: 19_456, timeCost: 2, parallelism: 1 };
+const ARGON2_OPTIONS = { memory: 19_456, passes: 2, parallelism: 1 };
+const SALT_BYTES = 16;
+const HASH_BYTES = 32;
+const PHC_HASH = /^\$(argon2id|argon2i|argon2d)\$v=19\$m=(\d+),t=(\d+),p=(\d+)\$([^$]+)\$([^$]+)$/;
 
-export function hashPassword(password: string): Promise<string> {
-  return hash(password, ARGON2_OPTIONS);
+const deriveKey = promisify(argon2);
+
+function toPhcBase64(bytes: Buffer): string {
+  return bytes.toString("base64").replace(/=+$/, "");
+}
+
+/** Nur kanonisches Base64 – Buffer.from überginge ungültige Zeichen stillschweigend. */
+function fromPhcBase64(value: string | undefined): Buffer | undefined {
+  if (!value) return undefined;
+  const bytes = Buffer.from(value, "base64");
+  return toPhcBase64(bytes) === value ? bytes : undefined;
+}
+
+export async function hashPassword(password: string): Promise<string> {
+  const salt = randomBytes(SALT_BYTES);
+  const hash = await deriveKey("argon2id", { message: password, nonce: salt, tagLength: HASH_BYTES, ...ARGON2_OPTIONS });
+  const { memory, passes, parallelism } = ARGON2_OPTIONS;
+  return `$argon2id$v=19$m=${memory},t=${passes},p=${parallelism}$${toPhcBase64(salt)}$${toPhcBase64(hash)}`;
 }
 
 export async function verifyPassword(passwordHash: string, password: string): Promise<boolean> {
   try {
-    return await verify(passwordHash, password);
+    const [, algorithm, memory, passes, parallelism, encodedSalt, encodedHash] = PHC_HASH.exec(passwordHash) ?? [];
+    const salt = fromPhcBase64(encodedSalt);
+    const expected = fromPhcBase64(encodedHash);
+    if (!salt || !expected) return false;
+    const actual = await deriveKey(algorithm as Argon2Algorithm, {
+      message: password,
+      nonce: salt,
+      tagLength: expected.length,
+      memory: Number(memory),
+      passes: Number(passes),
+      parallelism: Number(parallelism),
+    });
+    return timingSafeEqual(actual, expected);
   } catch {
     return false;
   }
