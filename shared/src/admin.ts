@@ -4,6 +4,7 @@ import type { LeadStatus, LeadTopic } from "./crm";
 import {
   CUSTOMER_TYPES,
   INVOICE_TYPES,
+  LOCALES,
   PAYMENT_METHODS,
   PAYMENT_STATUSES,
   PERMISSIONS,
@@ -190,6 +191,29 @@ export const UpdateCustomerProfileInput = z.object({
   billingAddress: AddressInput,
 });
 export type UpdateCustomerProfileInput = z.input<typeof UpdateCustomerProfileInput>;
+
+/** Kunde durch das Büro anlegen (z. B. Telefonkunde) – Stammdaten wie oben plus E-Mail und Sprache. */
+export const CreateCustomerInput = UpdateCustomerProfileInput.extend({
+  email: EmailSchema,
+  locale: z.enum(LOCALES).default("de"),
+  /** Zugangslink per E-Mail – der Kunde legt sein Passwort dann selbst fest. */
+  sendInvitation: z.boolean().default(true),
+});
+export type CreateCustomerInput = z.input<typeof CreateCustomerInput>;
+
+/** Antwort auf „Kunde anlegen“ – reicht, um den Kunden in Formularen direkt auszuwählen. */
+export interface CreatedCustomer {
+  customer: {
+    id: string;
+    customerNumber: string;
+    /** Firma oder Vor- und Nachname – wie in der Kundenauswahl angezeigt. */
+    name: string;
+    email: string;
+    billingAddress?: PostalAddress;
+  };
+  /** Zugangslink verschickt – false, wenn nicht gewünscht oder der Versand fehlschlug. */
+  invited: boolean;
+}
 
 /** Aktive Mitarbeiter für Auswahlfelder (Betreuer, Zuständigkeit). */
 export interface StaffOption {

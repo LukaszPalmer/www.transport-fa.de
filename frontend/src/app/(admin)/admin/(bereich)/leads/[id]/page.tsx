@@ -105,7 +105,7 @@ export default async function AdminLeadPage({ params }: PageProps<"/admin/leads/
 
         <div className="space-y-6 xl:col-span-2">
           <Card title="Bearbeitung" description="Status, Zuständigkeit und Wiedervorlage – fällige Wiedervorlagen erscheinen in der Übersicht.">
-            <LeadEditor lead={lead} staff={staff} canDelete={me.user.role === "ADMIN"} />
+            <LeadEditor lead={lead} staff={staff} canDelete={me.user.role === "ADMIN"} canCreateCustomer={can(me, "can_edit_customers")} />
           </Card>
           <Card title={`Notizen (${lead.notes.length})`}>
             <LeadNotes leadId={lead.id} notes={lead.notes} />

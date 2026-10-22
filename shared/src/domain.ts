@@ -37,7 +37,7 @@ export type Permission = (typeof PERMISSIONS)[number];
 
 export const PERMISSION_INFO: Record<Permission, { label: string; description: string }> = {
   can_view_customers: { label: "Kunden einsehen", description: "Kundenliste und 360°-Akte öffnen" },
-  can_edit_customers: { label: "Kundendaten bearbeiten", description: "Name, Firma, Anschrift, Telefon und USt-IdNr. von Kunden ändern" },
+  can_edit_customers: { label: "Kundendaten bearbeiten", description: "Kunden anlegen (z. B. Telefonkunden) sowie Name, Firma, Anschrift, Telefon und USt-IdNr. ändern" },
   can_manage_orders: { label: "Aufträge verwalten", description: "Aufträge anlegen, Status ändern" },
   can_manage_drivers: { label: "Fahrer zuweisen", description: "Fahrer & LKW anlegen und Aufträgen zuweisen" },
   can_chat: { label: "Live-Chat", description: "Kundenanfragen im Chat beantworten" },
@@ -58,7 +58,8 @@ export function effectivePermissions(role: Role, granted: readonly Permission[] 
 export const USER_STATES = ["ACTIVE", "DISABLED", "PENDING_DELETION"] as const;
 export type UserState = (typeof USER_STATES)[number];
 
-export const AUTH_TOKEN_TYPES = ["EMAIL_VERIFICATION", "PASSWORD_RESET"] as const;
+/** INVITATION: Zugangslink für vom Büro angelegte Kunden – setzt das erste Passwort. */
+export const AUTH_TOKEN_TYPES = ["EMAIL_VERIFICATION", "PASSWORD_RESET", "INVITATION"] as const;
 export type AuthTokenType = (typeof AUTH_TOKEN_TYPES)[number];
 
 export const LOCALES = ["de", "en"] as const;
@@ -207,6 +208,7 @@ export const EMAIL_TYPES = [
   "WELCOME",
   "VERIFICATION",
   "PASSWORD_RESET",
+  "INVITATION",
   "ACCOUNT_DELETED",
   "SECURITY_NOTICE",
   "DOCUMENT_SHARED",
@@ -220,7 +222,7 @@ export const EMAIL_TYPES = [
 export type EmailType = (typeof EMAIL_TYPES)[number];
 
 /** Enthalten Token-Links → Inhalt wird nie gespeichert und dem Kunden nicht angezeigt. */
-export const SENSITIVE_EMAIL_TYPES: readonly EmailType[] = ["VERIFICATION", "PASSWORD_RESET"];
+export const SENSITIVE_EMAIL_TYPES: readonly EmailType[] = ["VERIFICATION", "PASSWORD_RESET", "INVITATION"];
 
 export const EMAIL_STATUSES = ["QUEUED", "SENT", "DELIVERED", "BOUNCED", "FAILED"] as const;
 export type EmailStatus = (typeof EMAIL_STATUSES)[number];

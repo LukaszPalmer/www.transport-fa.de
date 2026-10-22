@@ -3,6 +3,7 @@ import { button, checklist, escapeHtml, heading, infoCard, legalFooterLine, link
 import type {
   AccountDeletedInput,
   ChatReplyInput,
+  InvitationMailInput,
   InvoiceDeliveryInput,
   InvoiceIssuedInput,
   PaymentReminderMailInput,
@@ -150,6 +151,46 @@ export function passwordResetMailEn(firstName: string, url: string): RenderedMai
         signature(locale),
       ],
       reason: `You are receiving this email because a new password was requested for your customer account at ${COMPANY.name}.`,
+    }),
+  };
+}
+
+export function invitationMailEn({ firstName, email, customerNumber, url, googleSignIn }: InvitationMailInput): RenderedMail {
+  const googleLine = "If your email address is a Google account, you can also sign in without a password using “Sign in with Google”.";
+  const contactLine = `Questions? Simply reply to this email or call us: ${COMPANY.contact.phone} (${COMPANY.contact.hoursEn}).`;
+
+  return {
+    subject: `Your customer account at ${COMPANY.name} is set up`,
+    text:
+      `Hello ${firstName},\n\nwe have created a customer account for you at ${COMPANY.name}.\n\n` +
+      `Customer number: ${customerNumber}\nEmail: ${email}\n\n` +
+      `Set your password using this link (valid for 7 days):\n\n${url}\n\n` +
+      (googleSignIn ? `${googleLine}\n\n` : "") +
+      `In the customer portal you'll find:\n${PORTAL_FEATURES.map((feature) => `• ${feature}`).join("\n")}\n\n` +
+      `If the link has expired, you can request a new one at any time via “Forgot password”.\n\n${contactLine}` +
+      textFooter(),
+    html: renderLayout({
+      locale,
+      preheader: `Your customer account is set up – customer number ${customerNumber}. Set your password now.`,
+      eyebrow: "Welcome",
+      title: `Your customer account is ready, ${firstName}`,
+      intro: "We have created a customer account for you. Set your password now – then you can see your jobs, invoices and documents online at any time.",
+      body: [
+        paragraph(`Hello ${firstName},`),
+        paragraph(`thank you for your order with ${COMPANY.name}. So that you have everything in one place, we have set up a customer account for you.`),
+        infoCard([
+          ["Customer number", customerNumber],
+          ["Email", email],
+        ]),
+        button("Set your password", url),
+        linkFallback(url, locale),
+        ...(googleSignIn ? [smallText(googleLine)] : []),
+        heading("What the portal offers"),
+        checklist(PORTAL_FEATURES),
+        note(`The link is valid for 7 days and can only be used once. If it has expired, simply request a new one via “Forgot password”. ${contactLine}`),
+        signature(locale),
+      ],
+      reason: `You are receiving this email because ${COMPANY.name} created a customer account for you under ${email}.`,
     }),
   };
 }

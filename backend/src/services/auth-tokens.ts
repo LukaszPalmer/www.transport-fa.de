@@ -6,6 +6,7 @@ import { AuthToken } from "../models";
 export const TOKEN_LIFETIME: Record<AuthTokenType, number> = {
   EMAIL_VERIFICATION: 24 * 60 * 60 * 1000,
   PASSWORD_RESET: 60 * 60 * 1000,
+  INVITATION: 7 * 24 * 60 * 60 * 1000,
 };
 
 /** Stellt einen Einmal-Link aus. Ältere Links desselben Typs werden ungültig. */
@@ -17,7 +18,11 @@ export async function issueAuthToken(userId: Types.ObjectId, type: AuthTokenType
 }
 
 /** Löst einen Link genau einmal ein (atomar) und liefert die Nutzer-ID – sonst null. */
-export async function consumeAuthToken(token: string, type: AuthTokenType): Promise<Types.ObjectId | null> {
-  const entry = await AuthToken.findOneAndDelete({ tokenHash: sha256(token), type, expiresAt: { $gt: new Date() } }).lean();
+export async function consumeAuthToken(token: string, type: AuthTokenType | AuthTokenType[]): Promise<Types.ObjectId | null> {
+  const entry = await AuthToken.findOneAndDelete({
+    tokenHash: sha256(token),
+    type: Array.isArray(type) ? { $in: type } : type,
+    expiresAt: { $gt: new Date() },
+  }).lean();
   return entry?.userId ?? null;
 }

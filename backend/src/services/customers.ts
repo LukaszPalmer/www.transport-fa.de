@@ -1,4 +1,4 @@
-import type { CustomerSummary, Locale, PostalAddress } from "@fa/shared";
+import type { CustomerSummary, CustomerType, Locale, PostalAddress } from "@fa/shared";
 import type { ClientSession, Types } from "mongoose";
 import type { Address } from "../db/schema-kit";
 import { CustomerProfile, nextSequence, type ICustomerProfile } from "../models";
@@ -15,6 +15,10 @@ interface NewCustomer {
   billingAddress?: PostalAddress;
   /** Sprache der Website bei der Registrierung – bestimmt die Sprache der E-Mails. */
   locale?: Locale;
+  /** Vom Büro gewählt („Kunde anlegen“) – sonst aus der Firma abgeleitet. */
+  type?: CustomerType;
+  vatId?: string;
+  phone?: string;
 }
 
 /** Legt das Kundenprofil mit fortlaufender Kundennummer an (K-10001, K-10002, …). */
@@ -32,7 +36,9 @@ export async function createCustomerProfile(input: NewCustomer, session?: Client
       {
         userId: input.userId,
         ...fields,
-        type: input.companyName ? "BUSINESS" : "PRIVATE",
+        type: input.type ?? (input.companyName ? "BUSINESS" : "PRIVATE"),
+        vatId: input.vatId,
+        phone: input.phone,
         locale: input.locale ?? "de",
         searchText: buildSearchText(fields, input.email),
       },

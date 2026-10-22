@@ -28,6 +28,8 @@ const exact: Record<string, string> = {
   "E-Mail-Adresse oder Passwort ist nicht korrekt.": "Email address or password is incorrect.",
   "Dieses Passwort ist aus Datenlecks bekannt. Bitte wählen Sie ein anderes.": "This password is known from data breaches. Please choose a different one.",
   "Für dieses Konto ist die Anmeldung mit Google eingerichtet.": "This account is set up to sign in with Google.",
+  "Für dieses Konto ist noch kein Passwort festgelegt. Nutzen Sie den Link aus unserer E-Mail oder „Passwort vergessen“.":
+    "No password has been set for this account yet. Use the link from our email or “Forgot password”.",
   "Zu viele Fehlversuche – das Konto ist für 15 Minuten gesperrt. Sie können Ihr Passwort zurücksetzen.":
     "Too many failed attempts – the account is locked for 15 minutes. You can reset your password.",
   "Dieses Konto ist deaktiviert. Bitte wenden Sie sich an uns.": "This account has been deactivated. Please contact us.",

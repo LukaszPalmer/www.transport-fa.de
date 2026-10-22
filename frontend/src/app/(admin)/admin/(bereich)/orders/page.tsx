@@ -55,7 +55,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps<"/admi
           ? "Status pflegen, Fahrer zuweisen und Rechnungen als offen oder bezahlt markieren – Kunden sehen Änderungen sofort im Portal."
           : "Status pflegen und Fahrer zuweisen – Kunden sehen Änderungen sofort im Tracking."
       }
-      actions={can(me, "can_manage_orders") && can(me, "can_view_customers") ? <CreateShipmentButton /> : undefined}
+      actions={can(me, "can_manage_orders") && can(me, "can_view_customers") ? <CreateShipmentButton allowCreateCustomer={can(me, "can_edit_customers")} /> : undefined}
     >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Filter" className="flex flex-wrap gap-2">

@@ -23,6 +23,8 @@ export const ACTIVITY_LABELS: Record<string, string> = {
   "account.email_changed": "E-Mail-Adresse geändert",
   "account.password_changed": "Passwort geändert",
   "account.password_change_failed": "Passwortänderung fehlgeschlagen",
+  "admin.customer_created": "Kunde angelegt",
+  "admin.customer_invited": "Zugangslink gesendet",
   "admin.customer_viewed": "Kundenakte geöffnet",
   "admin.customer_updated": "Kundenakte bearbeitet",
   "admin.credentials_changed": "Zugangsdaten neu gesetzt",

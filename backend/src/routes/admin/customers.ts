@@ -1,22 +1,25 @@
 import {
+  CreateCustomerInput,
   UpdateCustomerCrmInput,
   UpdateCustomerProfileInput,
   type AdminCustomerDetail,
   type AdminCustomerList,
   type AdminCustomerRow,
   type AdminDocumentItem,
+  type CreatedCustomer,
   type ShipmentStatus,
 } from "@fa/shared";
 import { Router } from "express";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { z } from "zod";
 import { requirePermission } from "../../auth/middleware";
-import { AppError } from "../../http/errors";
+import { AppError, emailTakenError } from "../../http/errors";
 import { audit } from "../../lib/audit";
 import { ChatSession, CustomerProfile, DocumentModel, Invoice, Lead, Shipment, StaffProfile, User } from "../../models";
 import { isOnline, onlineUserIds } from "../../realtime/presence";
 import { toAdminShipmentRows } from "../../services/admin-shipments";
-import { buildSearchText, toPostalAddress } from "../../services/customers";
+import { sendCustomerInvitation } from "../../services/customer-invitation";
+import { buildSearchText, createCustomerProfile, toPostalAddress } from "../../services/customers";
 import { toAdminInvoiceRows } from "../../services/invoices";
 
 /** /api/v1/admin/customers – Kundenliste mit Online-Status und 360°-Akte. */
@@ -40,7 +43,9 @@ function escapeRegex(value: string): string {
 adminCustomersRouter.get("/", async (req, res) => {
   const query = ListQuery.parse(req.query);
   const filter: Record<string, unknown> = {};
-  if (query.q) filter.searchText = { $regex: escapeRegex(query.q.toLowerCase()) };
+  // Jedes Wort muss vorkommen: „Palmer Lukasz", „palmer digital" und „düsseldorf palmer" finden denselben Kunden.
+  const words = query.q?.toLowerCase().split(/\s+/).filter(Boolean) ?? [];
+  if (words.length > 0) filter.$and = words.map((word) => ({ searchText: { $regex: escapeRegex(word) } }));
   if (query.online) filter.userId = { $in: onlineUserIds().map((id) => new Types.ObjectId(id)) };
 
   const [profiles, total] = await Promise.all([
@@ -92,6 +97,68 @@ adminCustomersRouter.get("/", async (req, res) => {
 
   const body: AdminCustomerList = { customers, total };
   res.json(body);
+});
+
+/**
+ * Kunde durch das Büro anlegen – z. B. bei telefonischen Aufträgen. Die E-Mail-Adresse gilt als
+ * bekannt (wie bei Mitarbeitern), sonst gingen Rechnungen und Benachrichtigungen nicht per Mail raus.
+ * Mit Zugangslink legt der Kunde sein Passwort selbst fest; Google-Anmeldung verknüpft automatisch.
+ */
+adminCustomersRouter.post("/", requirePermission("can_edit_customers"), async (req, res) => {
+  const input = CreateCustomerInput.parse(req.body);
+  if (await User.exists({ email: input.email })) throw emailTakenError();
+
+  const { user, profile } = await mongoose.connection.transaction(async (session) => {
+    const [created] = await User.create([{ email: input.email, name: `${input.firstName} ${input.lastName}`, emailVerifiedAt: new Date() }], { session });
+    if (!created) throw new Error("Kunde konnte nicht angelegt werden");
+    const customer = await createCustomerProfile(
+      {
+        userId: created._id,
+        email: input.email,
+        type: input.type,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        companyName: input.companyName,
+        vatId: input.vatId,
+        phone: input.phone,
+        billingAddress: input.billingAddress,
+        locale: input.locale,
+      },
+      session,
+    );
+    return { user: created, profile: customer };
+  });
+
+  audit(req, "admin.customer_created", { targetType: "CustomerProfile", targetId: profile._id, customerId: profile._id, meta: { number: profile.customerNumber } });
+  const invited = input.sendInvitation ? await sendCustomerInvitation(user, profile, req.auth!.user.id) : false;
+
+  const body: CreatedCustomer = {
+    customer: {
+      id: String(profile._id),
+      customerNumber: profile.customerNumber,
+      name: input.companyName || `${input.firstName} ${input.lastName}`,
+      email: user.email,
+      billingAddress: profile.billingAddress ? toPostalAddress(profile.billingAddress) : undefined,
+    },
+    invited,
+  };
+  res.status(201).json(body);
+});
+
+/** Zugangslink (erneut) senden – nur solange der Kunde noch kein Passwort hat. */
+adminCustomersRouter.post("/:id/invitation", requirePermission("can_edit_customers"), async (req, res) => {
+  if (!Types.ObjectId.isValid(String(req.params.id))) throw AppError.notFound("Kunde nicht gefunden.");
+  const profile = await CustomerProfile.findById(req.params.id).select("userId firstName customerNumber locale").lean();
+  if (!profile) throw AppError.notFound("Kunde nicht gefunden.");
+  const user = await User.findById(profile.userId).select("+passwordHash").lean();
+  if (!user || user.state !== "ACTIVE") throw AppError.badRequest("Das Kundenkonto ist gesperrt.");
+  if (user.passwordHash) throw AppError.badRequest("Der Kunde hat bereits ein Passwort. Er kann es selbst über „Passwort vergessen“ zurücksetzen.");
+
+  if (!(await sendCustomerInvitation(user, profile, req.auth!.user.id))) {
+    throw new AppError(502, "INTERNAL", "Die E-Mail konnte nicht gesendet werden. Bitte später erneut versuchen.");
+  }
+  audit(req, "admin.customer_invited", { targetType: "CustomerProfile", targetId: profile._id, customerId: profile._id });
+  res.status(202).json({ ok: true });
 });
 
 /** 360°-Akte: Stammdaten, Konto, alle Aufträge, Dokumente (auch interne), Belege und Chats. */

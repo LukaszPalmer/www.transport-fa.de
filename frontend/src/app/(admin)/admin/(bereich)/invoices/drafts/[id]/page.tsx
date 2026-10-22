@@ -37,7 +37,7 @@ export default async function InvoiceDraftPage({ params }: PageProps<"/admin/inv
         </Link>
       }
     >
-      <InvoiceEditor draft={draft} initialContext={context} />
+      <InvoiceEditor draft={draft} initialContext={context} allowCreateCustomer={can(me, "can_edit_customers")} />
     </AdminPage>
   );
 }

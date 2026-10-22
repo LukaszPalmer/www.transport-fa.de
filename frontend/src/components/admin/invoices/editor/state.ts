@@ -194,5 +194,7 @@ export function toContent(state: EditorState): { content?: InvoiceDraftContent; 
   if (parsed.success) return { content: parsed.data, errors: inputErrors };
   const errors = { ...inputErrors };
   for (const issue of parsed.error.issues) errors[issue.path.join(".")] ??= issue.message;
+  // Noch kein Kunde gewählt ist kein Eingabefehler („Ungültige ID.") – das meldet save() bei Bedarf verständlich.
+  if (!state.customerId) delete errors.customerId;
   return { errors };
 }

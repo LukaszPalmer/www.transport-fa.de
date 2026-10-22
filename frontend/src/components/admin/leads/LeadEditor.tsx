@@ -12,13 +12,37 @@ import { cn } from "@/lib/cn";
 import { inputClasses, selectClasses } from "@/components/forms/fields";
 import { AuthAlert } from "@/components/portal/auth-fields";
 import { buttonClasses } from "@/components/ui/button-styles";
+import type { NewCustomerDefaults } from "../customers/CreateCustomerDialog";
 import { CustomerPicker, type PickedCustomer } from "../customers/CustomerPicker";
 
 const toDay = (iso?: string) => (iso ? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Berlin" }).format(new Date(iso)) : "");
 const toEuroInput = (cents?: number) => (cents === undefined ? "" : String(cents / 100).replace(".", ","));
 
+/** Name, Firma und Kontakt aus der Anfrage – „Neuen Kunden anlegen“ ist damit fast fertig ausgefüllt. */
+function customerDefaultsFrom(lead: AdminLeadDetail): NewCustomerDefaults {
+  const [first = "", ...rest] = lead.name.trim().split(/\s+/);
+  return {
+    firstName: rest.length > 0 ? first : undefined,
+    lastName: rest.length > 0 ? rest.join(" ") : first,
+    companyName: lead.company,
+    email: lead.email,
+    phone: lead.phone,
+  };
+}
+
 /** Pipeline-Status, Zuständigkeit, Wiedervorlage, Auftragswert und Kunde einer Anfrage pflegen. */
-export function LeadEditor({ lead, staff, canDelete }: { lead: AdminLeadDetail; staff: StaffOption[]; canDelete: boolean }) {
+export function LeadEditor({
+  lead,
+  staff,
+  canDelete,
+  canCreateCustomer,
+}: {
+  lead: AdminLeadDetail;
+  staff: StaffOption[];
+  canDelete: boolean;
+  /** „Neuen Kunden anlegen“ in der Kundenauswahl (Recht „Kunden bearbeiten“). */
+  canCreateCustomer?: boolean;
+}) {
   const router = useRouter();
   const [status, setStatus] = useState<LeadStatus>(lead.status);
   const [assignedToId, setAssignedToId] = useState(lead.assignedTo?.id ?? "");
@@ -124,8 +148,12 @@ export function LeadEditor({ lead, staff, canDelete }: { lead: AdminLeadDetail; 
       </div>
       <div>
         <span className="mb-1.5 block text-sm font-semibold text-primary">Kunde im Portal</span>
-        <CustomerPicker value={customer} onChange={setCustomer} />
-        <p className="mt-1 text-xs text-slate-500">Verknüpfen, sobald die Person ein Kundenkonto hat – die Anfrage erscheint dann in der Kundenakte.</p>
+        <CustomerPicker value={customer} onChange={setCustomer} allowCreate={canCreateCustomer} createDefaults={customerDefaultsFrom(lead)} />
+        <p className="mt-1 text-xs text-slate-500">
+          {canCreateCustomer
+            ? "Noch kein Kundenkonto? In der Suche „Neuen Kunden anlegen“ wählen – Name und Kontaktdaten kommen aus der Anfrage. Danach „Speichern“."
+            : "Verknüpfen, sobald die Person ein Kundenkonto hat – die Anfrage erscheint dann in der Kundenakte."}
+        </p>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <button type="submit" disabled={pending} className={buttonClasses({ variant: "dark", size: "sm" })}>

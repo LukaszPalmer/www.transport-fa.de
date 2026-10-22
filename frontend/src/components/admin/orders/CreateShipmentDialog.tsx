@@ -14,19 +14,19 @@ import { CustomerPicker, type PickedCustomer } from "../customers/CustomerPicker
 import { Dialog, DialogSuccess, useCloseAfterSuccess } from "../Dialog";
 
 /** Neuen Auftrag anlegen – Kunde suchen, Leistung, Abhol- und Lieferadresse, Termine. */
-export function CreateShipmentButton({ presetCustomer }: { presetCustomer?: PickedCustomer }) {
+export function CreateShipmentButton({ presetCustomer, allowCreateCustomer }: { presetCustomer?: PickedCustomer; allowCreateCustomer?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={buttonClasses({ variant: "dark", size: "sm" })}>
         <Plus aria-hidden="true" className="size-4" /> Neuer Auftrag
       </button>
-      {open && <CreateShipmentDialog presetCustomer={presetCustomer} onClose={() => setOpen(false)} />}
+      {open && <CreateShipmentDialog presetCustomer={presetCustomer} allowCreateCustomer={allowCreateCustomer} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: PickedCustomer; onClose: () => void }) {
+function CreateShipmentDialog({ presetCustomer, allowCreateCustomer, onClose }: { presetCustomer?: PickedCustomer; allowCreateCustomer?: boolean; onClose: () => void }) {
   const router = useRouter();
   const [customer, setCustomer] = useState(presetCustomer);
   const [pending, setPending] = useState(false);
@@ -84,7 +84,7 @@ function CreateShipmentDialog({ presetCustomer, onClose }: { presetCustomer?: Pi
         {error && <AuthAlert tone="error">{error}</AuthAlert>}
 
         <Field label="Kunde" error={fieldErrors.customerId}>
-          <CustomerPicker value={customer} onChange={setCustomer} locked={Boolean(presetCustomer)} />
+          <CustomerPicker value={customer} onChange={setCustomer} locked={Boolean(presetCustomer)} allowCreate={allowCreateCustomer} />
         </Field>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">

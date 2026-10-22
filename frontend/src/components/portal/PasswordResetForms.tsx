@@ -20,10 +20,13 @@ const messages = defineMessages({
     minLength: `Mindestens ${PASSWORD_MIN_LENGTH} Zeichen.`,
     mismatch: "Die Passwörter stimmen nicht überein.",
     done: "Ihr Passwort wurde geändert. Aus Sicherheitsgründen wurden alle bestehenden Sitzungen abgemeldet.",
+    welcomeDone: "Ihr Passwort ist gespeichert – Ihr Kundenkonto ist startklar.",
     signIn: "Jetzt anmelden",
     newLink: "Neuen Link anfordern",
     password: "Neues Passwort",
     confirm: "Neues Passwort wiederholen",
+    welcomePassword: "Passwort",
+    welcomeConfirm: "Passwort wiederholen",
     save: "Passwort speichern",
   },
   en: {
@@ -34,10 +37,13 @@ const messages = defineMessages({
     minLength: `At least ${PASSWORD_MIN_LENGTH} characters.`,
     mismatch: "The passwords do not match.",
     done: "Your password has been changed. For security reasons, all existing sessions have been signed out.",
+    welcomeDone: "Your password is saved – your customer account is ready.",
     signIn: "Sign in now",
     newLink: "Request a new link",
     password: "New password",
     confirm: "Repeat new password",
+    welcomePassword: "Password",
+    welcomeConfirm: "Repeat password",
     save: "Save password",
   },
 });
@@ -86,8 +92,8 @@ export function ForgotPasswordForm() {
   );
 }
 
-/** Schritt 2: Neues Passwort mit dem Token aus der E-Mail setzen. */
-export function ResetPasswordForm({ token }: { token: string }) {
+/** Schritt 2: Neues Passwort mit dem Token aus der E-Mail setzen – `welcome`: erstes Passwort nach der Einladung. */
+export function ResetPasswordForm({ token, welcome }: { token: string; welcome?: boolean }) {
   const t = useMessages(messages);
   const [pending, setPending] = useState(false);
   const [done, setDone] = useState(false);
@@ -120,7 +126,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
   if (done) {
     return (
       <div className="space-y-5">
-        <AuthAlert tone="success">{t.done}</AuthAlert>
+        <AuthAlert tone="success">{welcome ? t.welcomeDone : t.done}</AuthAlert>
         <Link href={routes.portalLogin} className="block text-center font-semibold text-accent-ink underline underline-offset-4">
           {t.signIn}
         </Link>
@@ -140,7 +146,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       )}
       <PasswordField
         name="password"
-        label={t.password}
+        label={welcome ? t.welcomePassword : t.password}
         autoComplete="new-password"
         hint={t.minLength}
         showStrength
@@ -150,7 +156,7 @@ export function ResetPasswordForm({ token }: { token: string }) {
       />
       <PasswordField
         name="confirm"
-        label={t.confirm}
+        label={welcome ? t.welcomeConfirm : t.confirm}
         autoComplete="new-password"
         value={confirm}
         onValueChange={setConfirm}

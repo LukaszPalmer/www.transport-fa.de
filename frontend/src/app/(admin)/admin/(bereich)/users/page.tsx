@@ -6,6 +6,7 @@ import { routes } from "@/content/navigation";
 import { can, requireStaff } from "@/lib/admin-session";
 import { apiServer } from "@/lib/api/server";
 import { cn } from "@/lib/cn";
+import { CreateCustomerButton } from "@/components/admin/customers/CreateCustomerDialog";
 import { CustomerTable } from "@/components/admin/customers/CustomerTable";
 import { AdminPage, Card, NoAccess } from "@/components/admin/ui";
 
@@ -36,7 +37,11 @@ export default async function AdminCustomersPage({ searchParams }: PageProps<"/a
   };
 
   return (
-    <AdminPage title="Kunden" description={`${data.total} ${onlineOnly ? "Kunden gerade online" : "Kundenkonten"} – Online-Status aktualisiert sich live.`}>
+    <AdminPage
+      title="Kunden"
+      description={`${data.total} ${onlineOnly ? "Kunden gerade online" : "Kundenkonten"} – Online-Status aktualisiert sich live.`}
+      actions={can(me, "can_edit_customers") ? <CreateCustomerButton /> : undefined}
+    >
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <nav aria-label="Filter" className="flex gap-2">
           {[

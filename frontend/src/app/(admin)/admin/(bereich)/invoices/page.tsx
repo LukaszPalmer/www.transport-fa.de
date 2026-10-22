@@ -85,7 +85,7 @@ export default async function AdminInvoicesPage({ searchParams }: PageProps<"/ad
       description="Rechnungen als E-Rechnung erstellen und per E-Mail senden oder Belege aus der Buchhaltung hochladen. Den Zahlstatus pflegen Sie direkt in der Liste – der Kunde sieht ihn sofort im Portal."
       actions={
         <>
-          {can(me, "can_view_customers") && <SendInvoiceButton />}
+          {can(me, "can_view_customers") && <SendInvoiceButton allowCreateCustomer={can(me, "can_edit_customers")} />}
           <Link href={routes.adminInvoiceNew} className={buttonClasses({ variant: "dark", size: "sm" })}>
             <FilePlus2 aria-hidden="true" className="size-4" /> Rechnung erstellen
           </Link>

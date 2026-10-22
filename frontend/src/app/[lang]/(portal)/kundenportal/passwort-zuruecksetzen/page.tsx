@@ -13,6 +13,8 @@ const messages = defineMessages({
     metaTitle: "Kundenportal – Neues Passwort",
     title: "Neues Passwort festlegen",
     description: `Wählen Sie ein sicheres Passwort mit mindestens ${PASSWORD_MIN_LENGTH} Zeichen.`,
+    welcomeTitle: "Passwort für Ihr Kundenkonto festlegen",
+    welcomeDescription: `Ihr Kundenkonto ist eingerichtet. Wählen Sie ein Passwort mit mindestens ${PASSWORD_MIN_LENGTH} Zeichen – danach können Sie sich anmelden.`,
     back: "Zurück zur Anmeldung",
     invalid: "Dieser Link ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.",
     newLink: "Neuen Link anfordern",
@@ -21,6 +23,8 @@ const messages = defineMessages({
     metaTitle: "Customer portal – New password",
     title: "Set a new password",
     description: `Choose a secure password with at least ${PASSWORD_MIN_LENGTH} characters.`,
+    welcomeTitle: "Set the password for your customer account",
+    welcomeDescription: `Your customer account is set up. Choose a password with at least ${PASSWORD_MIN_LENGTH} characters – then you can sign in.`,
     back: "Back to sign-in",
     invalid: "This link is invalid or has expired. Please request a new one.",
     newLink: "Request a new link",
@@ -31,16 +35,20 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: messages[await getLocale()].metaTitle };
 }
 
-/** Ziel des Links aus der Reset-E-Mail. Die API prüft den Token beim Speichern (einmalig, 60 Min.). */
+/**
+ * Ziel des Links aus der Reset-E-Mail – und mit `willkommen=1` aus der Einladung für vom Büro
+ * angelegte Kunden. Die API prüft den Token beim Speichern (einmalig; Reset 60 Min., Einladung 7 Tage).
+ */
 export default async function ResetPasswordPage({ searchParams }: PageProps<"/[lang]/kundenportal/passwort-zuruecksetzen">) {
-  const [{ token }, locale] = await Promise.all([searchParams, getLocale()]);
+  const [{ token, willkommen }, locale] = await Promise.all([searchParams, getLocale()]);
   const t = messages[locale];
   const validToken = typeof token === "string" && token.length >= 20 ? token : undefined;
+  const welcome = willkommen === "1";
 
   return (
     <AuthShell
-      title={t.title}
-      description={t.description}
+      title={welcome ? t.welcomeTitle : t.title}
+      description={welcome ? t.welcomeDescription : t.description}
       footer={
         <Link href={routes.portalLogin} className="font-semibold text-accent-ink underline underline-offset-4">
           {t.back}
@@ -48,7 +56,7 @@ export default async function ResetPasswordPage({ searchParams }: PageProps<"/[l
       }
     >
       {validToken ? (
-        <ResetPasswordForm token={validToken} />
+        <ResetPasswordForm token={validToken} welcome={welcome} />
       ) : (
         <div className="space-y-5">
           <AuthAlert tone="error">{t.invalid}</AuthAlert>

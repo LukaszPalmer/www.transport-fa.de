@@ -7,7 +7,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { LOGO_MARK_PNG_BASE64 } from "../src/mail/assets/logo";
 import { LOGO_CID } from "../src/mail/layout";
-import { invoiceDeliveryMail, passwordResetMail, verificationMail, welcomeMail } from "../src/mail/templates";
+import { invitationMail, invoiceDeliveryMail, passwordResetMail, verificationMail, welcomeMail } from "../src/mail/templates";
 
 const dir = path.resolve(".mail-preview");
 mkdirSync(dir, { recursive: true });
@@ -22,6 +22,13 @@ const samples = {
   }),
   "bestaetigung": verificationMail("Anna", "https://www.transport-fa.de/kundenportal/email-bestaetigen?token=beispiel-token-1234567890"),
   "passwort-reset": passwordResetMail("Anna", "https://www.transport-fa.de/kundenportal/passwort-zuruecksetzen?token=beispiel-token-1234567890"),
+  einladung: invitationMail({
+    firstName: "Anna",
+    email: "anna.beispiel@gmail.com",
+    customerNumber: "K-10001",
+    url: "https://www.transport-fa.de/kundenportal/passwort-zuruecksetzen?token=beispiel-token-1234567890&willkommen=1",
+    googleSignIn: true,
+  }),
   rechnung: invoiceDeliveryMail({
     greetingName: "Anna",
     number: "RE-2026-00042",

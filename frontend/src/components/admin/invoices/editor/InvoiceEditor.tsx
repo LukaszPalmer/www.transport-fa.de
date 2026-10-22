@@ -41,7 +41,18 @@ const TERM_LABEL = (days: number) => (days === 0 ? "Sofort fällig" : `${days} T
  * Rechnung erstellen bzw. Entwurf bearbeiten. Speichern legt einen Entwurf an (nur im Admin
  * sichtbar), „Vorschau“ zeigt die PDF, „Senden“ schreibt die E-Rechnung fest.
  */
-export function InvoiceEditor({ draft, initialContext, presetShipmentId }: { draft?: AdminInvoiceDraft; initialContext?: InvoiceEditorContext; presetShipmentId?: string }) {
+export function InvoiceEditor({
+  draft,
+  initialContext,
+  presetShipmentId,
+  allowCreateCustomer,
+}: {
+  draft?: AdminInvoiceDraft;
+  initialContext?: InvoiceEditorContext;
+  presetShipmentId?: string;
+  /** „Neuen Kunden anlegen“ in der Kundenauswahl (Recht „Kunden bearbeiten“). */
+  allowCreateCustomer?: boolean;
+}) {
   const router = useRouter();
   const [context, setContext] = useState(initialContext);
   const [customer, setCustomer] = useState<PickedCustomer | undefined>(
@@ -251,7 +262,7 @@ export function InvoiceEditor({ draft, initialContext, presetShipmentId }: { dra
               <span className="mb-2 block text-sm font-semibold text-primary">
                 Kunde<span className="ml-0.5 text-red-600" aria-hidden="true">*</span>
               </span>
-              <CustomerPicker value={customer} onChange={(next) => void chooseCustomer(next)} />
+              <CustomerPicker value={customer} onChange={(next) => void chooseCustomer(next)} allowCreate={allowCreateCustomer} />
               {errors.customerId && <p className="mt-1.5 text-sm font-medium text-red-600">{errors.customerId}</p>}
             </div>
             {context && (

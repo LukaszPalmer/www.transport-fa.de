@@ -3,6 +3,7 @@ import { button, checklist, escapeHtml, heading, infoCard, legalFooterLine, link
 import {
   accountDeletedMailEn,
   chatReplyMailEn,
+  invitationMailEn,
   invoiceDeliveryMailEn,
   invoiceIssuedMailEn,
   passwordResetMailEn,
@@ -169,6 +170,60 @@ export function passwordResetMail(firstName: string, url: string, locale: Locale
         signature(),
       ],
       reason: `Sie erhalten diese E-Mail, weil für Ihr Kundenkonto bei ${COMPANY.name} ein neues Passwort angefordert wurde.`,
+    }),
+  };
+}
+
+// --- Einladung: Kundenkonto vom Büro angelegt ----------------------------------------------
+
+export interface InvitationMailInput {
+  firstName: string;
+  email: string;
+  customerNumber: string;
+  /** Link zum Festlegen des Passworts (7 Tage gültig). */
+  url: string;
+  /** Google-Anmeldung aktiv → Hinweis, dass es auch ganz ohne Passwort geht. */
+  googleSignIn: boolean;
+  locale?: Locale;
+}
+
+export function invitationMail(input: InvitationMailInput): RenderedMail {
+  if (input.locale === "en") return invitationMailEn(input);
+  const { firstName, email, customerNumber, url, googleSignIn } = input;
+  const googleLine = "Ist Ihre E-Mail-Adresse ein Google-Konto, können Sie sich auch ohne Passwort mit „Mit Google anmelden“ einloggen.";
+  const contactLine = `Fragen? Antworten Sie einfach auf diese E-Mail oder rufen Sie uns an: ${COMPANY.contact.phone} (${COMPANY.contact.hours}).`;
+
+  return {
+    subject: `Ihr Kundenkonto bei ${COMPANY.name} ist eingerichtet`,
+    text:
+      `Hallo ${firstName},\n\nwir haben für Sie ein Kundenkonto bei ${COMPANY.name} angelegt.\n\n` +
+      `Kundennummer: ${customerNumber}\nE-Mail: ${email}\n\n` +
+      `Legen Sie über diesen Link Ihr Passwort fest (7 Tage gültig):\n\n${url}\n\n` +
+      (googleSignIn ? `${googleLine}\n\n` : "") +
+      `Im Kundenportal finden Sie:\n${PORTAL_FEATURES.map((feature) => `• ${feature}`).join("\n")}\n\n` +
+      `Ist der Link abgelaufen, fordern Sie unter „Passwort vergessen“ jederzeit einen neuen an.\n\n${contactLine}` +
+      textFooter(),
+    html: renderLayout({
+      preheader: `Ihr Kundenkonto ist eingerichtet – Kundennummer ${customerNumber}. Jetzt Passwort festlegen.`,
+      eyebrow: "Willkommen",
+      title: `Ihr Kundenkonto ist bereit, ${firstName}`,
+      intro: "Wir haben für Sie ein Kundenkonto angelegt. Legen Sie jetzt Ihr Passwort fest – dann sehen Sie Aufträge, Rechnungen und Dokumente jederzeit online.",
+      body: [
+        paragraph(`Hallo ${firstName},`),
+        paragraph(`vielen Dank für Ihren Auftrag bei ${COMPANY.name}. Damit Sie alles an einem Ort haben, haben wir Ihnen ein Kundenkonto eingerichtet.`),
+        infoCard([
+          ["Kundennummer", customerNumber],
+          ["E-Mail", email],
+        ]),
+        button("Passwort festlegen", url),
+        linkFallback(url),
+        ...(googleSignIn ? [smallText(googleLine)] : []),
+        heading("Das erwartet Sie im Portal"),
+        checklist(PORTAL_FEATURES),
+        note(`Der Link ist 7 Tage gültig und nur einmal verwendbar. Ist er abgelaufen, fordern Sie unter „Passwort vergessen“ einfach einen neuen an. ${contactLine}`),
+        signature(),
+      ],
+      reason: `Sie erhalten diese E-Mail, weil ${COMPANY.name} unter ${email} ein Kundenkonto für Sie angelegt hat.`,
     }),
   };
 }

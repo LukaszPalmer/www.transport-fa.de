@@ -13,6 +13,7 @@ import { documentCategoryLabel, formatDate, formatDateTime, formatFileSize } fro
 import { CredentialsForm } from "@/components/admin/CredentialsForm";
 import { CustomerCrmForm } from "@/components/admin/customers/CustomerCrmCard";
 import { EditCustomerProfileButton } from "@/components/admin/customers/CustomerProfileDialog";
+import { SendInvitationButton } from "@/components/admin/customers/SendInvitationButton";
 import { LiveOnlineStatus } from "@/components/admin/customers/CustomerTable";
 import { InvoiceTable } from "@/components/admin/invoices/InvoiceTable";
 import { SendInvoiceButton } from "@/components/admin/invoices/SendInvoiceDialog";
@@ -75,11 +76,19 @@ export default async function AdminCustomerPage({ params }: PageProps<"/admin/us
             {customer.vatId && <Row label="USt-IdNr." value={customer.vatId} />}
             <Row label="E-Mail" value={user.email} note={user.emailVerified ? "bestätigt" : "nicht bestätigt"} warn={!user.emailVerified} />
             <Row label="Telefon" value={customer.phone ?? "–"} href={customer.phone ? `tel:${customer.phone}` : undefined} />
-            <Row label="Anmeldung" value={[user.hasPassword && "Passwort", user.googleLinked && "Google"].filter(Boolean).join(" + ") || "–"} />
+            <Row
+              label="Anmeldung"
+              value={[user.hasPassword && "Passwort", user.googleLinked && "Google"].filter(Boolean).join(" + ") || "noch keine"}
+              note={user.hasPassword || user.googleLinked ? undefined : "Zugang noch nicht eingerichtet"}
+              warn={!user.hasPassword && !user.googleLinked}
+            />
             <Row label="Sprache" value={customer.locale === "en" ? "Englisch" : "Deutsch"} note={customer.locale === "en" ? "E-Mails auf Englisch" : undefined} />
             <Row label="Letzte Anmeldung" value={user.lastLoginAt ? formatRelative(user.lastLoginAt) : "–"} />
             <Row label="Konto" value={user.state === "ACTIVE" ? "Aktiv" : "Gesperrt"} warn={user.state !== "ACTIVE"} />
           </dl>
+          {!user.hasPassword && !user.googleLinked && user.state === "ACTIVE" && can(me, "can_edit_customers") && (
+            <SendInvitationButton customerId={customer.id} email={user.email} />
+          )}
         </Card>
 
         <Card title="Zugangsdaten" description="E-Mail oder Passwort neu setzen – wirkt sofort." className="xl:col-span-2">

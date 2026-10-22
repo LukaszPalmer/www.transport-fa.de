@@ -24,7 +24,7 @@ import { customerLocaleOf, requestLocale } from "../lib/locale";
 import { logger } from "../lib/logger";
 import { sendMail } from "../mail/mailer";
 import { passwordResetMail, verificationMail, welcomeMail } from "../mail/templates";
-import { CustomerProfile, User, type IUser } from "../models";
+import { AuthToken, CustomerProfile, User, type IUser } from "../models";
 import { consumeAuthToken, issueAuthToken } from "../services/auth-tokens";
 import { createCustomerProfile } from "../services/customers";
 import { buildMeResponse } from "../services/me";
@@ -39,6 +39,8 @@ const MAX_FAILED_LOGINS = 5;
 const LOCK_DURATION_MS = 15 * 60 * 1000;
 const INVALID_CREDENTIALS = "E-Mail-Adresse oder Passwort ist nicht korrekt.";
 const PWNED_PASSWORD = "Dieses Passwort ist aus Datenlecks bekannt. Bitte wählen Sie ein anderes.";
+const GOOGLE_ONLY = "Für dieses Konto ist die Anmeldung mit Google eingerichtet.";
+const NO_PASSWORD_YET = "Für dieses Konto ist noch kein Passwort festgelegt. Nutzen Sie den Link aus unserer E-Mail oder „Passwort vergessen“.";
 
 const LANDING: Record<Role, string> = { CUSTOMER: "/kundenportal", EMPLOYEE: "/admin", ADMIN: "/admin", DRIVER: "/" };
 const LOGIN_PAGE = "/kundenportal/anmelden";
@@ -167,8 +169,9 @@ async function signInWithPassword(req: Request, input: LoginInput, audience: "po
   if (!user?.passwordHash || wrongAudience) {
     await verifyAgainstDummy(input.password);
     audit(req, "auth.login_failed", { meta: { reason: !user ? "unknown_email" : wrongAudience ? "not_staff" : "no_password", audience } });
-    const googleOnly = user && !user.passwordHash && audience === "portal";
-    throw AppError.unauthenticated(googleOnly ? "Für dieses Konto ist die Anmeldung mit Google eingerichtet." : INVALID_CREDENTIALS);
+    // Ohne Passwort: reines Google-Konto – oder vom Büro angelegt, der Zugangslink wurde noch nicht genutzt.
+    const withoutPassword = user && !user.passwordHash && audience === "portal";
+    throw AppError.unauthenticated(!withoutPassword ? INVALID_CREDENTIALS : user.googleSub ? GOOGLE_ONLY : NO_PASSWORD_YET);
   }
 
   if (user.lockedUntil && user.lockedUntil > new Date()) {
@@ -265,7 +268,8 @@ authRouter.post("/reset-password", async (req, res) => {
   const input = ResetPasswordInput.parse(req.body);
   if (await isPasswordPwned(input.password)) throw AppError.validation({ password: PWNED_PASSWORD });
 
-  const userId = await consumeAuthToken(input.token, "PASSWORD_RESET");
+  // Auch der Zugangslink für vom Büro angelegte Kunden (INVITATION) setzt hier das erste Passwort.
+  const userId = await consumeAuthToken(input.token, ["PASSWORD_RESET", "INVITATION"]);
   if (!userId) throw AppError.badRequest("Der Link ist ungültig oder abgelaufen. Bitte fordern Sie einen neuen an.");
 
   const passwordHash = await hashPassword(input.password);
@@ -287,6 +291,8 @@ authRouter.post("/reset-password", async (req, res) => {
     ],
     { updatePipeline: true },
   );
+  // Übrige offene Links verfallen – sonst ließe sich das Passwort damit erneut setzen.
+  await AuthToken.deleteMany({ userId, type: { $in: ["PASSWORD_RESET", "INVITATION"] } });
   await revokeAllSessions(userId);
   clearSessionCookie(res);
   audit(req, "auth.password_reset", { actorId: userId, targetType: "User", targetId: userId });

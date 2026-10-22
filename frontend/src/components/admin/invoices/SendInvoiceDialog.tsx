@@ -31,19 +31,19 @@ const PAID_OPTIONS: Array<{ value: PaymentMethod | ""; label: string }> = [
 ];
 
 /** Button + Dialog: Beleg aus der Buchhaltung (PDF) hochladen und an einen Kunden senden. */
-export function SendInvoiceButton({ presetCustomer }: { presetCustomer?: PickedCustomer }) {
+export function SendInvoiceButton({ presetCustomer, allowCreateCustomer }: { presetCustomer?: PickedCustomer; allowCreateCustomer?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button type="button" onClick={() => setOpen(true)} className={buttonClasses({ variant: "outline", size: "sm" })}>
         <CloudUpload aria-hidden="true" className="size-4" /> Beleg hochladen
       </button>
-      {open && <SendInvoiceDialog presetCustomer={presetCustomer} onClose={() => setOpen(false)} />}
+      {open && <SendInvoiceDialog presetCustomer={presetCustomer} allowCreateCustomer={allowCreateCustomer} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function SendInvoiceDialog({ presetCustomer, onClose }: { presetCustomer?: PickedCustomer; onClose: () => void }) {
+function SendInvoiceDialog({ presetCustomer, allowCreateCustomer, onClose }: { presetCustomer?: PickedCustomer; allowCreateCustomer?: boolean; onClose: () => void }) {
   const router = useRouter();
   const id = useId();
   const [customer, setCustomer] = useState(presetCustomer);
@@ -177,6 +177,7 @@ function SendInvoiceDialog({ presetCustomer, onClose }: { presetCustomer?: Picke
               setShipments([]);
             }}
             locked={Boolean(presetCustomer)}
+            allowCreate={allowCreateCustomer}
           />
           {fieldErrors.customerId && <p className="mt-1.5 text-sm font-medium text-red-600">{fieldErrors.customerId}</p>}
         </div>

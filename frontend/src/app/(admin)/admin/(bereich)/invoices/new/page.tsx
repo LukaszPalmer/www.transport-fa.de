@@ -41,7 +41,11 @@ export default async function NewInvoicePage({ searchParams }: PageProps<"/admin
         </Link>
       }
     >
-      <InvoiceEditor initialContext={context} presetShipmentId={context?.shipments.some((shipment) => shipment.id === shipmentId) ? shipmentId : undefined} />
+      <InvoiceEditor
+        initialContext={context}
+        presetShipmentId={context?.shipments.some((shipment) => shipment.id === shipmentId) ? shipmentId : undefined}
+        allowCreateCustomer={can(me, "can_edit_customers")}
+      />
     </AdminPage>
   );
 }

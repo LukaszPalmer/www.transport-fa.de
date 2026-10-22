@@ -58,7 +58,12 @@ export function Dialog({ open, onClose, title, description, children }: { open: 
   return (
     <dialog
       ref={ref}
-      onClose={onClose}
+      // React reicht „close“ durch den Komponentenbaum weiter – ein innerer Dialog (z. B. „Kunde anlegen“
+      // im Auftrag) würde sonst auch den äußeren schließen.
+      onClose={(event) => {
+        event.stopPropagation();
+        onClose();
+      }}
       onClick={(event) => event.target === ref.current && onClose()}
       className="m-auto w-[calc(100%-2rem)] max-w-lg rounded-3xl bg-white p-0 shadow-2xl backdrop:bg-primary/60 backdrop:backdrop-blur-sm"
     >
