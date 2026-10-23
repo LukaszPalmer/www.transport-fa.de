@@ -4,10 +4,16 @@ import { routes, sectionIds } from "../navigation";
 
 /** English version of ../home.ts – same structure. */
 
+export const homeSeo = {
+  title: "FA Transport Düsseldorf – Removals, Clearances & Transport",
+  description:
+    "Removals, clearances, house clearances and transport in Düsseldorf and the surrounding area – on schedule, insured and at a fixed price. Quote within 24 hours.",
+};
+
 export const hero = {
   eyebrow: "Removals · Clearances · Transport · from Düsseldorf",
-  headline: ["Removals & transport.", "Precise. Reliable."],
-  headlineAccent: "At a fixed price.",
+  headline: ["Removals & transport", "in Düsseldorf."],
+  headlineAccent: "Reliable. At a fixed price.",
   subheadline:
     "Whether it's a move, a clearance, a house clearance or a transport job: we move what matters to you – on schedule, with care and with one fixed contact person. Locally, across Germany and in Europe.",
   primaryCta: { label: "Request a quote", href: routes.contactForm } satisfies CtaLink,

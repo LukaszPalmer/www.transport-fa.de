@@ -2,14 +2,27 @@ import { CHAT_RETENTION_HOURS, formattedVatId, LOCATION_HISTORY_DAYS, ownerTitle
 import type { Metadata } from "next";
 import { company } from "@/content/company";
 import { getLocale } from "@/i18n/server";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage } from "@/components/layout/LegalPage";
 import { DatenschutzEn } from "./DatenschutzEn";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: (await getLocale()) === "en" ? "Privacy policy" : "Datenschutz",
-    alternates: { canonical: "/datenschutz" },
-  };
+  const locale = await getLocale();
+  return pageMetadata(
+    locale === "en"
+      ? {
+          path: "/datenschutz",
+          locale,
+          title: "Privacy policy",
+          description: `Privacy policy of ${company.legalName}: which data we process on the website and in the customer portal, why, for how long and what rights you have.`,
+        }
+      : {
+          path: "/datenschutz",
+          locale,
+          title: "Datenschutz",
+          description: `Datenschutzerklärung der ${company.legalName}: welche Daten wir auf Website und Kundenportal verarbeiten, wozu, wie lange und welche Rechte Sie haben.`,
+        },
+  );
 }
 
 /** Stand der Datenschutzerklärung – bei inhaltlichen Änderungen anpassen. */

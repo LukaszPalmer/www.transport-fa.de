@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { routes } from "@/content/navigation";
 import { useLocale } from "@/i18n/client";
-import { defineMessages } from "@/i18n/config";
+import { defineMessages, localizeHref } from "@/i18n/config";
 import { apiRequest } from "@/lib/api/client";
 import { ApiError, errorMessage, localizeMessage } from "@/lib/api/errors";
 import { AddressFields, readAddress } from "@/components/forms/AddressFields";
@@ -178,7 +178,7 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
         />
         <CheckboxField name="privacy" required error={fieldErrors.privacy}>
           {t.acceptBefore}{" "}
-          <Link href="/datenschutz" target="_blank" className="font-semibold text-accent-ink underline underline-offset-4">
+          <Link href={localizeHref("/datenschutz", locale)} target="_blank" className="font-semibold text-accent-ink underline underline-offset-4">
             {t.privacy}
           </Link>
           {t.acceptAfter}

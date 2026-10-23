@@ -3,13 +3,26 @@ import type { Metadata } from "next";
 import { company } from "@/content/company";
 import { imageCredits } from "@/content/image-credits";
 import { getLocale } from "@/i18n/server";
+import { pageMetadata } from "@/lib/seo";
 import { LegalPage } from "@/components/layout/LegalPage";
 
 export async function generateMetadata(): Promise<Metadata> {
-  return {
-    title: (await getLocale()) === "en" ? "Legal notice" : "Impressum",
-    alternates: { canonical: "/impressum" },
-  };
+  const locale = await getLocale();
+  return pageMetadata(
+    locale === "en"
+      ? {
+          path: "/impressum",
+          locale,
+          title: "Legal notice",
+          description: `Legal notice of ${company.legalName}, Düsseldorf: address, managing director, contact details, commercial register entry and VAT ID.`,
+        }
+      : {
+          path: "/impressum",
+          locale,
+          title: "Impressum",
+          description: `Impressum der ${company.legalName}, Düsseldorf: Anschrift, Geschäftsführung, Kontaktdaten, Handelsregistereintrag und Umsatzsteuer-ID.`,
+        },
+  );
 }
 
 // Anschrift, USt-IdNr. und Registerdaten kommen aus shared/src/company.ts.

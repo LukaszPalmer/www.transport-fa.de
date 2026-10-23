@@ -17,7 +17,9 @@ import { defineMessages } from "@/i18n/config";
 import { getLocale } from "@/i18n/server";
 import { routes } from "@/content/navigation";
 import { getService, serviceContactHref, serviceHref } from "@/content/services";
-import { blogPostingJsonLd } from "@/lib/structured-data";
+import { faqAnchor } from "@/lib/anchors";
+import { pageMetadata } from "@/lib/seo";
+import { blogPostingJsonLd, postImage } from "@/lib/structured-data";
 import { ArticleBody } from "@/components/blog/ArticleBody";
 import { PostCard } from "@/components/blog/PostCard";
 import { ReadingProgress } from "@/components/blog/ReadingProgress";
@@ -32,6 +34,7 @@ const messages = defineMessages({
     faq: "Häufige Fragen",
     readTime: (minutes: number) => `${minutes} Min. Lesezeit`,
     breadcrumbs: "Brotkrumen",
+    home: "Startseite",
     contents: "Inhalt",
     stock: "Symbolbild · Foto:",
     ctaService: (name: string) => `${name} in Düsseldorf & Umgebung?`,
@@ -46,6 +49,7 @@ const messages = defineMessages({
     faq: "Frequently asked questions",
     readTime: (minutes: number) => `${minutes} min read`,
     breadcrumbs: "Breadcrumbs",
+    home: "Home",
     contents: "Contents",
     stock: "Stock photo · Photo:",
     ctaService: (name: string) => `${name} in Düsseldorf & the region?`,
@@ -69,23 +73,21 @@ export async function generateMetadata({ params }: PageProps<"/[lang]/blog/[slug
   const locale = await getLocale();
   const post = getPost((await params).slug, locale);
   if (!post) return {};
-  return {
+  return pageMetadata({
+    path: blogHref(post.slug),
+    locale,
     title: post.title,
     description: post.excerpt,
     keywords: post.keywords,
-    alternates: { canonical: blogHref(post.slug) },
-    openGraph: {
-      type: "article",
-      title: post.title,
-      description: post.excerpt,
-      images: [post.cover.src],
+    image: postImage(post),
+    article: {
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt ?? post.publishedAt,
       authors: [post.author.name],
       section: getCategory(post.category, locale)?.name,
       tags: post.keywords,
     },
-  };
+  });
 }
 
 /** Beitragsseite – Inhalte vollständig aus src/content/blog.ts. */
@@ -123,6 +125,10 @@ export default async function BlogPostPage({ params }: PageProps<"/[lang]/blog/[
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-[radial-gradient(50rem_30rem_at_50%_0%,rgb(56_189_248/0.2),transparent_65%)]" />
         <Container className="max-w-4xl text-center">
           <nav aria-label={t.breadcrumbs} className="flex items-center justify-center gap-2 text-sm text-slate-400">
+            <SmartLink href="/" className="hover:text-white">
+              {t.home}
+            </SmartLink>
+            <span aria-hidden="true">/</span>
             <SmartLink href={routes.blog} className="hover:text-white">
               Blog
             </SmartLink>
@@ -205,7 +211,7 @@ export default async function BlogPostPage({ params }: PageProps<"/[lang]/blog/[
                 </h2>
                 <div className="mt-6 divide-y divide-slate-200 rounded-2xl border border-slate-200/80 bg-white px-6 shadow-card sm:px-8">
                   {post.faqs.map((faq) => (
-                    <details key={faq.question} className="group py-2">
+                    <details key={faq.question} id={faqAnchor(faq.question)} className="group scroll-mt-28 py-2">
                       <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-4 text-left font-display text-lg font-semibold text-primary [&::-webkit-details-marker]:hidden">
                         <h3>{faq.question}</h3>
                         <Icon name="arrow-right" className="size-5 shrink-0 text-accent-ink transition-transform duration-300 group-open:rotate-90" />

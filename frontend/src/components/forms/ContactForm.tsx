@@ -4,7 +4,7 @@ import { useActionState, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { submitContact } from "@/app/actions/contact";
 import { useLocale, useMessages } from "@/i18n/client";
-import { defineMessages } from "@/i18n/config";
+import { defineMessages, localizeHref } from "@/i18n/config";
 import { initialFormState } from "@/lib/form-state";
 import { ChoiceCards } from "./ChoiceCards";
 import { CheckboxField, TextAreaField, TextField } from "./fields";
@@ -168,7 +168,7 @@ function ContactFormInner({ topics, destinationTopics, onRestart }: ContactFormP
         </CheckboxField>
         <CheckboxField name="privacy" required defaultChecked={value("privacy") === "on"} error={errors.privacy}>
           {t.privacyBefore}{" "}
-          <Link href="/datenschutz" target="_blank" className="font-semibold text-accent-ink underline underline-offset-4">
+          <Link href={localizeHref("/datenschutz", locale)} target="_blank" className="font-semibold text-accent-ink underline underline-offset-4">
             {t.privacyLink}
           </Link>{" "}
           {t.privacyAfter}

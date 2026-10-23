@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import type { CtaLink, HeroMediaConfig } from "@/types/content";
 import { cn } from "@/lib/cn";
+import { Breadcrumbs, type Crumb } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
@@ -21,6 +22,8 @@ interface PageHeroProps {
   aside?: ReactNode;
   /** "full" = volle Viewport-Höhe (Startseite), "large" = Unterseiten. */
   size?: "full" | "large";
+  /** Brotkrumen über der Kategorie-Zeile (Unterseiten) – passend zum BreadcrumbList-JSON-LD. */
+  breadcrumbs?: { items: Crumb[]; label: string };
 }
 
 /**
@@ -55,6 +58,7 @@ export function PageHero({
   media,
   aside,
   size = "full",
+  breadcrumbs,
 }: PageHeroProps) {
   return (
     <section
@@ -76,6 +80,7 @@ export function PageHero({
       <Container className="relative py-12 lg:py-16">
         <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
           <div className="lg:col-span-8">
+            {breadcrumbs && <Breadcrumbs {...breadcrumbs} className="mb-5" />}
             <p className="glass inline-flex items-center gap-2.5 rounded-full px-4 py-1.5 text-xs font-medium tracking-wide text-slate-200">
               <LiveDot className="text-accent" />
               {eyebrow}

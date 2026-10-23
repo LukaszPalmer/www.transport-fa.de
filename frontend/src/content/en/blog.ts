@@ -8,9 +8,9 @@ import { umzugPostsEn } from "./blog-posts/umzug";
 /** English version of the blog page, categories and posts (same slugs as German). */
 export const blogPage = {
   seo: {
-    title: "Blog & guides – removals, clearances, transport",
+    title: "Guides: removals, clearances & transport",
     description:
-      "Practical knowledge from FA Transport: tips, checklists and background on removals, clearances, house clearances and transport.",
+      "Practical knowledge from FA Transport in Düsseldorf: costs, checklists and tips on removals, clearances, house clearances and transport.",
   },
   eyebrow: "Blog & guides",
   titleLead: "Read",

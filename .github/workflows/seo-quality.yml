@@ -1,0 +1,56 @@
+# SEO-, GEO- und Barrierefreiheits-Prüfung für jede Änderung an der Website.
+# Schlägt fehl (= Deploy-Blocker für den Merge), wenn Lint, Typen, das SEO-Audit aller Sitemap-Seiten
+# oder Lighthouse (SEO, Barrierefreiheit, Best Practices, CLS) die Schwellen verfehlen.
+# Lighthouse-Berichte liegen als Artefakt „lighthouse" am jeweiligen Lauf.
+name: SEO & Barrierefreiheit
+
+on:
+  pull_request:
+    paths: ["frontend/**", "shared/**", "package-lock.json", ".github/workflows/seo-quality.yml"]
+  push:
+    branches: [main]
+    paths: ["frontend/**", "shared/**", "package-lock.json", ".github/workflows/seo-quality.yml"]
+
+concurrency:
+  group: seo-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_PUBLIC_SITE_URL: https://www.transport-fa.de
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint -w @fa/frontend
+      - run: npm run typecheck -w @fa/frontend
+      - run: npm run build -w @fa/frontend
+
+      - name: Website starten
+        run: |
+          npm run start -w @fa/frontend -- --port 3000 &
+          for i in $(seq 1 60); do curl -sf http://localhost:3000/robots.txt > /dev/null && exit 0; sleep 1; done
+          echo "Website startet nicht" && exit 1
+
+      - name: SEO-Audit (alle Seiten der Sitemap)
+        run: npm run seo:audit -w @fa/frontend -- http://localhost:3000
+
+      - name: Lighthouse
+        working-directory: frontend
+        run: npx --yes @lhci/cli@0.15.1 autorun --config=./lighthouserc.json
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse
+          path: frontend/.lighthouseci
+          if-no-files-found: ignore

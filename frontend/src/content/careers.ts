@@ -9,9 +9,9 @@ import { heroMedia } from "./media";
  */
 export const careersPage = {
   seo: {
-    title: "Jobs in Düsseldorf – Transport, Umzug & Entrümpelung",
+    title: "Jobs in Düsseldorf – Fahrer & Umzugshelfer",
     description:
-      "Offene Stellen bei FA Transport in Düsseldorf: Berufskraftfahrer CE, Fahrer für Umzüge, Umzugshelfer und Mitarbeiter Entrümpelung (m/w/d). Jetzt in 3 Minuten online bewerben.",
+      "Offene Stellen in Düsseldorf: Berufskraftfahrer CE, Fahrer für Umzüge, Umzugshelfer und Mitarbeiter Entrümpelung (m/w/d). In 3 Minuten online bewerben.",
   },
   hero: {
     eyebrow: "Karriere · Düsseldorf",

@@ -5,7 +5,7 @@ import { useActionState, useId, useRef } from "react";
 import type { CareerArea, Job } from "@/types/content";
 import { submitApplication } from "@/app/actions/application";
 import { useLocale, useMessages } from "@/i18n/client";
-import { defineMessages } from "@/i18n/config";
+import { defineMessages, localizeHref } from "@/i18n/config";
 import { initialFormState } from "@/lib/form-state";
 import { cn } from "@/lib/cn";
 import { FileField } from "./FileField";
@@ -230,7 +230,7 @@ export function ApplicationForm({
       <div className="rounded-xl bg-surface p-5">
         <CheckboxField name="privacy" required defaultChecked={value("privacy") === "on"} error={errors.privacy}>
           {t.privacyBefore}{" "}
-          <Link href="/datenschutz" target="_blank" className="font-semibold text-accent-ink underline underline-offset-4">
+          <Link href={localizeHref("/datenschutz", locale)} target="_blank" className="font-semibold text-accent-ink underline underline-offset-4">
             {t.privacyLink}
           </Link>{" "}
           {t.privacyAfter}

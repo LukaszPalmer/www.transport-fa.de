@@ -22,14 +22,21 @@ export interface ImageCredit {
   license: "Pexels-Lizenz";
   /** Abgerufen am (ISO-Datum). */
   retrieved: string;
+  /** Pixelmaße der Datei – für Open Graph und ImageObject im JSON-LD. */
+  width: number;
+  height: number;
 }
 
 const PEXELS = "Pexels-Lizenz" as const;
 const RETRIEVED = "2026-09-27";
+/** Querformat 3:2 bzw. 16:9 in 1920 px Breite (so liegen die Dateien unter public/media/stock/). */
+const LANDSCAPE = { width: 1920, height: 1280 } as const;
+const WIDESCREEN = { width: 1920, height: 1080 } as const;
 
 export const imageCredits: ImageCredit[] = [
   {
     src: "/media/stock/umzug-team-kartons.jpg",
+    ...LANDSCAPE,
     subject: "Umzugshelfer tragen Kartons",
     subjectEn: "Movers carrying boxes",
     photographer: "RDNE Stock project",
@@ -39,6 +46,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/umzug-kartons-beschriftet.jpg",
+    ...LANDSCAPE,
     subject: "Beschriftete Umzugskartons",
     subjectEn: "Labelled moving boxes",
     photographer: "Ketut Subiyanto",
@@ -48,6 +56,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/umzug-transporter-beladen.jpg",
+    ...LANDSCAPE,
     subject: "Transporter wird mit Kartons beladen",
     subjectEn: "Van being loaded with boxes",
     photographer: "Artem Podrez",
@@ -57,6 +66,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/entruempelung-besenrein.jpg",
+    ...LANDSCAPE,
     subject: "Leere, besenreine Wohnung",
     subjectEn: "Empty flat, swept clean",
     photographer: "Gustavo Galeano Maz",
@@ -66,6 +76,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/entruempelung-sortieren.jpg",
+    ...LANDSCAPE,
     subject: "Sortieren in Kartons zum Behalten und Spenden",
     subjectEn: "Sorting into boxes to keep and donate",
     photographer: "RDNE Stock project",
@@ -75,6 +86,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/entruempelung-sofa-tragen.jpg",
+    ...LANDSCAPE,
     subject: "Zwei Helfer tragen ein Sofa",
     subjectEn: "Two helpers carrying a sofa",
     photographer: "RDNE Stock project",
@@ -84,6 +96,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/haushaltsaufloesung-wohnzimmer.jpg",
+    ...LANDSCAPE,
     subject: "Wohnzimmer mit Familienfotos",
     subjectEn: "Living room with family photos",
     photographer: "Rachel Claire",
@@ -93,6 +106,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/haushaltsaufloesung-erinnerungen.jpg",
+    ...LANDSCAPE,
     subject: "Alte Familienfotos in einer Schachtel",
     subjectEn: "Old family photos in a box",
     photographer: "fish socks",
@@ -102,6 +116,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/haushaltsaufloesung-sessel.jpg",
+    ...LANDSCAPE,
     subject: "Antiker Sessel in einem Wohnzimmer",
     subjectEn: "Antique armchair in a living room",
     photographer: "Gül Işık",
@@ -111,6 +126,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/transport-sattelzug.jpg",
+    ...LANDSCAPE,
     subject: "Sattelzug auf der Landstraße",
     subjectEn: "Articulated truck on a country road",
     photographer: "Ahmet Polat",
@@ -120,6 +136,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/transport-verladung.jpg",
+    ...LANDSCAPE,
     subject: "Palettenverladung mit Gabelstapler",
     subjectEn: "Pallet loading with a forklift",
     photographer: "Caleb Oquendo",
@@ -129,6 +146,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/transport-lkw-fahrer.jpg",
+    ...LANDSCAPE,
     subject: "Lkw-Fahrer im Führerhaus",
     subjectEn: "Truck driver in the cab",
     photographer: "Alex Surd",
@@ -138,6 +156,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/portal-transporter.jpg",
+    ...WIDESCREEN,
     subject: "Transporter wird vor einem Wohnhaus entladen",
     subjectEn: "Van being unloaded outside a house",
     photographer: "Artem Podrez",
@@ -147,6 +166,7 @@ export const imageCredits: ImageCredit[] = [
   },
   {
     src: "/media/stock/flotte-fahrzeuge.jpg",
+    ...LANDSCAPE,
     subject: "Transporter, Lkw und Autotransporter auf einem Rastplatz",
     subjectEn: "Van, lorries and car transporter at a rest area",
     photographer: "Malte Luk",

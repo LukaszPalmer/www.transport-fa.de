@@ -5,9 +5,9 @@ import { heroMedia } from "../media";
 
 export const careersPage = {
   seo: {
-    title: "Jobs in Düsseldorf – transport, removals & clearances",
+    title: "Jobs in Düsseldorf – drivers & movers",
     description:
-      "Open positions at FA Transport in Düsseldorf: professional HGV drivers (CE), removal drivers, removal helpers and clearance staff (m/f/d). Apply online in 3 minutes.",
+      "Jobs in Düsseldorf: professional HGV drivers (CE), removal drivers, removal helpers and clearance staff (m/f/d). Apply online in 3 minutes.",
   },
   hero: {
     eyebrow: "Careers · Düsseldorf",

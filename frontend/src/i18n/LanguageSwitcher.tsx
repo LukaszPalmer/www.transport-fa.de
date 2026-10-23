@@ -6,7 +6,7 @@ import { useState } from "react";
 import { apiRequest } from "@/lib/api/client";
 import { cn } from "@/lib/cn";
 import { useLocale } from "./client";
-import { LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, LOCALES, type Locale } from "./config";
+import { localizeHref, LOCALE_COOKIE, LOCALE_COOKIE_MAX_AGE, LOCALES, stripLocalePrefix, type Locale } from "./config";
 
 const LABELS: Record<Locale, { short: string; name: string }> = {
   de: { short: "DE", name: "Deutsch" },
@@ -22,24 +22,37 @@ export function storeLocale(locale: Locale): void {
 }
 
 /**
- * Umschalter Deutsch/Englisch. Setzt das Sprach-Cookie und lädt die Seite neu – der Proxy liefert
- * dann dieselbe URL in der anderen Sprache. Im Kundenportal wird die Sprache zusätzlich im Konto
- * gespeichert, damit auch E-Mails in dieser Sprache kommen.
+ * Umschalter Deutsch/Englisch. Setzt das Sprach-Cookie und öffnet auf der Website dieselbe Seite unter
+ * der URL der anderen Sprache (/kontakt ↔ /en/kontakt). Das Kundenportal hat keine Sprach-URLs: Dort
+ * lädt die Seite neu, und die Sprache wird zusätzlich im Konto gespeichert, damit auch E-Mails in
+ * dieser Sprache kommen.
  */
 export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" | "light"; className?: string }) {
   const current = useLocale();
-  const pathname = usePathname();
+  // Ohne Sprachpräfix – je nach Render-Art liefert usePathname() "/kontakt", "/de/kontakt" oder "/en/kontakt".
+  const { path } = stripLocalePrefix(usePathname());
   const [pending, setPending] = useState(false);
+  const inPortal = path.startsWith("/kundenportal");
 
-  const choose = async (locale: Locale) => {
+  const choosePortal = async (locale: Locale) => {
     if (locale === current || pending) return;
     setPending(true);
     storeLocale(locale);
-    if (pathname.startsWith("/kundenportal")) {
-      await apiRequest("/account/locale", { method: "PATCH", body: { locale } }).catch(() => undefined);
-    }
+    await apiRequest("/account/locale", { method: "PATCH", body: { locale } }).catch(() => undefined);
     window.location.reload();
   };
+
+  const itemClass = (active: boolean) =>
+    cn(
+      "rounded-lg px-2 py-1 transition-colors",
+      active
+        ? tone === "dark"
+          ? "bg-white text-primary"
+          : "bg-primary text-white"
+        : tone === "dark"
+          ? "text-slate-300 hover:text-white"
+          : "text-slate-600 hover:text-primary",
+    );
 
   return (
     <div
@@ -55,28 +68,38 @@ export function LanguageSwitcher({ tone = "dark", className }: { tone?: "dark" |
       <Globe aria-hidden="true" className={cn("mx-1 size-3.5", tone === "dark" ? "text-slate-400" : "text-slate-500")} />
       {LOCALES.map((locale) => {
         const active = locale === current;
+        if (inPortal) {
+          return (
+            <button
+              key={locale}
+              type="button"
+              lang={locale}
+              onClick={() => void choosePortal(locale)}
+              aria-pressed={active}
+              aria-label={`${LABELS[locale].short} – ${LABELS[locale].name}`}
+              title={LABELS[locale].name}
+              className={itemClass(active)}
+            >
+              {LABELS[locale].short}
+            </button>
+          );
+        }
+        // Website: echter Link auf die Sprachfassung – auch ohne JavaScript nutzbar und für Crawler sichtbar.
         return (
-          <button
+          <a
             key={locale}
-            type="button"
+            href={localizeHref(path, locale)}
+            hrefLang={locale}
             lang={locale}
-            onClick={() => void choose(locale)}
-            aria-pressed={active}
-            aria-label={LABELS[locale].name}
+            onClick={() => storeLocale(locale)}
+            aria-current={active ? "true" : undefined}
+            // Sichtbares Kürzel im Namen (WCAG 2.5.3 „Label in Name"), ausgeschrieben für Screenreader.
+            aria-label={`${LABELS[locale].short} – ${LABELS[locale].name}`}
             title={LABELS[locale].name}
-            className={cn(
-              "rounded-lg px-2 py-1 transition-colors",
-              active
-                ? tone === "dark"
-                  ? "bg-white text-primary"
-                  : "bg-primary text-white"
-                : tone === "dark"
-                  ? "text-slate-300 hover:text-white"
-                  : "text-slate-600 hover:text-primary",
-            )}
+            className={itemClass(active)}
           >
             {LABELS[locale].short}
-          </button>
+          </a>
         );
       })}
     </div>

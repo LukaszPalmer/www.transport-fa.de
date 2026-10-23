@@ -1,6 +1,7 @@
 import type { Faq } from "@/types/content";
 import { routes } from "@/content/navigation";
 import { getLocale } from "@/i18n/server";
+import { faqAnchor } from "@/lib/anchors";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -14,6 +15,7 @@ interface FaqSectionProps {
 /**
  * Häufige Fragen als natives Akkordeon (<details name> = exklusiv öffnend,
  * ohne JavaScript). Die strukturierten Daten (FAQPage) liefert die Seite.
+ * Jede Frage hat einen festen Anker (#faq-…) – Deep-Links öffnen sie (AnchorScroll).
  */
 export async function FaqSection({ faqs, title, contactHref = routes.contactForm }: FaqSectionProps) {
   const en = (await getLocale()) === "en";
@@ -34,7 +36,7 @@ export async function FaqSection({ faqs, title, contactHref = routes.contactForm
 
         <div className="divide-y divide-slate-200 rounded-2xl border border-slate-200/80 bg-white px-6 shadow-card sm:px-8 lg:col-span-8">
           {faqs.map((faq, index) => (
-            <details key={faq.question} name="faq" open={index === 0} className="group py-2">
+            <details key={faq.question} id={faqAnchor(faq.question)} name="faq" open={index === 0} className="group scroll-mt-28 py-2">
               <summary className="flex cursor-pointer list-none items-center justify-between gap-6 rounded-lg py-4 text-left font-display text-lg font-semibold text-primary [&::-webkit-details-marker]:hidden">
                 {faq.question}
                 <span

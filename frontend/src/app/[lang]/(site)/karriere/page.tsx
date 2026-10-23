@@ -4,6 +4,8 @@ import { drivingLicenses, getCareers, MAX_CV_MB } from "@/content/careers";
 import { defineMessages } from "@/i18n/config";
 import { getLocale } from "@/i18n/server";
 import { routes } from "@/content/navigation";
+import { pageMetadata } from "@/lib/seo";
+import { webPageJsonLd } from "@/lib/structured-data";
 import { CareerApplication } from "@/components/sections/careers/CareerApplication";
 import { HeroFactsCard } from "@/components/sections/hero/HeroFactsCard";
 import { PageHero } from "@/components/sections/hero/PageHero";
@@ -11,6 +13,7 @@ import { ProcessSteps } from "@/components/sections/ProcessSteps";
 import { StatsBar } from "@/components/sections/StatsBar";
 import { Container } from "@/components/ui/Container";
 import { Icon } from "@/components/ui/Icon";
+import { JsonLd } from "@/components/ui/JsonLd";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 const messages = defineMessages({
@@ -33,6 +36,10 @@ const messages = defineMessages({
     questions: "Fragen vorab?",
     questionsText: "Unser Personalteam ist für Sie da.",
     germanNote: "",
+    home: "Startseite",
+    breadcrumbs: "Brotkrumen",
+    careers: "Karriere",
+    posterAlt: "Zwei Lagermitarbeiter zwischen Palettenregalen, einer prüft Aufträge auf einem Tablet",
   },
   en: {
     jobs: "View open positions",
@@ -53,17 +60,24 @@ const messages = defineMessages({
     questions: "Questions first?",
     questionsText: "Our HR team is here for you.",
     germanNote: "Our teams work in German – good German skills are usually required.",
+    home: "Home",
+    breadcrumbs: "Breadcrumbs",
+    careers: "Careers",
+    posterAlt: "Two warehouse workers between pallet racks, one checking orders on a tablet",
   },
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { careersPage } = getCareers(await getLocale());
-  return {
+  const locale = await getLocale();
+  const { careersPage } = getCareers(locale);
+  const { media } = careersPage.hero;
+  return pageMetadata({
+    path: routes.careers,
+    locale,
     title: careersPage.seo.title,
     description: careersPage.seo.description,
-    alternates: { canonical: routes.careers },
-    openGraph: { images: [careersPage.hero.media.poster] },
-  };
+    image: { url: media.poster, ...media.posterSize, alt: messages[locale].posterAlt },
+  });
 }
 
 export default async function CareersPage() {
@@ -74,8 +88,24 @@ export default async function CareersPage() {
 
   return (
     <>
+      <JsonLd
+        data={webPageJsonLd({
+          path: routes.careers,
+          locale,
+          name: careersPage.seo.title,
+          description: careersPage.seo.description,
+          breadcrumbs: [{ name: t.careers, path: routes.careers }],
+        })}
+      />
       <PageHero
         size="large"
+        breadcrumbs={{
+          label: t.breadcrumbs,
+          items: [
+            { label: t.home, href: "/" },
+            { label: t.careers, href: routes.careers },
+          ],
+        }}
         eyebrow={hero.eyebrow}
         headline={hero.headline}
         headlineAccent={hero.headlineAccent}

@@ -2,19 +2,20 @@ import type { Metadata, Viewport } from "next";
 import { company } from "@/content/company";
 import { LocaleProvider } from "@/i18n/client";
 import { defineMessages, isLocale, LOCALES, type Locale } from "@/i18n/config";
+import { WebVitals } from "@/components/analytics/WebVitals";
 import { AnchorScroll } from "@/components/layout/AnchorScroll";
 import { fontClasses } from "../fonts";
 import "../globals.css";
 
 const messages = defineMessages({
   de: {
-    title: `${company.name} – Umzüge, Entrümpelungen & Transporte`,
+    title: `${company.name} Düsseldorf – Umzüge, Entrümpelungen & Transporte`,
     description: company.descriptions.de,
     ogLocale: "de_DE",
     skip: "Zum Inhalt springen",
   },
   en: {
-    title: `${company.name} – Removals, House Clearances & Transport`,
+    title: `${company.name} Düsseldorf – Removals, Clearances & Transport`,
     description: company.descriptions.en,
     ogLocale: "en_GB",
     skip: "Skip to content",
@@ -27,17 +28,40 @@ export function generateStaticParams(): Array<{ lang: Locale }> {
 }
 export const dynamicParams = false;
 
+/** Bestätigungscodes für Google Search Console und Bing Webmaster Tools (Meta-Tag-Methode, optional). */
+const verification: Metadata["verification"] = {
+  ...(process.env.GOOGLE_SITE_VERIFICATION && { google: process.env.GOOGLE_SITE_VERIFICATION }),
+  ...(process.env.BING_SITE_VERIFICATION && { other: { "msvalidate.01": process.env.BING_SITE_VERIFICATION } }),
+};
+
 export async function generateMetadata({ params }: LayoutProps<"/[lang]">): Promise<Metadata> {
   const { lang } = await params;
   const t = messages[isLocale(lang) ? lang : "de"];
+  const { geo } = company.address;
   return {
     metadataBase: new URL(company.siteUrl),
     title: { default: t.title, template: `%s | ${company.name}` },
     description: t.description,
     applicationName: company.name,
+    authors: [{ name: company.legalName, url: company.siteUrl }],
+    publisher: company.legalName,
+    // Volle Snippets und große Bildvorschau in Google (Seiten können per noindex abweichen).
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: { index: true, follow: true, "max-snippet": -1, "max-image-preview": "large", "max-video-preview": -1 },
+    },
     openGraph: { type: "website", locale: t.ogLocale, siteName: company.name },
     twitter: { card: "summary_large_image" },
     formatDetection: { telephone: false, email: false, address: false },
+    verification,
+    // Standort für Suchmaschinen, die Geo-Meta-Tags auswerten (Bing u. a.; Google nutzt JSON-LD).
+    other: {
+      "geo.region": "DE-NW",
+      "geo.placename": company.address.city,
+      "geo.position": `${geo.latitude};${geo.longitude}`,
+      ICBM: `${geo.latitude}, ${geo.longitude}`,
+    },
   };
 }
 
@@ -65,6 +89,7 @@ export default async function RootLayout({ children, params }: LayoutProps<"/[la
         </a>
         <LocaleProvider locale={locale}>{children}</LocaleProvider>
         <AnchorScroll />
+        {process.env.NEXT_PUBLIC_WEB_VITALS === "on" && <WebVitals />}
       </body>
     </html>
   );

@@ -17,6 +17,8 @@ export function AnchorScroll() {
     const scrollToHash = (hash: string, smooth: boolean) => {
       const target = hash.length > 1 ? document.getElementById(decodeURIComponent(hash.slice(1))) : null;
       if (!target) return false;
+      // Deep-Link auf eine FAQ-Frage (#faq-…): Antwort gleich aufklappen.
+      if (target instanceof HTMLDetailsElement) target.open = true;
       document.documentElement.classList.add("render-all");
       // Einen Frame warten, damit das Layout mit echten Höhen steht.
       requestAnimationFrame(() =>

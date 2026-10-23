@@ -14,11 +14,14 @@ import { BlogTeaserSection } from "@/components/sections/blog/BlogTeaserSection"
 import { LiveChatSection } from "@/components/sections/chat/LiveChatSection";
 import { ReferralSection } from "@/components/sections/referral/ReferralSection";
 import { JsonLd } from "@/components/ui/JsonLd";
-import { organizationJsonLd } from "@/lib/structured-data";
+import { pageMetadata } from "@/lib/seo";
+import { webPageJsonLd } from "@/lib/structured-data";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const locale = await getLocale();
+  const { homeSeo } = getHome(locale);
+  return pageMetadata({ path: "/", locale, title: { absolute: homeSeo.title }, description: homeSeo.description });
+}
 
 /**
  * Startseite – reine Komposition. Alle Sektionen sind Server Components;
@@ -26,10 +29,10 @@ export const metadata: Metadata = {
  */
 export default async function HomePage() {
   const locale = await getLocale();
-  const { trustStats } = getHome(locale);
+  const { trustStats, homeSeo } = getHome(locale);
   return (
     <>
-      <JsonLd data={organizationJsonLd(locale)} />
+      <JsonLd data={webPageJsonLd({ path: "/", locale, name: homeSeo.title, description: homeSeo.description })} />
       <HeroSection />
       <StatsBar stats={trustStats} label={locale === "en" ? "Company in figures" : "Unternehmen in Zahlen"} />
       <ServicesSection />

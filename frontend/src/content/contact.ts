@@ -15,9 +15,9 @@ export const topicsWithDestination = ["umzuege", "transport"];
 
 export const contactPage = {
   seo: {
-    title: "Kontakt & Angebot anfordern",
+    title: "Kontakt & kostenloses Angebot in Düsseldorf",
     description:
-      "Kostenloses Angebot für Umzug, Entrümpelung, Haushaltsauflösung oder Transport anfordern. Antwort in der Regel innerhalb von 24 Stunden.",
+      "Kostenloses Angebot für Umzug, Entrümpelung, Haushaltsauflösung oder Transport in Düsseldorf anfordern – Antwort in der Regel innerhalb von 24 Stunden.",
   },
   eyebrow: "Kontakt & Angebot",
   title: "Sprechen Sie mit uns.",
@@ -33,8 +33,8 @@ export const contactPage = {
 
 const contactPageEn: typeof contactPage = {
   seo: {
-    title: "Contact & request a quote",
-    description: "Request a free quote for a removal, clearance, house clearance or transport. We usually reply within 24 hours.",
+    title: "Contact & free quote in Düsseldorf",
+    description: "Request a free quote for a removal, clearance, house clearance or transport in Düsseldorf – we usually reply within 24 hours.",
   },
   eyebrow: "Contact & quote",
   title: "Talk to us.",

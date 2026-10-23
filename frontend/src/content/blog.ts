@@ -66,9 +66,9 @@ export interface BlogPost {
 
 export const blogPage = {
   seo: {
-    title: "Blog & Ratgeber – Umzug, Entrümpelung, Transport",
+    title: "Ratgeber: Umzug, Entrümpelung & Transport",
     description:
-      "Praxiswissen von FA Transport: Tipps, Checklisten und Hintergründe rund um Umzug, Entrümpelung, Haushaltsauflösung und Transport.",
+      "Praxiswissen von FA Transport aus Düsseldorf: Kosten, Checklisten und Tipps rund um Umzug, Entrümpelung, Haushaltsauflösung und Transport.",
   },
   eyebrow: "Blog & Ratgeber",
   titleLead: "Lesen Sie,",

@@ -5,6 +5,7 @@ import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { defineMessages } from "@/i18n/config";
 import { getLocale } from "@/i18n/server";
+import { pageMetadata } from "@/lib/seo";
 
 const messages = defineMessages({
   de: {
@@ -26,14 +27,10 @@ const messages = defineMessages({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const t = messages[await getLocale()];
-  return {
-    title: t.title,
-    description: t.description,
-    alternates: { canonical: routes.review },
-    // Service-Seite für Kunden (Link auf Rechnung/QR-Code) – nicht in Suchergebnissen.
-    robots: { index: false, follow: true },
-  };
+  const locale = await getLocale();
+  const t = messages[locale];
+  // Service-Seite für Kunden (Link auf Rechnung/QR-Code) – nicht in Suchergebnissen.
+  return pageMetadata({ path: routes.review, locale, title: t.title, description: t.description, noindex: true });
 }
 
 /**

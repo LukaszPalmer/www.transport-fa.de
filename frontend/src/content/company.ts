@@ -38,8 +38,18 @@ export const company = {
     careersEmail: COMPANY.contact.email,
   },
   address: COMPANY.address,
-  /** Einzugsgebiet für Suchmaschinen und KI-Suchen – dieselben Orte wie in den Ratgebern. */
+  /** Einzugsgebiet für Suchmaschinen und KI-Suchen – dieselben Orte wie in den Ratgebern und FAQ. */
   serviceArea: ["Düsseldorf", "Neuss", "Meerbusch", "Ratingen", "Hilden", "Erkrath"],
+  /** Wikidata-Kennungen der Orte – macht sie im JSON-LD zu eindeutigen Entitäten (Düsseldorf ≠ Namensvettern). */
+  wikidata: {
+    Düsseldorf: "Q1718",
+    Neuss: "Q2948",
+    Meerbusch: "Q4105",
+    Ratingen: "Q3791",
+    Hilden: "Q4094",
+    Erkrath: "Q6968",
+    Deutschland: "Q183",
+  } as Record<string, string>,
   /** Strukturierte Fassung von `contact.hours` (Mo–Fr 7–19 Uhr) – bei Änderungen beide anpassen. */
   openingHours: { days: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"], opens: "07:00", closes: "19:00" },
   register: COMPANY.register,

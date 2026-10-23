@@ -21,17 +21,19 @@ export const services: ServiceArea[] = [
     teaser: "Privat- und Firmenumzüge zum Festpreis – inklusive Verpackung, Montage und Halteverbotszone.",
     highlights: ["Kostenlose Besichtigung", "Verbindlicher Festpreis", "Montage & Einpackservice"],
     seo: {
-      title: "Umzüge zum Festpreis – Privat- & Firmenumzug",
+      title: "Umzugsunternehmen Düsseldorf zum Festpreis",
       description:
-        "Privat-, Firmen- und Fernumzüge mit festem Umzugsteam: kostenlose Besichtigung, verbindlicher Festpreis, Möbelmontage, Einpackservice und Halteverbotszone.",
+        "Ihr Umzugsunternehmen in Düsseldorf: Privat-, Firmen- und Fernumzüge mit festem Team – kostenlose Besichtigung, Festpreis, Möbelmontage und Halteverbotszone.",
     },
+    updatedAt: "2026-10-23",
     hero: {
-      eyebrow: "Umzüge · Privat & Gewerbe",
-      headline: ["Ihr Umzug.", "Sorgfältig geplant."],
+      eyebrow: "Umzugsunternehmen in Düsseldorf · Privat & Gewerbe",
+      headline: ["Ihr Umzug in Düsseldorf.", "Sorgfältig geplant."],
       headlineAccent: "Stressfrei erledigt.",
       subheadline:
         "Vom Einpackservice bis zur Küchenmontage: Unser festes Umzugsteam bringt Ihr Zuhause oder Büro sicher an den neuen Standort – zum verbindlichen Festpreis nach kostenloser Besichtigung.",
       media: heroMedia("umzuege"),
+      mediaAlt: "Zwei Umzugshelfer tragen ein Polstermöbel durch ein Treppenhaus nach draußen",
       factsTitle: "Ihr Umzug inklusive",
       facts: [
         "Kostenlose Besichtigung – vor Ort oder per Video",
@@ -120,6 +122,11 @@ export const services: ServiceArea[] = [
           "Ja, wir haften im Rahmen der gesetzlichen Bestimmungen für Umzugsgut (HGB). Für besonders wertvolle Gegenstände bieten wir eine erweiterte Transportversicherung an.",
       },
       {
+        question: "Wo führen Sie Umzüge durch?",
+        answer:
+          "Unser Schwerpunkt ist Düsseldorf mit allen Stadtteilen sowie Neuss, Meerbusch, Ratingen, Hilden und Erkrath. Fern- und Auslandsumzüge fahren wir deutschland- und europaweit – als Direktfahrt ohne Umladen.",
+      },
+      {
         question: "Kann ich die Umzugskosten steuerlich absetzen?",
         answer:
           "Privat veranlasste Umzüge können häufig als haushaltsnahe Dienstleistung (§ 35a EStG) berücksichtigt werden, beruflich veranlasste als Werbungskosten. Sie erhalten von uns eine Rechnung mit ausgewiesenem Arbeitskostenanteil – bitte stimmen Sie die Details mit Ihrer Steuerberatung ab.",
@@ -137,17 +144,19 @@ export const services: ServiceArea[] = [
     teaser: "Keller, Dachboden, Wohnung oder Gewerbe – besenrein geräumt, fachgerecht entsorgt, mit Wertanrechnung.",
     highlights: ["Kurzfristige Termine", "Fachgerechte Entsorgung", "Besenreine Übergabe"],
     seo: {
-      title: "Entrümpelung – schnell, diskret & besenrein",
+      title: "Entrümpelung Düsseldorf – schnell & besenrein",
       description:
-        "Entrümpelung von Wohnung, Keller, Dachboden und Gewerbeflächen: Festpreis nach Besichtigung, fachgerechte Entsorgung, Wertanrechnung und besenreine Übergabe.",
+        "Entrümpelung in Düsseldorf und Umgebung: Wohnung, Keller, Dachboden und Gewerbe – Festpreis nach Besichtigung, fachgerechte Entsorgung, besenreine Übergabe.",
     },
+    updatedAt: "2026-10-23",
     hero: {
-      eyebrow: "Entrümpelungen · schnell & diskret",
-      headline: ["Platz schaffen.", "Schnell. Diskret."],
+      eyebrow: "Entrümpelung in Düsseldorf · schnell & diskret",
+      headline: ["Entrümpelung in Düsseldorf.", "Schnell. Diskret."],
       headlineAccent: "Besenrein übergeben.",
       subheadline:
         "Wir räumen Keller, Dachböden, Wohnungen und Gewerbeflächen vollständig – inklusive fachgerechter Entsorgung und Recycling. Verwertbares rechnen wir transparent auf den Preis an.",
       media: heroMedia("entruempelungen"),
+      mediaAlt: "Ein Helfer trägt einen grünen Samtsessel durch einen Flur",
       factsTitle: "Ihre Entrümpelung inklusive",
       facts: [
         "Kostenlose Besichtigung & Festpreis",
@@ -236,6 +245,11 @@ export const services: ServiceArea[] = [
           "Wir trennen sortenrein und entsorgen über zertifizierte Fachbetriebe. Auf Wunsch erhalten Sie einen Entsorgungsnachweis, zum Beispiel für Gewerbeobjekte.",
       },
       {
+        question: "In welchen Orten entrümpeln Sie?",
+        answer:
+          "In ganz Düsseldorf sowie in Neuss, Meerbusch, Ratingen, Hilden und Erkrath. Weitere Orte in der Region auf Anfrage – schildern Sie uns einfach Ihr Objekt.",
+      },
+      {
         question: "Wie schnell können Sie entrümpeln?",
         answer:
           "In der Regel innerhalb weniger Tage, in dringenden Fällen oft innerhalb von 48 Stunden. Eine durchschnittliche Wohnung räumen wir meist an einem Arbeitstag.",
@@ -253,17 +267,19 @@ export const services: ServiceArea[] = [
     teaser: "Einfühlsame Komplettauflösung – im Erbfall, bei Umzug ins Pflegeheim oder bei Wohnungsaufgabe.",
     highlights: ["Persönlicher Ansprechpartner", "Wertanrechnung", "Übergabe an Vermieter"],
     seo: {
-      title: "Haushaltsauflösung – einfühlsam & komplett",
+      title: "Haushaltsauflösung Düsseldorf zum Festpreis",
       description:
-        "Haushaltsauflösung im Erbfall, bei Umzug ins Pflegeheim oder Wohnungsaufgabe: Festpreis, Wertanrechnung, Sicherung von Dokumenten und besenreine Übergabe.",
+        "Haushaltsauflösung in Düsseldorf im Erbfall, bei Umzug ins Pflegeheim oder Wohnungsaufgabe: Festpreis, faire Wertanrechnung und besenreine Übergabe.",
     },
+    updatedAt: "2026-10-23",
     hero: {
-      eyebrow: "Haushaltsauflösungen · einfühlsam & komplett",
-      headline: ["Mit Respekt.", "Mit Sorgfalt."],
-      headlineAccent: "Komplett aus einer Hand.",
+      eyebrow: "Haushaltsauflösung in Düsseldorf · einfühlsam & komplett",
+      headline: ["Haushaltsauflösung", "in Düsseldorf."],
+      headlineAccent: "Mit Respekt und Sorgfalt.",
       subheadline:
         "Ob im Trauerfall, beim Umzug ins Pflegeheim oder bei einer Wohnungsaufgabe: Wir lösen Haushalte vollständig auf – mit Taktgefühl, fairer Wertanrechnung und besenreiner Übergabe.",
-      media: heroMedia("haushaltsaufloesungen"),
+      media: heroMedia("haushaltsaufloesungen", { width: 1920, height: 1012 }),
+      mediaAlt: "Gepackte Umzugskartons in einem sonnigen Zimmer",
       factsTitle: "Ihre Haushaltsauflösung inklusive",
       facts: [
         "Persönlicher Ansprechpartner",
@@ -352,6 +368,11 @@ export const services: ServiceArea[] = [
           "Eine durchschnittliche Wohnung lösen wir meist in ein bis zwei Arbeitstagen auf. Den Zeitplan stimmen wir flexibel mit Ihnen und dem Vermieter ab.",
       },
       {
+        question: "Lösen Sie auch Haushalte außerhalb von Düsseldorf auf?",
+        answer:
+          "Ja. Neben Düsseldorf sind wir in Neuss, Meerbusch, Ratingen, Hilden und Erkrath im Einsatz. Für Erbengemeinschaften übernehmen wir Auflösungen auch überregional.",
+      },
+      {
         question: "Arbeiten Sie auch mit Nachlassverwaltern und Betreuern zusammen?",
         answer:
           "Ja, regelmäßig. Wir stimmen uns mit Erben, gesetzlichen Betreuern, Nachlassgerichten und Hausverwaltungen ab und dokumentieren jeden Schritt nachvollziehbar.",
@@ -370,17 +391,19 @@ export const services: ServiceArea[] = [
     teaser: "Möbel-, Einzel- und Gewerbetransporte, Lieferung & Abholung – regional, deutschlandweit und in Europa.",
     highlights: ["Vom Einzelstück bis zur Ladung", "Fester Ansprechpartner", "Deutschland- & europaweit"],
     seo: {
-      title: "Transporte – Möbel, Einzelstücke & Gewerbe",
+      title: "Möbeltransport & Transporte in Düsseldorf",
       description:
-        "Möbel- und Einzeltransporte, Lieferung & Abholung, gewerbliche Transporte und Direktfahrten: sicher verladen, termintreu zugestellt – regional, deutschlandweit und in Europa. Festpreis-Angebot innerhalb von 24 Stunden.",
+        "Möbel-, Einzel- und Gewerbetransporte ab Düsseldorf: sicher verladen, termintreu zugestellt – regional, deutschlandweit und in Europa. Angebot in 24 Stunden.",
     },
+    updatedAt: "2026-10-23",
     hero: {
-      eyebrow: "Transport · Privat & Gewerbe",
-      headline: ["Ihre Ladung.", "Sicher bewegt."],
+      eyebrow: "Transportunternehmen in Düsseldorf · Privat & Gewerbe",
+      headline: ["Transporte ab Düsseldorf.", "Sicher bewegt."],
       headlineAccent: "Termintreu geliefert.",
       subheadline:
         "Vom einzelnen Möbelstück über die Lieferung aus dem Möbelhaus bis zur Palette für Ihr Unternehmen: Wir holen ab, verladen fachgerecht und liefern pünktlich – mit festem Ansprechpartner und transparentem Festpreis.",
       media: heroMedia("transport"),
+      mediaAlt: "Lkw auf einer Autobahnbrücke durch bewaldete Hügel",
       factsTitle: "Ihr Transport inklusive",
       facts: [
         "Fester Ansprechpartner je Auftrag",
@@ -440,6 +463,11 @@ export const services: ServiceArea[] = [
         question: "Welche Transporte übernehmen Sie?",
         answer:
           "Einzelne Möbel und Geräte, Lieferungen aus Möbelhaus oder Lager, gewerbliche Transporte wie Büroausstattung und Paletten sowie Direktfahrten – regional, deutschlandweit und in Europa. Lagerung und Logistikdienstleistungen bieten wir nicht an.",
+      },
+      {
+        question: "Fahren Sie nur innerhalb von Düsseldorf?",
+        answer:
+          "Nein. Wir transportieren in Düsseldorf und der Region – etwa nach Neuss, Meerbusch, Ratingen, Hilden und Erkrath – sowie deutschlandweit und in Europa, als Direktfahrt ohne Umladen.",
       },
       {
         question: "Kann ich meinen Transport live verfolgen?",

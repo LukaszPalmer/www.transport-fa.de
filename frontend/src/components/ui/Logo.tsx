@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { company } from "@/content/company";
 import { useLocale } from "@/i18n/client";
+import { localizeHref } from "@/i18n/config";
 import { cn } from "@/lib/cn";
 
 interface LogoProps {
@@ -28,7 +29,7 @@ export function Logo({ tone = "light", className, href = "/", label }: LogoProps
   const locale = useLocale();
   return (
     <Link
-      href={href}
+      href={localizeHref(href, locale)}
       aria-label={label ?? (locale === "en" ? `${company.name} – home` : `${company.name} – zur Startseite`)}
       className={cn("group inline-flex items-center gap-3", className)}
     >

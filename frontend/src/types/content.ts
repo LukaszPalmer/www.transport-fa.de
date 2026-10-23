@@ -83,6 +83,7 @@ export interface VideoSource {
 
 export interface HeroMediaConfig {
   poster: string;
+  posterSize: { width: number; height: number };
   desktop: VideoSource[];
   mobile: VideoSource[];
 }
@@ -100,13 +101,22 @@ export interface ServiceArea {
   teaser: string;
   /** Drei Stichpunkte für die Übersichtskarte auf der Startseite. */
   highlights: string[];
+  /**
+   * Title ohne Marke (max. 45 Zeichen – „ | FA Transport" kommt dazu) mit Hauptsuchbegriff und Ort;
+   * Description 120–160 Zeichen.
+   */
   seo: { title: string; description: string };
+  /** Letzte inhaltliche Änderung (ISO-Datum) – `lastmod` in der Sitemap, `dateModified` im JSON-LD. */
+  updatedAt: string;
   hero: {
     eyebrow: string;
+    /** Die H1 – soll Leistung und Ort enthalten (z. B. „Umzug in Düsseldorf."). */
     headline: string[];
     headlineAccent: string;
     subheadline: string;
     media: HeroMediaConfig;
+    /** Bildbeschreibung des Standbilds – für Social-Media-Vorschau, Bildersuche und JSON-LD. */
+    mediaAlt: string;
     /** Checkliste in der Glass-Karte neben der Headline. */
     factsTitle: string;
     facts: string[];

@@ -5,10 +5,14 @@ import { getContact } from "@/content/contact";
 import { defineMessages } from "@/i18n/config";
 import { getLocale } from "@/i18n/server";
 import { routes } from "@/content/navigation";
+import { pageMetadata } from "@/lib/seo";
+import { webPageJsonLd } from "@/lib/structured-data";
 import { ContactForm } from "@/components/forms/ContactForm";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Icon, type IconName } from "@/components/ui/Icon";
+import { JsonLd } from "@/components/ui/JsonLd";
 import { SmartLink } from "@/components/ui/SmartLink";
 
 const messages = defineMessages({
@@ -26,6 +30,9 @@ const messages = defineMessages({
     existing: "Bestandskunde?",
     existingText: "Aufträge, Termine und Dokumente finden Sie jederzeit in Ihrem Kundenportal.",
     toPortal: "Zum Kundenportal",
+    home: "Startseite",
+    breadcrumbs: "Brotkrumen",
+    contact: "Kontakt",
   },
   en: {
     phone: "Phone",
@@ -41,16 +48,16 @@ const messages = defineMessages({
     existing: "Existing customer?",
     existingText: "You can find your jobs, appointments and documents in your customer portal at any time.",
     toPortal: "To the customer portal",
+    home: "Home",
+    breadcrumbs: "Breadcrumbs",
+    contact: "Contact",
   },
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { contactPage } = getContact(await getLocale());
-  return {
-    title: contactPage.seo.title,
-    description: contactPage.seo.description,
-    alternates: { canonical: routes.contact },
-  };
+  const locale = await getLocale();
+  const { contactPage } = getContact(locale);
+  return pageMetadata({ path: routes.contact, locale, title: contactPage.seo.title, description: contactPage.seo.description });
 }
 
 /**
@@ -69,6 +76,16 @@ export default async function ContactPage() {
 
   return (
     <>
+      <JsonLd
+        data={webPageJsonLd({
+          path: routes.contact,
+          locale,
+          type: "ContactPage",
+          name: contactPage.seo.title,
+          description: contactPage.seo.description,
+          breadcrumbs: [{ name: t.contact, path: routes.contact }],
+        })}
+      />
       <section className="relative isolate overflow-hidden bg-primary pt-36 pb-40 lg:pt-44 lg:pb-48">
         <div
           aria-hidden="true"
@@ -79,6 +96,14 @@ export default async function ContactPage() {
           className="absolute inset-0 -z-10 bg-[radial-gradient(50rem_30rem_at_100%_0%,rgb(56_189_248/0.18),transparent_65%)]"
         />
         <Container>
+          <Breadcrumbs
+            label={t.breadcrumbs}
+            items={[
+              { label: t.home, href: "/" },
+              { label: t.contact, href: routes.contact },
+            ]}
+            className="mb-5"
+          />
           <Eyebrow tone="dark">{contactPage.eyebrow}</Eyebrow>
           <h1 className="mt-4 max-w-3xl text-4xl font-extrabold leading-[1.05] tracking-[-0.03em] text-white sm:text-5xl lg:text-6xl">
             {contactPage.title}

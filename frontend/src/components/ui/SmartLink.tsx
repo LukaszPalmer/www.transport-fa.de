@@ -1,5 +1,5 @@
-import Link from "next/link";
 import type { AnchorHTMLAttributes } from "react";
+import { LocaleLink } from "./LocaleLink";
 
 type SmartLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
   href: string;
@@ -12,7 +12,7 @@ const isNative = (href: string) => /^(\/?#|mailto:|tel:)/.test(href) || href.end
 
 /**
  * Ein Link-Primitive für alle Ziele:
- * - interne Routen    → next/link (Prefetching, Client-Navigation)
+ * - interne Routen    → next/link in der Sprache der Seite (/en/… auf englischen Seiten)
  * - #Anker und /#Anker, mailto:, tel:, Dateien → natives <a>
  *   (Sprungmarken brauchen keinen Router; spart RSC-Prefetches der Startseite)
  * - externe URLs      → neues Tab mit sicherem rel-Attribut
@@ -27,7 +27,12 @@ export function SmartLink({ href, children, prefetch, ...props }: SmartLinkProps
   }
 
   if (isNative(href)) {
-    return (
+    // "/#anker" führt zur Startseite der jeweiligen Sprache – reine "#anker", mailto: und tel: bleiben unverändert.
+    return href.startsWith("/") ? (
+      <LocaleLink href={href} native {...props}>
+        {children}
+      </LocaleLink>
+    ) : (
       <a href={href} {...props}>
         {children}
       </a>
@@ -35,8 +40,8 @@ export function SmartLink({ href, children, prefetch, ...props }: SmartLinkProps
   }
 
   return (
-    <Link href={href} prefetch={prefetch} {...props}>
+    <LocaleLink href={href} prefetch={prefetch} {...props}>
       {children}
-    </Link>
+    </LocaleLink>
   );
 }

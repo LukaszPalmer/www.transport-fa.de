@@ -5,12 +5,22 @@ import { heroMedia } from "./media";
 import { routes, sectionIds } from "./navigation";
 
 /* --------------------------------------------------------------------------
+   Suchmaschinen – Marke + Ort + Leistungsbereiche. Die Einzelbegriffe („Umzugsunternehmen
+   Düsseldorf" …) gehören den Leistungsseiten, damit sich die Seiten nicht gegenseitig Konkurrenz machen.
+   -------------------------------------------------------------------------- */
+export const homeSeo = {
+  title: "FA Transport Düsseldorf – Umzug, Entrümpelung & Transport",
+  description:
+    "Umzüge, Entrümpelungen, Haushaltsauflösungen und Transporte in Düsseldorf und Umgebung – termintreu, versichert und zum Festpreis. Angebot in 24 Stunden.",
+};
+
+/* --------------------------------------------------------------------------
    Hero
    -------------------------------------------------------------------------- */
 export const hero = {
   eyebrow: "Umzug · Räumung · Transport · aus Düsseldorf",
-  headline: ["Umzüge & Transporte.", "Präzise. Zuverlässig."],
-  headlineAccent: "Zum Festpreis.",
+  headline: ["Umzüge & Transporte", "in Düsseldorf."],
+  headlineAccent: "Zuverlässig. Zum Festpreis.",
   subheadline:
     "Ob Umzug, Entrümpelung, Haushaltsauflösung oder Transport: Wir bewegen, was Ihnen wichtig ist – termintreu, sorgfältig und mit einem festen Ansprechpartner. In der Region, deutschlandweit und in Europa.",
   primaryCta: { label: "Angebot anfordern", href: routes.contactForm } satisfies CtaLink,
@@ -186,6 +196,7 @@ export const contactCta = {
    Sprachfassungen
    -------------------------------------------------------------------------- */
 const homeDe = {
+  homeSeo,
   hero,
   heroShipment,
   trustStats,

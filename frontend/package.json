@@ -12,7 +12,9 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "encode:hero": "node scripts/encode-hero-video.mjs",
-    "build:app-map": "node scripts/build-app-map.mjs"
+    "build:app-map": "node scripts/build-app-map.mjs",
+    "seo:audit": "node scripts/seo-audit.mjs",
+    "indexnow": "node scripts/indexnow.mjs"
   },
   "dependencies": {
     "@fa/shared": "*",

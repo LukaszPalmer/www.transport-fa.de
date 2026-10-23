@@ -13,10 +13,12 @@ import { RelatedServices } from "@/components/sections/RelatedServices";
 import { ReviewsSection } from "@/components/sections/reviews/ReviewsSection";
 import { StatsBar } from "@/components/sections/StatsBar";
 import { TrackingAppSection } from "@/components/sections/app/TrackingAppSection";
+import { ServiceGuidesSection } from "@/components/sections/blog/ServiceGuidesSection";
 import { Container } from "@/components/ui/Container";
 import { JsonLd } from "@/components/ui/JsonLd";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import { faqJsonLd, serviceJsonLd } from "@/lib/structured-data";
+import { pageMetadata } from "@/lib/seo";
+import { serviceImage, serviceJsonLd } from "@/lib/structured-data";
 
 const messages = defineMessages({
   de: {
@@ -30,6 +32,8 @@ const messages = defineMessages({
     ctaTitle: "Kostenloses Angebot in Kürze.",
     ctaText: "Schildern Sie uns Ihr Vorhaben – wir melden uns schnell mit einem transparenten, verbindlichen Angebot.",
     ctaButton: "Angebot anfordern",
+    home: "Startseite",
+    breadcrumbs: "Brotkrumen",
   },
   en: {
     quote: "Request a free quote",
@@ -42,6 +46,8 @@ const messages = defineMessages({
     ctaTitle: "A free quote, fast.",
     ctaText: "Tell us about your project – we'll get back to you quickly with a transparent, binding quote.",
     ctaButton: "Request a quote",
+    home: "Home",
+    breadcrumbs: "Breadcrumbs",
   },
 });
 
@@ -53,14 +59,16 @@ export function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps<"/[lang]/leistungen/[slug]">): Promise<Metadata> {
-  const service = getService((await params).slug, await getLocale());
+  const locale = await getLocale();
+  const service = getService((await params).slug, locale);
   if (!service) return {};
-  return {
+  return pageMetadata({
+    path: serviceHref(service.slug),
+    locale,
     title: service.seo.title,
     description: service.seo.description,
-    alternates: { canonical: serviceHref(service.slug) },
-    openGraph: { title: service.seo.title, description: service.seo.description, images: [service.hero.media.poster] },
-  };
+    image: serviceImage(service),
+  });
 }
 
 /** Template aller Leistungsseiten – Inhalte kommen vollständig aus src/content/services.ts. */
@@ -76,10 +84,16 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/leistun
   return (
     <>
       <JsonLd data={serviceJsonLd(service, locale)} />
-      <JsonLd data={faqJsonLd(service.faqs)} />
 
       <PageHero
         size="large"
+        breadcrumbs={{
+          label: t.breadcrumbs,
+          items: [
+            { label: t.home, href: "/" },
+            { label: service.name, href: serviceHref(service.slug) },
+          ],
+        }}
         eyebrow={hero.eyebrow}
         headline={hero.headline}
         headlineAccent={hero.headlineAccent}
@@ -128,6 +142,8 @@ export default async function ServicePage({ params }: PageProps<"/[lang]/leistun
       <FaqSection faqs={service.faqs} title={t.faq(service.name)} contactHref={contactHref} />
 
       <RelatedServices current={service.slug} />
+
+      <ServiceGuidesSection service={service.slug} serviceName={service.name} />
 
       <ContactCta
         title={t.ctaTitle}

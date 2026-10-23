@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Generiert (scripts/copy-maplibre-worker.mjs)
 /public/maplibre/
+
+# Lighthouse-CI-Berichte (npx @lhci/cli autorun)
+/.lighthouseci/

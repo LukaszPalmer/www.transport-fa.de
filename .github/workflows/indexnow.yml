@@ -1,0 +1,25 @@
+# Meldet nach jedem erfolgreichen Produktions-Deploy (Vercel setzt das GitHub-Deployment „Production")
+# die geänderten Seiten an IndexNow – Bing, Yandex, Seznam & Co. indexieren sie dann binnen Minuten.
+# Manuell (Actions → IndexNow → Run workflow) lassen sich auch alle Seiten melden, z. B. nach dem Livegang.
+name: IndexNow
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      all:
+        description: Alle Seiten der Sitemap melden (sonst nur die der letzten 7 Tage)
+        type: boolean
+        default: false
+
+jobs:
+  submit:
+    if: github.event_name == 'workflow_dispatch' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      - run: node frontend/scripts/indexnow.mjs ${{ inputs.all && '--all' || '' }}

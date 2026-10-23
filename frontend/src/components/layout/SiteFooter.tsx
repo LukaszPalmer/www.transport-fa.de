@@ -126,7 +126,7 @@ export async function SiteFooter() {
             </p>
           </address>
           <div className="mt-6">
-            <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500">{t.language}</p>
+            <p className="mb-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-400">{t.language}</p>
             <LanguageSwitcher />
           </div>
         </div>
@@ -138,7 +138,7 @@ export async function SiteFooter() {
             <p>
               © {year} {company.legalName}. {t.rights}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-400">
               {ownerTitle(locale)}: {company.owner}
               {hasRegisterEntry() && ` · ${company.register.court}, ${company.register.number}`} · {t.vat} {formattedVatId()}
             </p>

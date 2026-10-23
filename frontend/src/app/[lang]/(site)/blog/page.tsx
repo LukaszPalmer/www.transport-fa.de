@@ -4,9 +4,11 @@ import { getBlog, sortedPosts, type BlogCategory } from "@/content/blog";
 import { routes } from "@/content/navigation";
 import { defineMessages, type Locale } from "@/i18n/config";
 import { getLocale } from "@/i18n/server";
+import { pageMetadata } from "@/lib/seo";
 import { blogJsonLd } from "@/lib/structured-data";
 import { BlogBrowser } from "@/components/blog/BlogBrowser";
 import { TopicCard } from "@/components/blog/TopicCard";
+import { Breadcrumbs } from "@/components/ui/Breadcrumbs";
 import { ButtonLink } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -22,6 +24,8 @@ const messages = defineMessages({
     checklist: "Umzugs-Checkliste",
     checklistItems: ["Halteverbot beantragen", "Kartons & Material", "Adresse ummelden"],
     readMore: "Weiterlesen →",
+    home: "Startseite",
+    breadcrumbs: "Brotkrumen",
   },
   en: {
     topics: "Topics",
@@ -31,17 +35,15 @@ const messages = defineMessages({
     checklist: "Moving checklist",
     checklistItems: ["Apply for no-parking zone", "Boxes & materials", "Register new address"],
     readMore: "Read more →",
+    home: "Home",
+    breadcrumbs: "Breadcrumbs",
   },
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { blogPage } = getBlog(await getLocale());
-  return {
-    title: blogPage.seo.title,
-    description: blogPage.seo.description,
-    alternates: { canonical: routes.blog },
-    openGraph: { title: blogPage.seo.title, description: blogPage.seo.description, type: "website" },
-  };
+  const locale = await getLocale();
+  const { blogPage } = getBlog(locale);
+  return pageMetadata({ path: routes.blog, locale, title: blogPage.seo.title, description: blogPage.seo.description });
 }
 
 /**
@@ -57,7 +59,7 @@ export default async function BlogPage() {
 
   return (
     <>
-      <JsonLd data={blogJsonLd(posts, locale)} />
+      <JsonLd data={blogJsonLd(posts, locale, { name: blogPage.seo.title, description: blogPage.seo.description })} />
 
       <section aria-labelledby="blog-title" className="relative isolate overflow-hidden bg-primary pt-36 pb-40 lg:pt-44 lg:pb-52">
         <div aria-hidden="true" className="bg-grid absolute inset-0 -z-10 [mask-image:radial-gradient(ellipse_at_30%_20%,black,transparent_75%)]" />
@@ -66,6 +68,14 @@ export default async function BlogPage() {
 
         <Container className="grid grid-cols-1 items-center gap-16 lg:grid-cols-12">
           <div className="lg:col-span-7">
+            <Breadcrumbs
+              label={t.breadcrumbs}
+              items={[
+                { label: t.home, href: "/" },
+                { label: "Blog", href: routes.blog },
+              ]}
+              className="mb-5"
+            />
             <Eyebrow tone="dark">{blogPage.eyebrow}</Eyebrow>
             <h1 id="blog-title" className="mt-5 text-[clamp(2.5rem,7vw,4rem)] leading-[1.04] font-extrabold tracking-[-0.03em] text-white">
               <span className="block">{blogPage.titleLead}</span>
@@ -88,8 +98,12 @@ export default async function BlogPage() {
         </Container>
       </section>
 
-      <section aria-label={posts.length ? t.posts : t.topics} className="relative z-10 -mt-28 pb-24 lg:-mt-36 lg:pb-32">
+      <section aria-labelledby="posts-title" className="relative z-10 -mt-28 pb-24 lg:-mt-36 lg:pb-32">
         <Container>
+          {/* Gliederung für Screenreader und Crawler: die Beitragskarten (h3) stehen unter dieser h2. */}
+          <h2 id="posts-title" className="sr-only">
+            {posts.length ? t.posts : t.topics}
+          </h2>
           {posts.length > 0 ? (
             <div className="rounded-3xl bg-surface p-4 shadow-elevated ring-1 ring-primary/5 sm:p-6 lg:p-8">
               <BlogBrowser posts={posts} categories={blogCategories} />
